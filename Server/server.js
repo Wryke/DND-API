@@ -1,7 +1,13 @@
 const express = require('express');
 const fs = require("fs")
+const path = require("path")
 
-const fName = "./Database/5e-SRD-Equipment.json"
+const app = express();
+      app.use(express.json());
+      
+const PORT = 3000;
+
+const fName = path.join(__dirname, "../Database/5e-SRD-Equipment.json")
 
 let items = [];
 
@@ -12,10 +18,6 @@ try {
 catch (error) {
     console.log(error.message);
 }
-
-const app = express();
-app.use(express.json());
-const PORT = 3000;
 
 app.get("/items/", (req, res) => {
     res.json({items})
