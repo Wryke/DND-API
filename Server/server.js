@@ -1,28 +1,31 @@
 const express = require('express');
 const fs = require("fs")
 
-const fName = "Database/5e-SRD-Equipment.json"
+const fName = "./Database/5e-SRD-Equipment.json"
+
+let items = [];
 
 try {
-    const data = fs.readFileSync(
-        fName,
-        "utf8"
-    );
-
-    const items = JSON.parse(data);
+    const data = fs.readFileSync(fName,"utf8");
+    items = JSON.parse(data);
 }
 catch (error) {
     console.log(error.message);
 }
 
 const app = express();
-const PORT = 3000;
 app.use(express.json());
+const PORT = 3000;
 
-app.get('/item/:index', (req, res) => {
-    const index = req.params.id
+app.get("/items/", (req, res) => {
+    res.json({items})
+})
+
+app.get('/items/:index', (req, res) => {
+    const index = req.params.index
 
     const item = items.find(i => i.index === index)
+    
     if(!item){
         res.status(404).json({
             error: "Item not found"
