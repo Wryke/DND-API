@@ -40,12 +40,12 @@ catch (error) {
 }
 
 // --- Delete Routes ---
-app.delete("/Users/:id/Characters/:characterName/inventory/:itemIndex", (req, res) => {
+app.delete("/Users/:id/Characters/:characterName/Inventory/:itemIndex", (req, res) => {
 
 })
 
 // --- Patch Routes ---
-app.patch("/Users/:id/Characters/:characterName/inventory/:itemIndex", (req, res) => {
+app.patch("/Users/:id/Characters/:characterName/Inventory/:itemIndex", (req, res) => {
 
 })
 
@@ -134,6 +134,7 @@ app.get('/items/:index', (req, res) => {
     res.json(item);
 });
 
+// Get a list of all the quipment categories
 app.get("/categories/", (req, res) => {
     res.json({equipmentCategories})
 })
@@ -154,6 +155,7 @@ app.get('/categories/:category', (req, res) => {
     res.json(category);
 });
 
+// Get a specific an item by index from a specific category
 app.get('/categories/:category/:index', (req, res) => {
     const categoryIndex = req.params.category
     const itemIndex = req.params.index
