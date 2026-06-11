@@ -11,8 +11,8 @@ function loadItems() {
     return JSON.parse(data)
 }
 
-function findItem(item, id) {
-    return EQUIPMENT.find(item => item.id === id)
+function findItem(item, index) {
+    return EQUIPMENT.find(item => item.index === index)
 }
 
 function loadMagicItems() {
@@ -20,8 +20,8 @@ function loadMagicItems() {
     return JSON.parse(data)
 }
 
-function findMagicItem(item, id) {
-    return MAGIC_ITEMS.find(item => item.id === id)
+function findMagicItem(item, index) {
+    return MAGIC_ITEMS.find(item => item.index === index)
 }
 
 function loadCategories(){
@@ -29,8 +29,8 @@ function loadCategories(){
     return JSON.parse(data)
 }
 
-function findCategory(item, id) {
-    return CATEGORIES.find(item => item.id === id)
+function findCategory(item, index) {
+    return CATEGORIES.find(category => category.index === index)
 }
 
 module.exports = {

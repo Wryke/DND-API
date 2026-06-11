@@ -16,11 +16,11 @@ router.get("/", (req, res) => {
     res.json(items)
 });
 
-app.get("/items/", (req, res) => {
+app.get("/", (req, res) => {
     res.json({equipment})
 })
 
-app.get('/items/:index', (req, res) => {
+app.get('/:index', (req, res) => {
     const index = req.params.index
 
     const item = equipment.find(i => i.index === index)
@@ -37,13 +37,14 @@ app.get('/items/:index', (req, res) => {
 });
 
 app.get("/categories/", (req, res) => {
-    res.json({equipmentCategories})
+    const categories = loadCategories();
+    res.json(categories)
 })
 
 app.get('/categories/:category', (req, res) => {
     const categoryIndex = req.params.category
-
-    const category = equipmentCategories.find(i => i.index === categoryIndex)
+    const categories = loadCategories();
+    const category = findCategory(categories, index)
     
     if(!category){
         res.status(404).json({
@@ -59,8 +60,8 @@ app.get('/categories/:category', (req, res) => {
 app.get('/categories/:category/:index', (req, res) => {
     const categoryIndex = req.params.category
     const itemIndex = req.params.index
-
-    const category = equipmentCategories.find(i => i.index === categoryIndex)
+    const categories = loadCategories();
+    const category = findCategory(categories, index)
     
     if(!category){
         res.status(404).json({
