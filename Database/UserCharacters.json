@@ -1,0 +1,13 @@
+[
+{
+    "id": "123456789",
+    "username": "Wryke",
+    "characters": [
+        {
+            "character_name": "Kcos",
+            "max_carry_weight": 160,
+            "inventory": []
+        }
+    ]
+}
+]
