@@ -9,11 +9,21 @@ const PORT = 3000;
 
 const EQUIPMENT            = path.join(__dirname, "../Database/5e-SRD-Equipment.json")
 const EQUIPMENT_CATEGORIES = path.join(__dirname, "../Database/5e-SRD-Equipment-Categories.json")
-const USERS                = path.join(__dirname, "../Database/UserCharacters.json")
+const USERS                = path.join(__dirname, "../Database/Users.json")
 
 let equipment = [];
 let equipmentCategories = [];
 let users = [];
+
+function loadFile(path) {
+    try {
+        const data = fs.readFileSync(path,"utf8")
+        return JSON.parse(data)
+    }
+    catch (error) {
+        console.log(error.message)
+    }
+}
 
 try {
     const data = fs.readFileSync(EQUIPMENT,"utf8");
