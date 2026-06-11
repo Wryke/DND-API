@@ -1,5 +1,5 @@
-const express = require("express");
-const router = express.Router();
+const express = require("express")
+const router = express.Router()
 
 const {
     loadItems,
@@ -12,15 +12,11 @@ const {
 
 // --- Get Routes ---
 router.get("/", (req, res) => {
-    const items = loadItems();
+    const items = loadItems()
     res.json(items)
-});
-
-app.get("/", (req, res) => {
-    res.json({equipment})
 })
 
-app.get('/:index', (req, res) => {
+router.get('/:index', (req, res) => {
     const index = req.params.index
 
     const item = equipment.find(i => i.index === index)
@@ -33,17 +29,17 @@ app.get('/:index', (req, res) => {
         return
     }
 
-    res.json(item);
-});
+    res.json(item)
+})
 
-app.get("/categories/", (req, res) => {
-    const categories = loadCategories();
+router.get("/categories/", (req, res) => {
+    const categories = loadCategories()
     res.json(categories)
 })
 
-app.get('/categories/:category', (req, res) => {
+router.get('/categories/:category', (req, res) => {
     const categoryIndex = req.params.category
-    const categories = loadCategories();
+    const categories = loadCategories()
     const category = findCategory(categories, index)
     
     if(!category){
@@ -54,13 +50,13 @@ app.get('/categories/:category', (req, res) => {
         return
     }
 
-    res.json(category);
-});
+    res.json(category)
+})
 
-app.get('/categories/:category/:index', (req, res) => {
+router.get('/categories/:category/:index', (req, res) => {
     const categoryIndex = req.params.category
     const itemIndex = req.params.index
-    const categories = loadCategories();
+    const categories = loadCategories()
     const category = findCategory(categories, index)
     
     if(!category){
@@ -81,8 +77,8 @@ app.get('/categories/:category/:index', (req, res) => {
         return
     }
 
-    const fullItem = equipment.find(e => e.index === itemIndex);
-    res.json(fullItem);
-});
+    const fullItem = equipment.find(e => e.index === itemIndex)
+    res.json(fullItem)
+})
 
-module.exports = router;
+module.exports = router

@@ -1,18 +1,17 @@
-// helpers/userHelpers.js
 const fs = require("fs")
 const path = require("path")
 
-const EQUIPMENT = path.join(__dirname, "../Database/equipment.json")
-const CATEGORIES = path.join(__dirname, "../Database/Equipment-Categories.json")
-const MAGIC_ITEMS = path.join(__dirname, "../Database/Magic-Items.json")
+const EQUIPMENT = path.join(__dirname, "../../Database/Equipment.json")
+const CATEGORIES = path.join(__dirname, "../../Database/Equipment-Categories.json")
+const MAGIC_ITEMS = path.join(__dirname, "../../Database/Magic-Items.json")
 
 function loadItems() {
     const data = fs.readFileSync(EQUIPMENT, "utf8")
     return JSON.parse(data)
 }
 
-function findItem(item, index) {
-    return EQUIPMENT.find(item => item.index === index)
+function findItem(items, index) {
+    return items.find(item => item.index === index)
 }
 
 function loadMagicItems() {
@@ -20,8 +19,8 @@ function loadMagicItems() {
     return JSON.parse(data)
 }
 
-function findMagicItem(item, index) {
-    return MAGIC_ITEMS.find(item => item.index === index)
+function findMagicItem(items, index) {
+    return items.find(item => item.index === index)
 }
 
 function loadCategories(){
@@ -29,8 +28,8 @@ function loadCategories(){
     return JSON.parse(data)
 }
 
-function findCategory(item, index) {
-    return CATEGORIES.find(category => category.index === index)
+function findCategory(categories, index) {
+    return categories.find(category => category.index === index)
 }
 
 module.exports = {
