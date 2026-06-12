@@ -9,17 +9,25 @@ const {
 } = require("../helpers/userHelpers")
 
 // --- Get Routes ---
+
+// Load all users
 router.get("/", (req, res) => {
     const users = loadUsers()
     res.json(users)
 })
 
+// Load user of specific ID
 router.get("/:id", (req, res) => {
     const users = loadUsers()
+
+    // TODO
+
     res.json(users)
 })
 
 // --- Post Routes ---
+
+// Create a new user with empty Characters
 router.post("/", (req, res) => {
     const users = loadUsers()
 
@@ -41,6 +49,7 @@ router.post("/", (req, res) => {
     res.status(201).json(newUser)
 })
 
+// Create/add a new character for an existing user.
 router.post("/:id/Characters", (req, res) => {
     const id = req.params.id
 
@@ -69,16 +78,27 @@ router.post("/:id/Characters", (req, res) => {
 })
 
 // --- Put Routes ---
+
+// Replace/modify an existing character.
 router.put("/:id/Characters/:characterName", (req, res) => {
 
 })
 
 // --- Patch Routes ---
-router.patch("/:id/Characters/:characterName/Inventory/:itemIndex", (req, res) => {
+
+// Add item or increment quantity if it already exists.
+router.patch("/:id/Characters/:characterName/Inventory/:itemIndex&:quantity", (req, res) => {
+
+})
+
+// Decrement quantity if it already exists.
+router.patch("/:id/Characters/:characterName/Inventory/:itemIndex&:quantity", (req, res) => {
 
 })
 
 // --- Delete Routes ---
+
+// Remove item if it already exists.
 router.delete("/:id/Characters/:characterName/Inventory/:itemIndex", (req, res) => {
 
 })

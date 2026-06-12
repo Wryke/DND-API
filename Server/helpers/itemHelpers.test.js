@@ -44,10 +44,10 @@ describe("Item helper functions", () => {
         expect(Array.isArray(categories)).toBe(true)
     })
 
-    test("findCategory returns matching category", () => {
+    test("findItem returns matching category", () => {
         const categories = loadCategories()
 
-        const category = findCategory(
+        const category = findItem(
             categories,
             "adventuring-gear"
         )
