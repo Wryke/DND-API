@@ -24,9 +24,22 @@ function findItem(items, index) {
     return items.find(item => item.index === index)
 }
 
+function findAnyItem(index) {
+    let items = loadItems()
+    let item = findItem(items, index)
+
+    if(!item){
+        items = loadMagicItems()
+        item = findItem(items, index)
+    }
+
+    return item
+}
+
 module.exports = {
     loadItems,
     loadMagicItems,
     loadCategories,
-    findItem
+    findItem,
+    findAnyItem
 }
