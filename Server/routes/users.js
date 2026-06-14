@@ -8,15 +8,39 @@ const {
     findCharacter
 } = require("../helpers/userHelpers")
 
+// --- Routes ---
+
+// GET /users/
+// GET /users/:id
+// GET /users/:id/characters
+// GET /users/:id/characters/:characterName
+// GET /users/:id/characters/:characterName/inventory
+// GET /users/:id/characters/:characterName/inventory/:inventoryIndex
+// GET /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
+
+// POST /users/
+// POST /users/:id/characters
+// POST /users/:id/characters/:characterName
+
+// PUT /users/:id/characters/:characterName
+// PUT /users/:id/characters/:characterName/inventory/:inventoryIndex
+
+// PATCH /users/:id/characters/:characterName/inventory/:inventoryIndex/:itemIndex
+
+// DELETE /users/:id
+// DELETE /users/:id/characters/:characterName
+// DELETE /users/:id/characters/:characterName/inventory/:inventoryIndex
+// DELETE /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
+
 // --- Get Routes ---
 
-// Load all users
+// Get all users
 router.get("/", (req, res) => {
     const users = loadUsers()
     res.json(users)
 })
 
-// Load user of specific ID
+// Get specific user by id
 router.get("/:id", (req, res) => {
     const users = loadUsers()
 
@@ -25,9 +49,34 @@ router.get("/:id", (req, res) => {
     res.json(users)
 })
 
+// Get a users characters
+router.get("/:id/characters", (req, res) => {
+
+})
+
+// Get a specific character
+router.get("/:id/characters/:characterName", (req, res) => {
+
+})
+
+// Get a specific characters inventories
+router.get("/:id/characters/:characterName/inventory", (req, res) => {
+
+})
+
+// Get all items in a specific inventory
+router.get("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
+
+})
+
+// Get a specific item from a characters inventory
+router.get("/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
+
+})
+
 // --- Post Routes ---
 
-// Create a new user with empty Characters
+// Post a new user with empty characters list
 router.post("/", (req, res) => {
     const users = loadUsers()
 
@@ -49,8 +98,8 @@ router.post("/", (req, res) => {
     res.status(201).json(newUser)
 })
 
-// Create/add a new character for an existing user.
-router.post("/:id/Characters", (req, res) => {
+// Post a new character to a character list.
+router.post("/:id/characters", (req, res) => {
     const id = req.params.id
 
     const user = users.find(user => user.id === id)
@@ -77,29 +126,49 @@ router.post("/:id/Characters", (req, res) => {
     res.json(user)
 })
 
+// Post a new inventory to a character
+router.post("/:id/characters/:characterName", (req, res) => {
+
+})
+
 // --- Put Routes ---
 
-// Replace/modify an existing character.
-router.put("/:id/Characters/:characterName", (req, res) => {
+// Put replace/modify an existing character.
+router.put("/:id/characters/:characterName", (req, res) => {
+
+})
+
+// Put replace/modify an existing inventory.
+router.put("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
 
 })
 
 // --- Patch Routes ---
 
-// Add item or increment quantity if it already exists.
-router.patch("/:id/Characters/:characterName/Inventory/:itemIndex&:quantity", (req, res) => {
-
-})
-
-// Decrement quantity if it already exists.
-router.patch("/:id/Characters/:characterName/Inventory/:itemIndex&:quantity", (req, res) => {
+// Patch new item or modify quantity
+router.patch("/:id/characters/:characterName/inventory/:inventoryIndex/:itemIndex", (req, res) => {
 
 })
 
 // --- Delete Routes ---
 
-// Remove item if it already exists.
-router.delete("/:id/Characters/:characterName/Inventory/:itemIndex", (req, res) => {
+// Delete a user
+router.delete("/:id", (req, res) => {
+
+})
+
+// Delete a character from a user.
+router.delete("/:id/characters/:characterName", (req, res) => {
+
+})
+
+// Delete an inventory from a character.
+router.delete("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
+
+})
+
+// Delete an item from an inventory.
+router.delete("/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
 
 })
 
