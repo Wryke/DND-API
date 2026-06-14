@@ -7,7 +7,7 @@ const app = express()
 
 app.use(express.json())
 
-app.use("/Items", itemRoutes)
-app.use("/Users", userRoutes)
+app.use("/items", itemRoutes)
+app.use("/users", userRoutes)
 
 module.exports = app
