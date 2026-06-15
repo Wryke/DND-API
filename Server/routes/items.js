@@ -7,7 +7,7 @@ const {
     loadCategories,
     findItem,
     findAnyItem
-} = require("../helpers/itemHelpers")
+} = require("../helpers/itemHelpers.js")
 
 function isValidIndex(index, res) {
     if (!index || typeof index !== "string") {

@@ -5,24 +5,26 @@ const {
 
 describe("User helper functions", () => {
 
-    const users = [
+    let users = [
         {
-            id: "1",
-            username: "Joe",
-            characters: [
+            "id": "1",
+            "username": "Joe",
+            "characters": [
                 {
-                    character_name: "Grung",
-                    inventories: []
+                    "character_name": "Grung",
+                    "max_carry_weight": 160,
+                    "inventories": []
                 }
             ]
         },
         {
-            id: "2",
-            username: "Tim",
-            characters: [
+            "id": "2",
+            "username": "Tim",
+            "characters": [
                 {
-                    character_name: "Sir Killsalot",
-                    inventories: []
+                    "character_name": "Sir Killsalot",
+                    "max_carry_weight": 200,
+                    "inventories": []
                 }
             ]
         }

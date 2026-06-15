@@ -2,9 +2,8 @@ const {
     loadItems,
     findItem,
     loadMagicItems,
-    findMagicItem,
     loadCategories,
-    findCategory
+    findAnyItem
 } = require("./itemHelpers.js")
 
 describe("Item helper functions", () => {
@@ -55,4 +54,6 @@ describe("Item helper functions", () => {
         expect(category).toBeDefined()
         expect(category.index).toBe("adventuring-gear")
     })
+
+    //TODO: test findAnyItem
 })

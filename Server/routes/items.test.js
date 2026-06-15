@@ -1,6 +1,8 @@
 const request = require("supertest")
 const app = require("../app")
 
+// --- Routes ---
+
 // GET /items/equipment
 // GET /items/equipment/:index
 

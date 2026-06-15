@@ -1,5 +1,5 @@
 [
-{
+    {
     "id": "123456789",
     "username": "Wryke",
     "characters": [
@@ -8,34 +8,34 @@
             "max_carry_weight": 160,
             "inventories": [
                 {
-                    "index": "backpack",
-                    "name": "Backpack",
-                    "url": "/equipment/backpack",
-                    "max_weight": 30,
-                    "items": [
+                "index": "backpack",
+                "name": "Backpack",
+                "url": "/equipment/backpack",
+                "max_weight": 30,
+                "items": [
                         {
-                            "index": "ink-pen",
-                            "name": "Ink Pen",
-                            "url": "/equipment/ink-pen",
-                            "quantity": 1
+                        "index": "ink-pen",
+                        "name": "Ink Pen",
+                        "url": "/equipment/ink-pen",
+                        "quantity": 1
                         },
                         {
-                            "index": "javelin",
-                            "name": "Javelin",
-                            "url": "/equipment/javelin",
-                            "quantity": 2
+                        "index": "javelin",
+                        "name": "Javelin",
+                        "url": "/equipment/javelin",
+                        "quantity": 2
                         }
                     ]
                 },
                 {
-                    "index": "pouch",
-                    "name": "Pouch",
-                    "url": "/equipment/pouch",
-                    "max_weight": 5,
-                    "items": []
+                "index": "pouch",
+                "name": "Pouch",
+                "url": "/equipment/pouch",
+                "max_weight": 5,
+                "items": []
                 }
             ]
         }
     ]
-}
+    }
 ]

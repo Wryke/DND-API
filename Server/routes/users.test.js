@@ -36,76 +36,76 @@ describe("user routes", () => {
     })
 
     // GET /users/:id
-        test("GET /", async () => {
-        const response = await request(app).get("")
+        test("GET /users/123456789 returns Wryke", async () => {
+        const response = await request(app).get("/users/123456789")
 
         expect(response.status).toBe(200)
-        expect(response.body.index).toBe("")
+        expect(response.body.username).toBe("Wryke")
     })
 
-    test("GET /", async () => {
-        const response = await request(app).get("")
+    test("GET /users/987654321 returns 404 undefined", async () => {
+        const response = await request(app).get("/users/987654321")
 
         expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
+        expect(response.body.username).toBe(undefined)
     })
 
     // GET /users/:id/characters
-    test("GET /users/ returns an array", async () => {
-        const response = await request(app).get("/users/")
+    test("GET /users/123456789/characters returns an array", async () => {
+        const response = await request(app).get("/users/123456789/characters")
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
     })
 
     // GET /users/:id/characters/:characterName
-        test("GET /", async () => {
-        const response = await request(app).get("")
+        test("GET /users/123456789/characters/Kcos returns Kcos", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos")
 
         expect(response.status).toBe(200)
-        expect(response.body.index).toBe("")
+        expect(response.body.character_name).toBe("Kcos")
     })
 
-    test("GET /", async () => {
-        const response = await request(app).get("")
+    test("GET /users/123456789/characters/flooper returns 404 undefined", async () => {
+        const response = await request(app).get("/users/123456789/characters/flooper")
 
         expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
+        expect(response.body.character_name).toBe(undefined)
     })
 
     // GET /users/:id/characters/:characterName/inventory
-        test("GET /users/ returns an array", async () => {
-        const response = await request(app).get("/users/")
+    test("GET /users/123456789/Kcos/inventory returns an array", async () => {
+        const response = await request(app).get("/users/123456789/Kcos/inventory")
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
     })
 
     // GET /users/:id/characters/:characterName/inventory/:inventoryIndex
-        test("GET /", async () => {
-        const response = await request(app).get("")
+    test("GET /users/123456789/characters/Kcos/inventory/backpack returns backpack", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack")
 
         expect(response.status).toBe(200)
-        expect(response.body.index).toBe("")
+        expect(response.body.index).toBe("backpack")
     })
 
-    test("GET /", async () => {
-        const response = await request(app).get("")
+    test("GET /users/123456789/characters/Kcos/inventory/backpack/items/flooper returns 404 and undefined", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack/items/flooper")
 
         expect(response.status).toBe(404)
         expect(response.body.index).toBe(undefined)
     })
 
     // GET /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
-        test("GET /", async () => {
-        const response = await request(app).get("")
+    test("GET /users/123456789/characters/Kcos/inventory/backpack/items/ink-pen returns ink pen", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack/items/ink-pen")
 
         expect(response.status).toBe(200)
-        expect(response.body.index).toBe("")
+        expect(response.body.index).toBe("ink-pen")
     })
 
-    test("GET /", async () => {
-        const response = await request(app).get("")
+    test("GET /users/123456789/characters/Kcos/inventory/backpack/items/flooper returns 404 and undefined", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack/items/flooper")
 
         expect(response.status).toBe(404)
         expect(response.body.index).toBe(undefined)

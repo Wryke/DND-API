@@ -6,7 +6,14 @@ const {
     saveUsers,
     findUser,
     findCharacter
-} = require("../helpers/userHelpers")
+} = require("../helpers/userHelpers.js")
+
+function isValidIndex(index, res) {
+    if (!index || typeof index !== "string") {
+        return false
+    }
+    return true
+}
 
 // --- Routes ---
 
@@ -40,38 +47,110 @@ router.get("/", (req, res) => {
     res.json(users)
 })
 
+
 // Get specific user by id
 router.get("/:id", (req, res) => {
+    const id = req.params.id
+
+    if(!isValidIndex(id)){
+        return res.status(404).json({
+            error: "Invalid ID"
+        })
+    }
+
     const users = loadUsers()
 
-    // TODO
+    let user = findUser(users, id)
 
-    res.json(users)
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    res.json(user)
 })
 
 // Get a users characters
 router.get("/:id/characters", (req, res) => {
+    const id = req.params.id
 
+    if(!isValidIndex(id)){
+        return res.status(404).json({
+            error: "Invalid ID"
+        })
+    }
+
+    const users = loadUsers()
+
+    let user = findUser(users, id)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const characters = user.characters
+
+    res.json(characters)
 })
 
 // Get a specific character
 router.get("/:id/characters/:characterName", (req, res) => {
+    const id = req.params.id
 
+    if(!isValidIndex(id)){
+        return res.status(404).json({
+            error: "Invalid ID"
+        })
+    }
+
+    const users = loadUsers()
+
+    const user = findUser(users, id)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const characterName = req.params.characterName
+
+    if(!isValidIndex(characterName)){
+        return res.status(404).json({
+            error: "Invalid Index"
+        })
+    }
+
+    const character = findCharacter(user, characterName)
+
+    if(!character){
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    res.json(character)
 })
 
 // Get a specific characters inventories
 router.get("/:id/characters/:characterName/inventory", (req, res) => {
-
+    // TODO
+    res.json(undefined)
 })
 
 // Get all items in a specific inventory
 router.get("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
-
+    // TODO
+    res.json(undefined)
 })
 
 // Get a specific item from a characters inventory
 router.get("/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
-
+    // TODO
+    res.json(undefined)
 })
 
 // --- Post Routes ---
@@ -128,48 +207,48 @@ router.post("/:id/characters", (req, res) => {
 
 // Post a new inventory to a character
 router.post("/:id/characters/:characterName", (req, res) => {
-
+    // TODO
 })
 
 // --- Put Routes ---
 
 // Put replace/modify an existing character.
 router.put("/:id/characters/:characterName", (req, res) => {
-
+    // TODO
 })
 
 // Put replace/modify an existing inventory.
 router.put("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
-
+    // TODO
 })
 
 // --- Patch Routes ---
 
 // Patch new item or modify quantity
 router.patch("/:id/characters/:characterName/inventory/:inventoryIndex/:itemIndex", (req, res) => {
-
+    // TODO
 })
 
 // --- Delete Routes ---
 
 // Delete a user
 router.delete("/:id", (req, res) => {
-
+    // TODO
 })
 
 // Delete a character from a user.
 router.delete("/:id/characters/:characterName", (req, res) => {
-
+    // TODO
 })
 
 // Delete an inventory from a character.
 router.delete("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
-
+    // TODO
 })
 
 // Delete an item from an inventory.
 router.delete("/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
-
+    // TODO
 })
 
 module.exports = router
