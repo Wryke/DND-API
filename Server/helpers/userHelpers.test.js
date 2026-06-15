@@ -49,4 +49,6 @@ describe("User helper functions", () => {
 
         expect(character.character_name).toBe("Grung")
     })
+
+    // TODO : findInventory tests
 })

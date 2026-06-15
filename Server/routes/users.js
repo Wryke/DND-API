@@ -5,7 +5,9 @@ const {
     loadUsers,
     saveUsers,
     findUser,
-    findCharacter
+    findCharacter,
+    findInventory,
+    findItem
 } = require("../helpers/userHelpers.js")
 
 function isValidIndex(index, res) {
@@ -137,20 +139,188 @@ router.get("/:id/characters/:characterName", (req, res) => {
 
 // Get a specific characters inventories
 router.get("/:id/characters/:characterName/inventory", (req, res) => {
-    // TODO
-    res.json(undefined)
+    const id = req.params.id
+
+    if(!isValidIndex(id)){
+        return res.status(404).json({
+            err: "Invalid ID"
+        })
+    }
+
+    const users = loadUsers()
+    const user = findUser(users, id)
+
+    if(!user){
+        return res.status(404).json({
+            err: "User not found"
+        })
+    }
+
+    const characterName = req.params.characterName
+
+    if(!isValidIndex(characterName)){
+        return res.status(404).json({
+            err: "Invalid character name"
+        })
+    }
+
+    const character = findCharacter(user, characterName)
+
+    if(!character){
+        return res.status(404).json({
+            err: "Invalid character"
+        })
+    }
+
+    const inventories = character.inventories
+
+    if(!inventories){
+        return res.status(404).json({
+            err: "Invalid inventory"
+        })
+    }
+
+    res.json(inventories)
 })
 
 // Get all items in a specific inventory
 router.get("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
-    // TODO
-    res.json(undefined)
+    const id = req.params.id
+
+    if(!isValidIndex(id)){
+        return res.status(404).json({
+            err: "Invalid ID"
+        })
+    }
+
+    const users = loadUsers()
+    const user = findUser(users, id)
+
+    if(!user){
+        return res.status(404).json({
+            err: "User not found"
+        })
+    }
+
+    const characterName = req.params.characterName
+
+    if(!isValidIndex(characterName)){
+        return res.status(404).json({
+            err: "Invalid character name"
+        })
+    }
+
+    const character = findCharacter(user, characterName)
+
+    if(!character){
+        return res.status(404).json({
+            err: "Invalid character"
+        })
+    }
+
+    const inventories = character.inventories
+
+    if(!inventories){
+        return res.status(404).json({
+            err: "Invalid inventory"
+        })
+    }
+
+    const inventoryIndex = req.params.inventoryIndex
+
+    if(!isValidIndex(inventoryIndex)){
+        return res.status(404).json({
+            err: "Invalid inventory index"
+        })
+    }
+
+    const inventory = findInventory(inventories, inventoryIndex)
+
+    if(!inventory){
+        return res.status(404).json({
+            err: "Invalid inventory"
+        })
+    }
+
+    res.json(inventory)
 })
 
 // Get a specific item from a characters inventory
 router.get("/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
-    // TODO
-    res.json(undefined)
+    const id = req.params.id
+
+    if(!isValidIndex(id)){
+        return res.status(404).json({
+            err: "Invalid ID"
+        })
+    }
+
+    const users = loadUsers()
+    const user = findUser(users, id)
+
+    if(!user){
+        return res.status(404).json({
+            err: "User not found"
+        })
+    }
+
+    const characterName = req.params.characterName
+
+    if(!isValidIndex(characterName)){
+        return res.status(404).json({
+            err: "Invalid character name"
+        })
+    }
+
+    const character = findCharacter(user, characterName)
+
+    if(!character){
+        return res.status(404).json({
+            err: "Invalid character"
+        })
+    }
+
+    const inventories = character.inventories
+
+    if(!inventories){
+        return res.status(404).json({
+            err: "Invalid inventory"
+        })
+    }
+
+    const inventoryIndex = req.params.inventoryIndex
+
+    if(!isValidIndex(inventoryIndex)){
+        return res.status(404).json({
+            err: "Invalid inventory index"
+        })
+    }
+
+    const inventory = findInventory(inventories, inventoryIndex)
+
+    if(!inventory){
+        return res.status(404).json({
+            err: "Invalid inventory"
+        })
+    }
+
+    const itemIndex = req.params.itemIndex
+
+    if(!isValidIndex(itemIndex)){
+        return res.status(404).json({
+            err: "Invalid index"
+        })
+    }
+
+    const item = findItem(inventory, itemIndex)
+
+    if(!item){
+        return res.status(404).json({
+            err: "Item not found"
+        })
+    }
+
+    res.json(item)
 })
 
 // --- Post Routes ---

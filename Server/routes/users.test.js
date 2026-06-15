@@ -74,8 +74,8 @@ describe("user routes", () => {
     })
 
     // GET /users/:id/characters/:characterName/inventory
-    test("GET /users/123456789/Kcos/inventory returns an array", async () => {
-        const response = await request(app).get("/users/123456789/Kcos/inventory")
+    test("GET /users/123456789/characters/Kcos/inventory returns an array", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos/inventory")
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
@@ -89,8 +89,8 @@ describe("user routes", () => {
         expect(response.body.index).toBe("backpack")
     })
 
-    test("GET /users/123456789/characters/Kcos/inventory/backpack/items/flooper returns 404 and undefined", async () => {
-        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack/items/flooper")
+    test("GET /users/123456789/characters/Kcos/inventory/flooper returns 404 and undefined", async () => {
+        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/flooper")
 
         expect(response.status).toBe(404)
         expect(response.body.index).toBe(undefined)

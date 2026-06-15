@@ -13,16 +13,26 @@ function saveUsers(users) {
 }
 
 function findUser(users, id) {
-    return users.find(user => user.id === id)
+    return users.find(u => u.id === id)
 }
 
 function findCharacter(user, characterName) {
-    return user.characters.find(character => character.character_name === characterName)
+    return user.characters.find(c => c.character_name === characterName)
+}
+
+function findInventory(inventories, inventoryIndex) {
+    return inventories.find(i => i.index === inventoryIndex)
+}
+
+function findItem(inventory, itemIndex){
+    return inventory.items.find(i => i.index === itemIndex)
 }
 
 module.exports = {
     loadUsers,
     saveUsers,
     findUser,
-    findCharacter
+    findCharacter,
+    findInventory,
+    findItem
 }
