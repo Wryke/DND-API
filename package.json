@@ -19,6 +19,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "express": "^5.2.1",
     "jsdom": "^29.1.1"
   },
