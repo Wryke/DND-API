@@ -9,6 +9,10 @@ const {
     findAnyItem
 } = require("../helpers/itemHelpers.js")
 
+const {
+    findItemByIndex
+} = require("../db/itemQueries.js")
+
 function isValidIndex(index, res) {
     if (!index || typeof index !== "string") {
         return false
@@ -47,9 +51,7 @@ router.get('/equipment/:index', (req, res) => {
         })
     }
 
-    const items = loadItems()
-
-    let item = findItem(items, index)
+    let item = findItemByIndex(index)
 
     if(!item){
         return res.status(404).json({

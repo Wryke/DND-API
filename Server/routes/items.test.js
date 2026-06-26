@@ -30,7 +30,7 @@ describe("item routes", () => {
         const response = await request(app).get("/items/equipment/backpack")
 
         expect(response.status).toBe(200)
-        expect(response.body.index).toBe("backpack")
+        expect(response.body.item_index).toBe("backpack")
     })
 
     test("GET /items/equipment/flooper returns 404 and undefined", async () => {
