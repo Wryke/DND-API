@@ -13,13 +13,6 @@ const {
     findItemByIndex
 } = require("../db/itemQueries.js")
 
-function isValidIndex(index, res) {
-    if (!index || typeof index !== "string") {
-        return false
-    }
-    return true
-}
-
 // --- Get Routes ---
 
 // GET /items/equipment
@@ -45,12 +38,6 @@ router.get("/equipment", (req, res) => {
 router.get('/equipment/:index', (req, res) => {
     const index = req.params.index
 
-    if(!isValidIndex(index)){
-        return res.status(404).json({
-            error: "Invalid Index"
-        })
-    }
-
     let item = findItemByIndex(index)
 
     if(!item){
@@ -71,12 +58,6 @@ router.get('/magic', (req, res) => {
 // Get item from magic items.
 router.get('/magic/:index', (req, res) => {
     const index = req.params.index
-
-    if(!isValidIndex(index)){
-        return res.status(404).json({
-            error: "Invalid Index"
-        })
-    }
     
     const items = loadMagicItems()
 
@@ -94,12 +75,6 @@ router.get('/magic/:index', (req, res) => {
 // Get item from all items.
 router.get("/all/:index", (req, res) => {
     const index = req.params.index
-    
-    if(!isValidIndex(index)){
-        return res.status(404).json({
-            error: "Invlid Index"
-        })
-    }
 
     const item = findAnyItem(index)
 
@@ -122,12 +97,6 @@ router.get("/categories/", (req, res) => {
 router.get('/categories/:category', (req, res) => {
     const categoryIndex = req.params.category
 
-    if(!isValidIndex(categoryIndex)){
-        return res.status(404).json({
-            error: "Invalid Index"
-        })
-    }
-
     const categories = loadCategories()
     const category = findItem(categories, categoryIndex)
     
@@ -144,19 +113,6 @@ router.get('/categories/:category', (req, res) => {
 router.get('/categories/:category/:index', (req, res) => {
     const categoryIndex = req.params.category
     const itemIndex = req.params.index
-
-    if(!isValidIndex(categoryIndex)){
-        return res.status(404).json({
-            error: "Invalid Index"
-        })
-    }
-    
-    if(!isValidIndex(itemIndex)){
-        return res.status(404).json({
-            error: "Invalid Index"
-        })
-    }
-
 
     const categories = loadCategories()
     const category = findItem(categories, categoryIndex)
