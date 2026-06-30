@@ -11,11 +11,7 @@ const app = require("../app")
 
 // GET /items/all/:index
 
-// GET /items/categories
-// GET /items/categories/:category
-// GET /items/categories/:category/:index
-
-describe("item routes", () => {
+describe("Item Routes", () => {
 
     // GET /items/equipment
     test("GET /items/equipment returns an array", async () => {
@@ -23,6 +19,28 @@ describe("item routes", () => {
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
+        expect(response.body.length).toBeGreaterThan(0);
+
+        expect(response.body[0]).toHaveProperty("item_id");
+        expect(response.body[0]).toHaveProperty("item_index");
+        expect(response.body[0]).toHaveProperty("name");
+        expect(response.body[0]).toHaveProperty("item_category");
+    })
+
+        // GET /items/equipment?category=""
+    test("GET /items/equipment?category=armor returns an array", async () => {
+        const response = await request(app).get("/items/equipment?category=armor")
+
+        expect(response.status).toBe(200)
+        expect(Array.isArray(response.body)).toBe(true)
+        expect(response.body.length).toBeGreaterThan(0);
+
+        expect(response.body[0]).toHaveProperty("item_id");
+        expect(response.body[0]).toHaveProperty("item_index");
+        expect(response.body[0]).toHaveProperty("name");
+        expect(response.body[0]).toHaveProperty("item_category");
+
+        expect(response.body[0].item_category).toBe("armor")
     })
 
     // GET /items/equipment/:index
@@ -37,7 +55,7 @@ describe("item routes", () => {
         const response = await request(app).get("/items/equipment/flooper")
 
         expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
+        expect(response.body.item_index).toBe(undefined)
     })
 
     // GET /items/magic
@@ -80,44 +98,6 @@ describe("item routes", () => {
 
     test("GET /items/all/flooper returns 404 and undefined", async () => {
         const response = await request(app).get("/items/all/flooper")
-
-        expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
-    })
-
-    // GET /items/categories
-    test("GET /items/categores returns an array", async () => {
-        const response = await request(app).get("/items/categories")
-
-        expect(response.status).toBe(200)
-        expect(Array.isArray(response.body)).toBe(true)
-    })
-
-    // GET /items/categories/:category
-    test("GET /items/categories/adventuring-gear returns backpack", async () => {
-        const response = await request(app).get("/items/categories/adventuring-gear")
-
-        expect(response.status).toBe(200)
-        expect(response.body.index).toBe("adventuring-gear")
-    })
-
-    test("GET /items/categories/flooper returns 404 and undefined", async () => {
-        const response = await request(app).get("/items/categories/flooper")
-
-        expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
-    })
-
-    // GET /items/categories/:category/:index
-    test("GET /items/categories/adventuring-gear/backpack returns backpack", async () => {
-        const response = await request(app).get("/items/categories/adventuring-gear/backpack")
-
-        expect(response.status).toBe(200)
-        expect(response.body.index).toBe("backpack")
-    })
-
-    test("GET /items/categories/adventuring-gear/flooper returns 404 and undefined", async () => {
-        const response = await request(app).get("/items/categories/adventuring-gear/flooper")
 
         expect(response.status).toBe(404)
         expect(response.body.index).toBe(undefined)

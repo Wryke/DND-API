@@ -10,7 +10,9 @@ const {
 } = require("../helpers/itemHelpers.js")
 
 const {
-    findItemByIndex
+    findAllItems,
+    findItemByIndex,
+    findItemsByCategory
 } = require("../db/itemQueries.js")
 
 // --- Get Routes ---
@@ -23,16 +25,16 @@ const {
 
 // GET /items/all/:index
 
-// GET /items/categories
-// GET /items/categories/:category
-// GET /items/categories/:category/:index
-
-// Get all equipment items.
+// Get all equipment items of a specific category.
 router.get("/equipment", (req, res) => {
-    const items = loadItems()
+    const { category } = req.query;
 
-    res.json(items)
-})
+    const items = category
+        ? findItemsByCategory(category)
+        : findAllItems();
+
+    res.json(items);
+});
 
 // Get item from equipment.
 router.get('/equipment/:index', (req, res) => {
@@ -91,62 +93,6 @@ router.get("/all/:index", (req, res) => {
 router.get("/categories/", (req, res) => {
     const categories = loadCategories()
     res.json(categories)
-})
-
-// Get a specific category by index.
-router.get('/categories/:category', (req, res) => {
-    const categoryIndex = req.params.category
-
-    const categories = loadCategories()
-    const category = findItem(categories, categoryIndex)
-    
-    if(!category){
-        return res.status(404).json({
-            error: "Category not found"
-        })
-    }
-
-    res.json(category)
-})
-
-// Get a specific item from a specific category
-router.get('/categories/:category/:index', (req, res) => {
-    const categoryIndex = req.params.category
-    const itemIndex = req.params.index
-
-    const categories = loadCategories()
-    const category = findItem(categories, categoryIndex)
-    
-    if(!category){
-        return res.status(404).json({
-            error: `Category not found`
-        })
-    }
-
-    const itemReference = findItem(category.equipment, itemIndex)
-    
-    if(!itemReference){
-        return res.status(404).json({
-            error: `Item not found in ${category.index}`
-        })
-    }
-
-    let items
-    if(category.index === "magic-items"){
-        items = loadMagicItems()
-    } else {
-        items = loadItems()
-    }
-
-    const item = findItem(items, itemIndex)
-
-    if(!item){
-        return res.status(404).json({
-            error: `Item not found in ${category.index}`
-        })
-    }
-
-    res.json(item)
 })
 
 module.exports = router

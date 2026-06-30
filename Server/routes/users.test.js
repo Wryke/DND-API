@@ -25,7 +25,7 @@ const app = require("../app")
 // DELETE /users/:id/characters/:characterName/inventory/:inventoryIndex
 // DELETE /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
 
-describe("user routes", () => {
+describe("User Routes", () => {
 
     // GET /users/
     test("GET /users/ returns an array", async () => {
