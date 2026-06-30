@@ -13,7 +13,7 @@ const app = require("../app")
 
 describe("Item Routes", () => {
 
-    // GET /items/equipment
+    // GET /items/equipment?category=""
     test("GET /items/equipment returns an array", async () => {
         const response = await request(app).get("/items/equipment")
 
@@ -27,20 +27,24 @@ describe("Item Routes", () => {
         expect(response.body[0]).toHaveProperty("item_category");
     })
 
-        // GET /items/equipment?category=""
-    test("GET /items/equipment?category=armor returns an array", async () => {
+    test("GET /items/equipment?category=armor returns an aray where all items have category = armor", async () => {
         const response = await request(app).get("/items/equipment?category=armor")
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
         expect(response.body.length).toBeGreaterThan(0);
 
-        expect(response.body[0]).toHaveProperty("item_id");
-        expect(response.body[0]).toHaveProperty("item_index");
-        expect(response.body[0]).toHaveProperty("name");
-        expect(response.body[0]).toHaveProperty("item_category");
+        expect(
+            response.body.every(item => item.item_category === "armor")
+        ).toBe(true);
+    })
 
-        expect(response.body[0].item_category).toBe("armor")
+    test("GET /items/equipment?category=floopers returns an empty aray", async () => {
+        const response = await request(app).get("/items/equipment?category=floopers")
+
+        expect(response.status).toBe(200)
+        expect(Array.isArray(response.body)).toBe(true)
+        expect(response.body.length).toHaveLength(0);
     })
 
     // GET /items/equipment/:index
@@ -55,7 +59,7 @@ describe("Item Routes", () => {
         const response = await request(app).get("/items/equipment/flooper")
 
         expect(response.status).toBe(404)
-        expect(response.body.item_index).toBe(undefined)
+        expect(response.body.item_index).toBeUndefined()
     })
 
     // GET /items/magic
@@ -78,7 +82,7 @@ describe("Item Routes", () => {
         const response = await request(app).get("/items/equipment/flooper")
 
         expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
+        expect(response.body.index).toBeUndefined()
     })
 
     // GET /items/all/:index
@@ -100,6 +104,6 @@ describe("Item Routes", () => {
         const response = await request(app).get("/items/all/flooper")
 
         expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
+        expect(response.body.index).toBeUndefined()
     })
 })
