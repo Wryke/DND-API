@@ -44,7 +44,7 @@ describe("Item Routes", () => {
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
-        expect(response.body.length).toHaveLength(0);
+        expect(response.body).toHaveLength(0);
     })
 
     // GET /items/equipment/:index

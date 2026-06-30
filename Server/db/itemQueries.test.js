@@ -38,6 +38,6 @@ describe("Database Item Quieres", () => {
     test("findItemsByCategory with bad arg 'flooper' returns an empty array", () => {
         const items = findItemsByCategory("flooper")
         expect(Array.isArray(items)).toBe(true)
-        expect(items.length).toHaveLength(0);
+        expect(items).toHaveLength(0);
     })
 })
