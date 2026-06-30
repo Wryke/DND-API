@@ -1,4 +1,3 @@
-const { loadItems } = require("../helpers/itemHelpers");
 const db = require("./connection");
 
 const tables = db.prepare(`
