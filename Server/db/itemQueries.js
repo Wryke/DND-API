@@ -1,10 +1,10 @@
-const db = require("./connection");
+const db = require("./connection")
 
 const tables = db.prepare(`
     SELECT name
     FROM sqlite_master
-    WHERE type = 'table';
-`).all();
+    WHERE type = 'table'
+`).all()
 
 const findAllItemsStmt = db.prepare(`
     SELECT *
@@ -13,7 +13,7 @@ const findAllItemsStmt = db.prepare(`
 `).all()
 
 function findAllItems() {
-    return findAllItemsStmt;
+    return findAllItemsStmt
 }
 
 const findItemByIndexStmt = db.prepare(`
@@ -23,7 +23,7 @@ const findItemByIndexStmt = db.prepare(`
 `)
 
 function findItemByIndex(itemIndex) {
-    return findItemByIndexStmt.get(itemIndex);
+    return findItemByIndexStmt.get(itemIndex)
 }
 
 const findItemByNameStmt = db.prepare(`
@@ -33,7 +33,7 @@ const findItemByNameStmt = db.prepare(`
 `)
 
 function findItemByName(name) {
-    return findItemByNameStmt.get(name);
+    return findItemByNameStmt.get(name)
 }
 
 const findItemsByCategoryStmt = db.prepare(`
@@ -44,7 +44,7 @@ const findItemsByCategoryStmt = db.prepare(`
 `)
 
 function findItemsByCategory(category) {
-    return findItemsByCategoryStmt.all(category);
+    return findItemsByCategoryStmt.all(category)
 }
 
 module.exports = {
@@ -52,4 +52,4 @@ module.exports = {
     findItemByIndex,
     findItemByName,
     findItemsByCategory
-};
+}
