@@ -2,7 +2,8 @@ const {
     findUserById,
     findUserByUsername,
     createUser,
-    deleteUserById
+    deleteUserById,
+    findCharacterByUserId
 } = require("./userQueries")
 
 const db = require("./connection")
