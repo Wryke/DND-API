@@ -1,4 +1,8 @@
-const { findAllItems, findItemByIndex, findItemsByCategory } = require("./itemQueries")
+const {
+    findAllItems,
+    findItemByIndex,
+    findItemsByCategory
+} = require("./itemQueries")
 
 describe("Database Item Quieres", () => {
     // findItemByIndex

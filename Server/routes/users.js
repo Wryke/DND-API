@@ -10,6 +10,11 @@ const {
     findItem
 } = require("../helpers/userHelpers.js")
 
+const { 
+    createUser,
+    deleteUserById
+ } = require("../db/userQueries.js")
+
 function isValidIndex(index, res) {
     if (!index || typeof index !== "string") {
         return false
@@ -327,24 +332,29 @@ router.get("/:id/characters/:characterName/inventory/:inventoryIndex/items/:item
 
 // Post a new user with empty characters list
 router.post("/", (req, res) => {
-    const users = loadUsers()
+    const username = req.body.username
+    const password = req.body.password
 
-    const newUser = {
-        id: req.body.id,
-        username: req.body.username,
-        characters: []
+    if (!username || !password) {
+        return res.status(400).json({
+            error: "Username and password are required"
+        });
     }
 
-    if (findUser(users, newUser.id)) {
-        return res.status(409).json({
-            error: "User already exists"
+    try {
+        const user = createUser(req.body)
+        return res.status(201).json(user)
+    } catch (error) {
+        if(error.message.includes("UNIQUE constraint failed")) {
+            return res.status(409).json({
+                error: "Username already exists"
+            })
+        }
+
+        return res.status(500).json({
+            error: "Internal server error"
         })
     }
-
-    users.push(newUser)
-    saveUsers(users)
-
-    res.status(201).json(newUser)
 })
 
 // Post a new character to a character list.
@@ -403,7 +413,18 @@ router.patch("/:id/characters/:characterName/inventory/:inventoryIndex/:itemInde
 
 // Delete a user
 router.delete("/:id", (req, res) => {
-    // TODO
+
+    const deleted = deleteUserById(req.params.id);
+
+    if (!deleted) {
+        return res.status(404).json({
+            error: "User not found"
+        });
+    }
+
+    return res.status(200).json({
+        deleted: true
+    })
 })
 
 // Delete a character from a user.
