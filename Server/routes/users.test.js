@@ -31,14 +31,14 @@ describe("User Routes", () => {
         db.prepare(`
             DELETE FROM characters
             WHERE name LIKE 'TestCharacter%'
-        `).run();
+        `).run()
 
         db.prepare(`
             DELETE FROM users
             WHERE username LIKE 'TestUser_%'
             OR username LIKE 'DuplicateUser_%'
-        `).run();
-    });
+        `).run()
+    })
 
     // GET /users/
     test("GET /users/ returns an array", async () => {
