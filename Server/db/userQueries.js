@@ -6,7 +6,7 @@ const findUserByIdStmt = db.prepare(`
     WHERE user_id = ?
 `)
 
-function findUserById(userId) {
+function findUserById (userId) {
     return findUserByIdStmt.get(userId)
 }
 
@@ -16,7 +16,7 @@ const findUserByUsernameStmt = db.prepare(`
     WHERE username = ?
 `)
 
-function findUserByUsername(username) {
+function findUserByUsername (username) {
     return findUserByUsernameStmt.get(username)
 }
 
@@ -25,7 +25,7 @@ const createUserStmt = db.prepare(`
     VALUES (?, ?)
 `)
 
-function createUser({ username, password }) {
+function createUser ({ username, password }) {
     const result = createUserStmt.run(username, password)
 
     return {
@@ -39,7 +39,7 @@ const deleteUserByStmt = db.prepare(`
     WHERE user_id = ?
 `)
 
-function deleteUserById(userId) {
+function deleteUserById (userId) {
     const result = deleteUserByStmt.run(userId)
     return result.changes === 1
 }
@@ -51,8 +51,24 @@ const findCharacterByUserIdStmt = db.prepare(`
     ORDER BY name
 `)
 
-function findCharacterByUserId(userId) {
+function findCharacterByUserId (userId) {
     return findCharacterByUserIdStmt.all(userId)
+}
+
+const createCharacterStmt = db.prepare(`
+    INSERT INTO characters (user_id, name, max_weight)
+    VALUES (?, ?, ?)
+`)
+
+function createCharacter ({ user_id, name, max_weight }) {
+    const result = createCharacterStmt.run(user_id, name, max_weight)
+
+    return {
+        character_id: result.lastInsertRowid,
+        user_id,
+        name,
+        max_weight
+    }
 }
 
 module.exports = {
@@ -60,5 +76,6 @@ module.exports = {
     findUserByUsername,
     createUser,
     deleteUserById,
-    findCharacterByUserId
+    findCharacterByUserId,
+    createCharacter
 }

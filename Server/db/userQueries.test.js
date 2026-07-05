@@ -3,7 +3,8 @@ const {
     findUserByUsername,
     createUser,
     deleteUserById,
-    findCharacterByUserId
+    findCharacterByUserId,
+    createCharacter
 } = require("./userQueries")
 
 const db = require("./connection")
@@ -11,6 +12,11 @@ const db = require("./connection")
 describe("Database User Queries", () => {
 
     afterEach(() => {
+        db.prepare(`
+            DELETE FROM characters
+            WHERE name LIKE 'TestCharacter%'
+        `).run()
+
         db.prepare(`
             DELETE FROM users
             WHERE username LIKE 'TestUser_%'
@@ -71,5 +77,39 @@ describe("Database User Queries", () => {
         const result = deleteUserById(999999)
 
         expect(result).toBe(false)
+    })
+
+    // findCharactersByUserId
+    test("findCharactersByUserId returns an array", () => {
+        const characters = findCharacterByUserId(1)
+
+        expect(Array.isArray(characters)).toBe(true)
+    })
+
+    test("findCharactersByUserId returns characters for a user", () => {
+        const username = `TestUser_${Date.now()}`
+
+        const user = createUser({
+            username: username,
+            password: "testpass"
+        })
+
+        const character = createCharacter({
+            user_id: user.user_id,
+            name: "TestCharacter",
+            max_weight: 100
+        })
+
+        const characters = findCharacterByUserId(user.user_id)
+
+        expect(Array.isArray(characters)).toBe(true)
+
+        expect(
+            characters.some(c => c.character_id === character.character_id)
+        ).toBe(true)
+
+        expect(
+            characters.some(c => c.name === "TestCharacter")
+        ).toBe(true)
     })
 })
