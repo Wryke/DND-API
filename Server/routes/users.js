@@ -12,8 +12,18 @@ const {
 
 const { 
     createUser,
-    deleteUserById
+    findUserById,
+    deleteUserById,
+    createCharacter,
+    findCharacterByUserId
  } = require("../db/userQueries.js")
+
+//     findUserById,
+//     findUserByUsername,
+//     createUser,
+//     deleteUserById,
+//     findCharacterByUserId,
+//     createCharacter
 
 function isValidIndex(index, res) {
     if (!index || typeof index !== "string") {
@@ -80,17 +90,15 @@ router.get("/:id", (req, res) => {
 
 // Get a users characters
 router.get("/:id/characters", (req, res) => {
-    const id = req.params.id
+    const userId = Number(req.params.id)
 
-    if(!isValidIndex(id)){
-        return res.status(404).json({
-            error: "Invalid ID"
+    if(!Number.isInteger(userId)){
+        return res.status(400).json({
+            error: "Invalid user ID"
         })
     }
 
-    const users = loadUsers()
-
-    let user = findUser(users, id)
+    const user = findUserById(userId)
 
     if(!user){
         return res.status(404).json({
@@ -98,9 +106,9 @@ router.get("/:id/characters", (req, res) => {
         })
     }
 
-    const characters = user.characters
+    const characters = findCharacterByUserId(userId)
 
-    res.json(characters)
+    return res.status(200).json(characters)
 })
 
 // Get a specific character
@@ -338,7 +346,7 @@ router.post("/", (req, res) => {
     if (!username || !password) {
         return res.status(400).json({
             error: "Username and password are required"
-        });
+        })
     }
 
     try {
@@ -359,9 +367,16 @@ router.post("/", (req, res) => {
 
 // Post a new character to a character list.
 router.post("/:id/characters", (req, res) => {
-    const id = req.params.id
+    const userId = Number(req.params.id)
+    const { name, max_weight } = req.body
 
-    const user = users.find(user => user.id === id)
+    if (!Number.isInteger(userId)) {
+        return res.status(400).json({
+            error: "Invalid user ID"
+        })
+    }
+
+    const user = findUserById(userId)
 
     if (!user) {
         return res.status(404).json({
@@ -369,20 +384,37 @@ router.post("/:id/characters", (req, res) => {
         })
     }
 
-    if (!Array.isArray(req.body)) {
+    if (
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        typeof max_weight !== "number" ||
+        max_weight <= 0
+    ) {
         return res.status(400).json({
-            error: "Request body must be an array of characters"
+            error: "Name and a positive max weight are required"
         })
     }
 
-    user.Characters = req.body
+    try {
+        const character = createCharacter({
+            user_id: userId,
+            name: name.trim(),
+            max_weight
+        })
 
-    fs.writeFileSync(
-        USERS,
-        JSON.stringify(users, null, 4)
-    )
+        return res.status(201).json(character)
+    }
+    catch (error) {
+        if (error.message.includes("UNIQUE constraint failed")) {
+            return res.status(409).json({
+                error: "This user already has a character with that name"
+            })
+        }
 
-    res.json(user)
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
 // Post a new inventory to a character
@@ -414,12 +446,12 @@ router.patch("/:id/characters/:characterName/inventory/:inventoryIndex/:itemInde
 // Delete a user
 router.delete("/:id", (req, res) => {
 
-    const deleted = deleteUserById(req.params.id);
+    const deleted = deleteUserById(req.params.id)
 
     if (!deleted) {
         return res.status(404).json({
             error: "User not found"
-        });
+        })
     }
 
     return res.status(200).json({

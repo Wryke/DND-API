@@ -67,12 +67,34 @@ describe("User Routes", () => {
     })
 
     // GET /users/:id/characters
-    test("GET /users/123456789/characters returns an array", async () => {
+    test("GET /users/:id/characters returns the user's characters", async () => {
+        const username = `TestUser_${Date.now()}`
+
+        const userResponse = await request(app)
+            .post("/users/")
+            .send({
+                username,
+                password: "testpass"
+            })
+
+        const userId = userResponse.body.user_id
+
+        expect(userResponse.status).toBe(201)
         
-        const response = await request(app).get("/users/123456789/characters")
+        await request(app)
+            .post(`/users/${userId}/characters`)
+            .send({
+                name: "TestCharacter",
+                max_weight: 100
+            })
+
+        const response = await request(app).get(`/users/${userId}/characters`)
 
         expect(response.status).toBe(200)
         expect(Array.isArray(response.body)).toBe(true)
+        expect(
+            response.body.some(character => character.name === "TestCharacter")
+        ).toBe(true)
     })
 
     // GET /users/:id/characters/:characterName
@@ -217,5 +239,30 @@ describe("User Routes", () => {
 
         expect(deleteResponse.status).toBe(200)
         expect(deleteResponse.body.deleted).toBe(true)
+    })
+
+    // POST /users/:id/characters
+    test("POST /users/:id/characters creates a character", async () => {
+        const username = `TestUser_${Date.now()}`
+
+        const userResponse = await request(app)
+            .post("/users/")
+            .send({
+                username,
+                password: "testpass"
+            })
+
+        expect(userResponse.status).toBe(201)
+
+        const characterResponse = await request(app)
+            .post(`/users/${userResponse.body.user_id}/characters`)
+            .send({
+                name: "TestCharacter",
+                max_weight: 100
+            })
+
+        expect(characterResponse.status).toBe(201)
+        expect(characterResponse.body.name).toBe("TestCharacter")
+        expect(characterResponse.body.user_id).toBe(userResponse.body.user_id)
     })
 })
