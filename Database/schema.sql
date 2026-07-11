@@ -12,7 +12,10 @@ CREATE TABLE characters (
     name TEXT NOT NULL,
     max_weight REAL NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE,
+
     UNIQUE (user_id, name)
 );
 
@@ -30,7 +33,14 @@ CREATE TABLE inventory (
     parent_inventory_id INTEGER,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
 
-    FOREIGN KEY (character_id) REFERENCES characters(character_id),
-    FOREIGN KEY (item_id) REFERENCES items(item_id),
-    FOREIGN KEY (parent_inventory_id) REFERENCES inventory(inventory_id)
+    FOREIGN KEY (character_id)
+        REFERENCES characters(character_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id),
+
+    FOREIGN KEY (parent_inventory_id)
+        REFERENCES inventory(inventory_id)
+        ON DELETE SET NULL
 );

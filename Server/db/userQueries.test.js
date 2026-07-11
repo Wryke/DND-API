@@ -5,7 +5,8 @@ const {
     deleteUserById,
     findCharactersByUserId,
     findCharacterByUserIdAndName,
-    createCharacter
+    createCharacter,
+    deleteCharacterById
 } = require("./userQueries")
 
 const db = require("./connection")
@@ -135,5 +136,36 @@ describe("Database User Queries", () => {
 
         expect(character.name).toBe(characterName)
         expect(character.user_id).toBe(user.user_id)
+    })
+
+    // deleteCharacterById
+    test("deleteCharacterById deletes an existing character", () => {
+        const user = createUser({
+            username: `TestUser_${Date.now()}`,
+            password: "testpass"
+        })
+
+        const character = createCharacter({
+            user_id: user.user_id,
+            name: "TestCharacter",
+            max_weight: 100
+        })
+
+        const deleted = deleteCharacterById(character.character_id)
+
+        expect(deleted).toBe(true)
+
+        const foundCharacter = findCharacterByUserIdAndName(
+            user.user_id,
+            "TestCharacter"
+        )
+
+        expect(foundCharacter).toBeUndefined()
+    })
+
+    test("deleteCharacterById returns false for a missing character", () => {
+        const deleted = deleteCharacterById(999999999)
+
+        expect(deleted).toBe(false)
     })
 })

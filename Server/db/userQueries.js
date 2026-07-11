@@ -34,13 +34,13 @@ function createUser ({ username, password }) {
     }
 }
 
-const deleteUserByStmt = db.prepare(`
+const deleteUserByIdStmt = db.prepare(`
     DELETE FROM users
     WHERE user_id = ?
 `)
 
 function deleteUserById (userId) {
-    const result = deleteUserByStmt.run(userId)
+    const result = deleteUserByIdStmt.run(userId)
     return result.changes === 1
 }
 
@@ -81,6 +81,16 @@ function createCharacter ({ user_id, name, max_weight }) {
     }
 }
 
+const deleteCharacterByIdStmt = db.prepare(`
+    DELETE FROM characters
+    WHERE character_id = ?
+`)
+
+function deleteCharacterById (characterId) {
+    const result = deleteCharacterByIdStmt.run(characterId)
+    return result.changes === 1
+}
+
 module.exports = {
     findUserById,
     findUserByUsername,
@@ -88,5 +98,6 @@ module.exports = {
     deleteUserById,
     findCharactersByUserId,
     findCharacterByUserIdAndName,
-    createCharacter
+    createCharacter,
+    deleteCharacterById
 }

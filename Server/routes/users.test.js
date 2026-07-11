@@ -226,6 +226,65 @@ describe("User Routes", () => {
         expect(characterResponse.body.user_id).toBe(userResponse.body.user_id)
     })
 
+    // DELETE /users/:id/characters/:name
+    test("DELETE /users/:id/characters/:name deletes an existing character", async () => {
+        const username = `TestUser_${Date.now()}`
+        const characterName = `TestCharacter_${Date.now()}`
+
+        const userResponse = await request(app)
+            .post("/users")
+            .send({
+                username,
+                password: "testpass"
+            })
+
+        expect(userResponse.status).toBe(201)
+
+        const userId = userResponse.body.user_id
+
+        const characterResponse = await request(app)
+            .post(`/users/${userId}/characters`)
+            .send({
+                name: characterName,
+                max_weight: 100
+            })
+
+        expect(characterResponse.status).toBe(201)
+
+        const deleteResponse = await request(app)
+            .delete(
+                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
+            )
+
+        expect(deleteResponse.status).toBe(200)
+        expect(deleteResponse.body.deleted).toBe(true)
+
+        const getResponse = await request(app)
+            .get(
+                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
+            )
+
+        expect(getResponse.status).toBe(404)
+    })
+
+    test("DELETE /users/:id/characters/:name returns 404 for a missing character", async () => {
+        const username = `TestUser_${Date.now()}`
+
+        const userResponse = await request(app)
+            .post("/users")
+            .send({
+                username,
+                password: "testpass"
+            })
+
+        const userId = userResponse.body.user_id
+
+        const deleteResponse = await request(app)
+            .delete(`/users/${userId}/characters/DoesNotExist`)
+
+        expect(deleteResponse.status).toBe(404)
+        expect(deleteResponse.body.error).toBe("Character not found")
+    })
     // --- Inventory Routes ---
 
     // GET /users/:id/characters/:characterName/inventory

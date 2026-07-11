@@ -17,7 +17,8 @@ const {
     deleteUserById,
     findCharactersByUserId,
     findCharacterByUserIdAndName,
-    createCharacter
+    createCharacter,
+    deleteCharacterById
  } = require("../db/userQueries.js")
 
 //     findUserById,
@@ -43,6 +44,7 @@ function isValidIndex(index, res) {
 // GET /users/:id/characters
 // GET /users/:id/characters/:name
 // POST /users/:id/characters
+// DELETE /users/:id/characters/:name
 
 // --- Inventory Routes ---
 // GET /users/:id/characters/:name/inventory
@@ -154,7 +156,11 @@ router.get("/:id/characters/:name", (req, res) => {
         const userId = Number(req.params.id)
         const characterName = req.params.name
 
-    if(!Number.isInteger(userId) || !characterName){
+    if (
+        !Number.isInteger(userId) ||
+        typeof characterName !== "string" ||
+        characterName.trim().length === 0
+    ) {
         return res.status(400).json({
             error: "Invalid user ID or character name"
         })
@@ -168,11 +174,11 @@ router.get("/:id/characters/:name", (req, res) => {
         })
     }
 
-    const character = findCharacterByUserIdAndName(userId, characterName)
+    const character = findCharacterByUserIdAndName(userId, characterName.trim())
 
     if(!character){
         return res.status(404).json({
-            error: "No characters found"
+            error: "Character not found"
         })
     }
 
@@ -229,6 +235,43 @@ router.post("/:id/characters", (req, res) => {
             error: "Internal server error"
         })
     }
+})
+
+// DELETE a character from a user
+router.delete("/:id/characters/:name", (req,res) => {
+    const userId = Number(req.params.id)
+    const name = req.params.name
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID and character name are required"
+        })
+    }
+
+    
+    const character = findCharacterByUserIdAndName(userId, name)
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        });
+    }
+
+    const deleted = deleteCharacterById(character.character_id)
+
+    if (!deleted) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    return res.status(200).json({
+        deleted: true
+    })
 })
 
 // --- Inventory Routes ---
