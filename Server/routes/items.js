@@ -19,10 +19,8 @@ const {
 
 // GET /items/equipment
 // GET /items/equipment/:index
-
 // GET /items/magic
 // GET /items/magic/:index
-
 // GET /items/all/:index
 
 // Get all equipment items of a specific category.

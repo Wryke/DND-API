@@ -21,12 +21,6 @@ const {
     deleteCharacterById
  } = require("../db/userQueries.js")
 
-//     findUserById,
-//     findUserByUsername,
-//     createUser,
-//     deleteUserById,
-//     findCharactersByUserId,
-//     createCharacter
 
 function isValidIndex(index, res) {
     if (!index || typeof index !== "string") {
@@ -38,12 +32,14 @@ function isValidIndex(index, res) {
 // --- User Routes ---
 // GET /users/:id
 // POST /users/
+// PATCH /users/:id
 // DELETE /users/:id
 
 // --- Character Routes ---
 // GET /users/:id/characters
 // GET /users/:id/characters/:name
 // POST /users/:id/characters
+// PATCH /users/:id/characters/:name
 // DELETE /users/:id/characters/:name
 
 // --- Inventory Routes ---
