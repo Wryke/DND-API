@@ -41,22 +41,22 @@ function isValidIndex(index, res) {
 
 // --- Character Routes ---
 // GET /users/:id/characters
-// GET /users/:id/characters/:characterName
+// GET /users/:id/characters/:name
 // POST /users/:id/characters
 
 // --- Inventory Routes ---
-// GET /users/:id/characters/:characterName/inventory
-// GET /users/:id/characters/:characterName/inventory/:inventoryIndex
-// GET /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
+// GET /users/:id/characters/:name/inventory
+// GET /users/:id/characters/:name/inventory/:inventoryIndex
+// GET /users/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex
 
-// PUT /users/:id/characters/:characterName
-// PUT /users/:id/characters/:characterName/inventory/:inventoryIndex
+// PUT /users/:id/characters/:name
+// PUT /users/:id/characters/:name/inventory/:inventoryIndex
 
-// PATCH /users/:id/characters/:characterName/inventory/:inventoryIndex/:itemIndex
+// PATCH /users/:id/characters/:name/inventory/:inventoryIndex/:itemIndex
 
-// DELETE /users/:id/characters/:characterName
-// DELETE /users/:id/characters/:characterName/inventory/:inventoryIndex
-// DELETE /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
+// DELETE /users/:id/characters/:name
+// DELETE /users/:id/characters/:name/inventory/:inventoryIndex
+// DELETE /users/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex
 
 // --- User Routes ---
 

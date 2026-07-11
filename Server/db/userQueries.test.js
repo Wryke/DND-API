@@ -4,6 +4,7 @@ const {
     createUser,
     deleteUserById,
     findCharactersByUserId,
+    findCharacterByUserIdAndName,
     createCharacter
 } = require("./userQueries")
 
@@ -111,5 +112,28 @@ describe("Database User Queries", () => {
         expect(
             characters.some(c => c.name === "TestCharacter")
         ).toBe(true)
+    })
+
+    // findCharacterByUserIdAndName
+    test("findCharacterByUserIdAndName returns an existing character for a user", () => {
+        const username = `TestUser_${Date.now()}`
+
+        const user = createUser({
+            username: username,
+            password: "testpass"
+        })
+
+        const characterName = "TestCharacter"
+
+        const newCharacter = createCharacter({
+            user_id: user.user_id,
+            name: characterName,
+            max_weight: 100
+        })
+
+        const character = findCharacterByUserIdAndName(user.user_id, characterName)
+
+        expect(character.name).toBe(characterName)
+        expect(character.user_id).toBe(user.user_id)
     })
 })

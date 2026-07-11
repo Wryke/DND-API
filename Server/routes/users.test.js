@@ -164,7 +164,7 @@ describe("User Routes", () => {
         ).toBe(true)
     })
 
-    // GET /users/:id/characters/:characterName
+    // GET /users/:id/characters/:name
     test("GET /users/:id/characters/:name returns the user's characters by name", async () => {
         const username = `TestUser_${Date.now()}`
 
