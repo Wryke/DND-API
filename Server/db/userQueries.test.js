@@ -3,7 +3,7 @@ const {
     findUserByUsername,
     createUser,
     deleteUserById,
-    findCharacterByUserId,
+    findCharactersByUserId,
     createCharacter
 } = require("./userQueries")
 
@@ -81,7 +81,7 @@ describe("Database User Queries", () => {
 
     // findCharactersByUserId
     test("findCharactersByUserId returns an array", () => {
-        const characters = findCharacterByUserId(1)
+        const characters = findCharactersByUserId(1)
 
         expect(Array.isArray(characters)).toBe(true)
     })
@@ -100,7 +100,7 @@ describe("Database User Queries", () => {
             max_weight: 100
         })
 
-        const characters = findCharacterByUserId(user.user_id)
+        const characters = findCharactersByUserId(user.user_id)
 
         expect(Array.isArray(characters)).toBe(true)
 

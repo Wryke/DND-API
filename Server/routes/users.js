@@ -11,18 +11,20 @@ const {
 } = require("../helpers/userHelpers.js")
 
 const { 
-    createUser,
     findUserById,
+    findUserByUsername,
+    createUser,
     deleteUserById,
-    createCharacter,
-    findCharacterByUserId
+    findCharactersByUserId,
+    findCharacterByUserIdAndName,
+    createCharacter
  } = require("../db/userQueries.js")
 
 //     findUserById,
 //     findUserByUsername,
 //     createUser,
 //     deleteUserById,
-//     findCharacterByUserId,
+//     findCharactersByUserId,
 //     createCharacter
 
 function isValidIndex(index, res) {
@@ -142,24 +144,23 @@ router.get("/:id/characters", (req, res) => {
         })
     }
 
-    const characters = findCharacterByUserId(userId)
+    const characters = findCharactersByUserId(userId)
 
     return res.status(200).json(characters)
 })
 
 // Get a specific character
-router.get("/:id/characters/:characterName", (req, res) => {
-    const id = req.params.id
+router.get("/:id/characters/:name", (req, res) => {
+        const userId = Number(req.params.id)
+        const characterName = req.params.name
 
-    if(!isValidIndex(id)){
-        return res.status(404).json({
-            error: "Invalid ID"
+    if(!Number.isInteger(userId) || !characterName){
+        return res.status(400).json({
+            error: "Invalid user ID or character name"
         })
     }
 
-    const users = loadUsers()
-
-    const user = findUser(users, id)
+    const user = findUserById(userId)
 
     if(!user){
         return res.status(404).json({
@@ -167,23 +168,15 @@ router.get("/:id/characters/:characterName", (req, res) => {
         })
     }
 
-    const characterName = req.params.characterName
-
-    if(!isValidIndex(characterName)){
-        return res.status(404).json({
-            error: "Invalid Index"
-        })
-    }
-
-    const character = findCharacter(user, characterName)
+    const character = findCharacterByUserIdAndName(userId, characterName)
 
     if(!character){
         return res.status(404).json({
-            error: "Character not found"
+            error: "No characters found"
         })
     }
 
-    res.json(character)
+    return res.status(200).json(character)
 })
 
 // Post a new character

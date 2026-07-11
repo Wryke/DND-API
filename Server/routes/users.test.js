@@ -165,12 +165,32 @@ describe("User Routes", () => {
     })
 
     // GET /users/:id/characters/:characterName
-    test("GET /users/123456789/characters/Kcos returns Kcos", async () => {
+    test("GET /users/:id/characters/:name returns the user's characters by name", async () => {
+        const username = `TestUser_${Date.now()}`
+
+        const userResponse = await request(app)
+            .post("/users/")
+            .send({
+                username,
+                password: "testpass"
+            })
+
+        const userId = userResponse.body.user_id
+
+        expect(userResponse.status).toBe(201)
         
-        const response = await request(app).get("/users/123456789/characters/Kcos")
+        const characterName = "TestCharacter"
+        await request(app)
+            .post(`/users/${userId}/characters`)
+            .send({
+                name: characterName,
+                max_weight: 100
+            })
+
+        const response = await request(app).get(`/users/${userId}/characters/${characterName}`)
 
         expect(response.status).toBe(200)
-        expect(response.body.character_name).toBe("Kcos")
+        expect(response.body.name).toBe(characterName)
     })
 
     test("GET /users/123456789/characters/flooper returns 404 undefined", async () => {
@@ -178,7 +198,7 @@ describe("User Routes", () => {
         const response = await request(app).get("/users/123456789/characters/flooper")
 
         expect(response.status).toBe(404)
-        expect(response.body.character_name).toBe(undefined)
+        expect(response.body.name).toBe(undefined)
     })
 
     // POST /users/:id/characters
@@ -205,7 +225,7 @@ describe("User Routes", () => {
         expect(characterResponse.body.name).toBe("TestCharacter")
         expect(characterResponse.body.user_id).toBe(userResponse.body.user_id)
     })
-    
+
     // --- Inventory Routes ---
 
     // GET /users/:id/characters/:characterName/inventory

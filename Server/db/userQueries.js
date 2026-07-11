@@ -44,15 +44,25 @@ function deleteUserById (userId) {
     return result.changes === 1
 }
 
-const findCharacterByUserIdStmt = db.prepare(`
+const findCharactersByUserIdStmt = db.prepare(`
     SELECT *
     FROM characters
     WHERE user_id = ?
     ORDER BY name
 `)
 
-function findCharacterByUserId (userId) {
-    return findCharacterByUserIdStmt.all(userId)
+function findCharactersByUserId (userId) {
+    return findCharactersByUserIdStmt.all(userId)
+}
+
+const findCharacterByUserIdAndNameStmt = db.prepare(`
+    SELECT *
+    FROM characters
+    WHERE user_id = ? AND name = ?
+`)
+
+function findCharacterByUserIdAndName (userId, characterName) {
+    return findCharacterByUserIdAndNameStmt.get(userId, characterName)
 }
 
 const createCharacterStmt = db.prepare(`
@@ -76,6 +86,7 @@ module.exports = {
     findUserByUsername,
     createUser,
     deleteUserById,
-    findCharacterByUserId,
+    findCharactersByUserId,
+    findCharacterByUserIdAndName,
     createCharacter
 }
