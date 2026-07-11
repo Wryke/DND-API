@@ -14,6 +14,7 @@ const {
     findUserById,
     findUserByUsername,
     createUser,
+    updateUserById,
     deleteUserById,
     findCharactersByUserId,
     findCharacterByUserIdAndName,

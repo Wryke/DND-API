@@ -2,10 +2,12 @@ const {
     findUserById,
     findUserByUsername,
     createUser,
+    updateUserById,
     deleteUserById,
     findCharactersByUserId,
     findCharacterByUserIdAndName,
     createCharacter,
+    updateCharacterById,
     deleteCharacterById
 } = require("./userQueries")
 
@@ -26,6 +28,8 @@ describe("Database User Queries", () => {
         `).run()
     })
     
+    // --- User Queries ---
+
     // findUserById
     test("findUserById returns undefined for missing user", () => {
         const user = findUserById(999)
@@ -61,6 +65,32 @@ describe("Database User Queries", () => {
         }).toThrow("UNIQUE constraint failed")
     })
 
+    // updateUserById
+    test("updateUserById updates the username of an existing user", () => {
+        const username = `TestUser_${Date.now()}`
+
+        const user = createUser({
+            username: username,
+            password: "testpass"
+        })
+
+        const newUsername = `${username}9090`
+        const result = updateUserById(
+            user.user_id, 
+            {
+                username: newUsername
+            })
+
+        expect(result.user_id).toBe(user.user_id)
+        expect(result.username).toBe(newUsername)
+    })
+
+    test("deleteUserById returns false for missing user", () => {
+        const result = deleteUserById(999999)
+
+        expect(result).toBe(false)
+    })
+
     // deleteUserById
     test("deleteUserById deletes an existing user", () => {
         const username = `TestUser_${Date.now()}`
@@ -80,6 +110,8 @@ describe("Database User Queries", () => {
 
         expect(result).toBe(false)
     })
+
+    // --- Character Queries ---
 
     // findCharactersByUserId
     test("findCharactersByUserId returns an array", () => {
@@ -138,6 +170,55 @@ describe("Database User Queries", () => {
         expect(character.user_id).toBe(user.user_id)
     })
 
+    // createCharacter
+    test("updateUserById updates the username of an existing user", () => {
+        const username = `TestUser_${Date.now()}`
+
+        const user = createUser({
+            username: username,
+            password: "testpass"
+        })
+
+        const name = "TestCharacter"
+        const character = createCharacter({
+            user_id: user.user_id,
+            name: name,
+            max_weight: 100
+        })
+        
+        expect(character.user_id).toBe(user.user_id)
+        expect(character.name).toBe(name)
+    })
+
+    // updateCharacterById
+    test("updateCharacterById updates the name of an existing character", () => {
+        const username = `TestUser_${Date.now()}`
+
+        const user = createUser({
+            username: username,
+            password: "testpass"
+        })
+
+        const name = "TestCharacter"
+        const character = createCharacter({
+            user_id: user.user_id,
+            name: name,
+            max_weight: 100
+        })
+
+        const newName = `${name}9090`
+        const result = updateCharacterById(
+            user.user_id, 
+            {
+                name: newName,
+                max_weight: character.max_weight
+            })
+
+        expect(result.character_id).toBe(character.character_id)
+        expect(result.name).toBe(newName)
+        expect(result.max_weight).toBe(character.max_weight)
+    })
+
     // deleteCharacterById
     test("deleteCharacterById deletes an existing character", () => {
         const user = createUser({
@@ -168,4 +249,6 @@ describe("Database User Queries", () => {
 
         expect(deleted).toBe(false)
     })
+
+    // --- Inventory Queries ---
 })
