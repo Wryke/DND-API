@@ -50,12 +50,23 @@ describe("User Routes", () => {
     })
 
     // GET /users/:id
-    test("GET /users/123456789 returns Wryke", async () => {
-        
-        const response = await request(app).get("/users/123456789")
+    test("GET /users/:id returns respective user", async () => {
+        const username = `TestUser_${Date.now()}`
 
-        expect(response.status).toBe(200)
-        expect(response.body.username).toBe("Wryke")
+        const userResponse = await request(app)
+            .post("/users/")
+            .send({
+                username,
+                password: "testpass"
+            })
+
+        expect(userResponse.status).toBe(201)
+        const userId = userResponse.body.user_id
+
+        const findUserResponse = await request(app).get(`/users/${userId}`)
+
+        expect(findUserResponse.status).toBe(200)
+        expect(findUserResponse.body.username).toBe(username)
     })
 
     test("GET /users/987654321 returns 404 undefined", async () => {
