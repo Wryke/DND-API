@@ -19,6 +19,7 @@ const {
     findCharactersByUserId,
     findCharacterByUserIdAndName,
     createCharacter,
+    updateCharacterById,
     deleteCharacterById
  } = require("../db/userQueries.js")
 
@@ -113,6 +114,7 @@ router.post("/", (req, res) => {
 router.patch("/:id", (req, res) => {
 
     const userId = Number(req.params.id)
+    const { username } = req.body
 
     if(!Number.isInteger(userId)){
         return res.status(400).json({
@@ -120,7 +122,39 @@ router.patch("/:id", (req, res) => {
         })
     }
 
+    if (
+        typeof username !== "string" ||
+        username.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid username is required"
+        })
+    }
 
+    try {
+        const updated = updateUserById(userId, {
+            username: username.trim()
+        })
+
+        if (!updated) {
+            return res.status(404).json({
+                error: "User not found"
+            })
+        }
+
+        return res.status(200).json(updated)
+    }
+    catch (error) {
+        if (error.message.includes("UNIQUE constraint failed")) {
+            return res.status(409).json({
+                error: "Username already exists"
+            })
+        }
+
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
 // DELETE /users/:id - delete a user
@@ -255,21 +289,77 @@ router.post("/:id/characters", (req, res) => {
 
 // PATCH /users/:id - update a user
 router.patch("/:id/characters/:name", (req, res) => {
-
+    
     const userId = Number(req.params.id)
-    const name = req.params.name
+    const currentName = req.params.name
+    const { name: newName, max_weight } = req.body
 
     if (
         !Number.isInteger(userId) ||
-        typeof name !== "string" ||
-        name.trim().length === 0
+        typeof currentName !== "string" ||
+        currentName.trim().length === 0
     ) {
         return res.status(400).json({
             error: "Invalid user ID or character name"
         })
     }
-    
-    // TODO
+
+    const character = findCharacterByUserIdAndName(userId, currentName.trim())
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const hasName = newName !== undefined
+    const hasMaxWeight = max_weight !== undefined
+
+    if (!hasName && !hasMaxWeight) {
+        return res.status(400).json({
+            error: "At least one field must be provided"
+        })
+    }
+
+    if (hasName && (typeof newName !== "string" || newName.trim().length === 0)) {
+        return res.status(400).json({
+            error: "Name must be a non-empty string"
+        })
+    }
+
+    if (hasMaxWeight && (typeof max_weight !== "number" || max_weight <= 0)) {
+        return res.status(400).json({
+            error: "Max weight must be a positive number"
+        })
+    }
+
+    try {
+        const updated = updateCharacterById(
+            character.character_id,
+            {
+                name: hasName ? newName.trim() : character.name,
+                max_weight: hasMaxWeight ? max_weight : character.max_weight 
+            })
+
+        if (!updated) {
+            return res.status(404).json({
+                error: "Character not found"
+            })
+        }
+
+        return res.status(200).json(updated)
+    }
+    catch (error) {
+        if (error.message.includes("UNIQUE constraint failed")) {
+            return res.status(409).json({
+                error: "This user already has a character with that name"
+            })
+        }
+
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
 // DELETE /users/:id/characters/:name - Delete a character
