@@ -58,8 +58,9 @@ function isValidIndex(index, res) {
 
 // --- User Routes ---
 
-// Get specific user by id
+// GET /users/:id - get a user by id
 router.get("/:id", (req, res) => {
+
     const userId = Number(req.params.id)
 
     if(!Number.isInteger(userId)){
@@ -79,8 +80,9 @@ router.get("/:id", (req, res) => {
     return res.status(200).json(user)
 })
 
-// Post a new user
+// POST /users/ - Add a new user
 router.post("/", (req, res) => {
+
     const username = req.body.username
     const password = req.body.password
 
@@ -106,7 +108,21 @@ router.post("/", (req, res) => {
     }
 })
 
-// Delete a user
+// PATCH /users/:id - update a user
+router.patch("/:id", (req, res) => {
+
+    const userId = Number(req.params.id)
+
+    if(!Number.isInteger(userId)){
+        return res.status(400).json({
+            error: "Invalid user ID"
+        })
+    }
+
+
+})
+
+// DELETE /users/:id - delete a user
 router.delete("/:id", (req, res) => {
 
     const deleted = deleteUserById(req.params.id)
@@ -124,8 +140,9 @@ router.delete("/:id", (req, res) => {
 
 // --- Character Routes ---
 
-// Get a users characters
+// GET /users/:id/characters - get a users list of characters
 router.get("/:id/characters", (req, res) => {
+
     const userId = Number(req.params.id)
 
     if(!Number.isInteger(userId)){
@@ -147,15 +164,16 @@ router.get("/:id/characters", (req, res) => {
     return res.status(200).json(characters)
 })
 
-// Get a specific character
+// GET /users/:id/characters/:name - get a user's specific character
 router.get("/:id/characters/:name", (req, res) => {
-        const userId = Number(req.params.id)
-        const characterName = req.params.name
+
+    const userId = Number(req.params.id)
+    const name = req.params.name
 
     if (
         !Number.isInteger(userId) ||
-        typeof characterName !== "string" ||
-        characterName.trim().length === 0
+        typeof name !== "string" ||
+        name.trim().length === 0
     ) {
         return res.status(400).json({
             error: "Invalid user ID or character name"
@@ -170,7 +188,7 @@ router.get("/:id/characters/:name", (req, res) => {
         })
     }
 
-    const character = findCharacterByUserIdAndName(userId, characterName.trim())
+    const character = findCharacterByUserIdAndName(userId, name.trim())
 
     if(!character){
         return res.status(404).json({
@@ -181,8 +199,9 @@ router.get("/:id/characters/:name", (req, res) => {
     return res.status(200).json(character)
 })
 
-// Post a new character
+// POST /users/:id/characters - Add a new character
 router.post("/:id/characters", (req, res) => {
+
     const userId = Number(req.params.id)
     const { name, max_weight } = req.body
 
@@ -233,8 +252,28 @@ router.post("/:id/characters", (req, res) => {
     }
 })
 
-// DELETE a character from a user
+// PATCH /users/:id - update a user
+router.patch("/:id/characters/:name", (req, res) => {
+
+    const userId = Number(req.params.id)
+    const name = req.params.name
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "Invalid user ID or character name"
+        })
+    }
+    
+    // TODO
+})
+
+// DELETE /users/:id/characters/:name - Delete a character
 router.delete("/:id/characters/:name", (req,res) => {
+
     const userId = Number(req.params.id)
     const name = req.params.name
 
@@ -274,6 +313,7 @@ router.delete("/:id/characters/:name", (req,res) => {
 
 // Get a specific characters inventories
 router.get("/:id/characters/:characterName/inventory", (req, res) => {
+
     const id = req.params.id
 
     if(!isValidIndex(id)){
@@ -320,6 +360,7 @@ router.get("/:id/characters/:characterName/inventory", (req, res) => {
 
 // Get all items in a specific inventory
 router.get("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res) => {
+
     const id = req.params.id
 
     if(!isValidIndex(id)){
@@ -382,6 +423,7 @@ router.get("/:id/characters/:characterName/inventory/:inventoryIndex", (req, res
 
 // Get a specific item from a characters inventory
 router.get("/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
+
     const id = req.params.id
 
     if(!isValidIndex(id)){
