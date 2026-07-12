@@ -49,13 +49,13 @@ router.get('/equipment/:index', (req, res) => {
     res.json(item)
 })
 
-// Get all magic items.
+// Get all magic items. //TODO migrate to query system
 router.get('/magic', (req, res) => {
     const items = loadMagicItems()
     res.json(items)
 })
 
-// Get item from magic items.
+// Get item from magic items. //TODO migrate to query system
 router.get('/magic/:index', (req, res) => {
     const index = req.params.index
     
@@ -87,7 +87,7 @@ router.get("/all/:index", (req, res) => {
     res.json(item)
 })
 
-// Get all existing categories.
+// Get all existing categories. //TODO migrate to query
 router.get("/categories/", (req, res) => {
     const categories = loadCategories()
     res.json(categories)
