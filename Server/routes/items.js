@@ -23,7 +23,7 @@ const {
 // GET /items/magic/:index
 // GET /items/all/:index
 
-// Get all equipment items of a specific category.
+// GET /items/equipment - Get all equipment items of a specific category.
 router.get("/equipment", (req, res) => {
     const { category } = req.query;
 
@@ -34,7 +34,7 @@ router.get("/equipment", (req, res) => {
     res.json(items);
 });
 
-// Get item from equipment.
+// GET /items/equipment/:index - Get item from equipment.
 router.get('/equipment/:index', (req, res) => {
     const index = req.params.index
 

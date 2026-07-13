@@ -47,16 +47,9 @@ function isValidIndex(index, res) {
 // --- Inventory Routes ---
 // GET /users/:id/characters/:name/inventory
 // GET /users/:id/characters/:name/inventory/:inventoryIndex
-// GET /users/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex
-
-// PUT /users/:id/characters/:name
-// PUT /users/:id/characters/:name/inventory/:inventoryIndex
-
-// PATCH /users/:id/characters/:name/inventory/:inventoryIndex/:itemIndex
-
-// DELETE /users/:id/characters/:name
+// PUT /users/:id/characters/:name/inventory
+// PATCH /users/:id/characters/:name/inventory/:inventoryIndex
 // DELETE /users/:id/characters/:name/inventory/:inventoryIndex
-// DELETE /users/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex
 
 // --- User Routes ---
 
@@ -402,7 +395,7 @@ router.delete("/:id/characters/:name", (req,res) => {
 
 // --- Inventory Routes ---
 
-// Get a specific characters inventories
+// GET /users/:id/characters/:name/inventory - get a characters entire inventory
 router.get("/:id/characters/:name/inventory", (req, res) => {
 
     const id = req.params.id
@@ -449,8 +442,8 @@ router.get("/:id/characters/:name/inventory", (req, res) => {
     res.json(inventories)
 })
 
-// Get all items in a specific inventory
-router.get("/:id/characters/:name/inventory/:inventoryIndex", (req, res) => {
+// GET /users/:id/characters/:name/inventory/:inventoryId - Get all items in a specific inventory
+router.get("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
 
     const id = req.params.id
 
@@ -512,8 +505,8 @@ router.get("/:id/characters/:name/inventory/:inventoryIndex", (req, res) => {
     res.json(inventory)
 })
 
-// Get a specific item from a characters inventory
-router.get("/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
+// GET /users/:id/characters/:name/inventory/:inventoryId/items/itemIndex - Get a specific item from a characters inventory
+router.get("/:id/characters/:name/inventory/:inventoryId/items/:itemIndex", (req, res) => {
 
     const id = req.params.id
 
@@ -591,42 +584,18 @@ router.get("/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex", (
     res.json(item)
 })
 
-// Post a new inventory to a character
-router.post("/:id/characters/:name", (req, res) => {
+// POST /users/:id/characters/:name/inventory - Add a new inventory to a character
+router.post("/:id/characters/:name/inventory", (req, res) => {
     // TODO
 })
 
-// --- Put Routes ---
-
-// Put replace/modify an existing character.
-router.put("/:id/characters/:name", (req, res) => {
-    // TODO
-})
-
-// Put replace/modify an existing inventory.
-router.put("/:id/characters/:name/inventory/:inventoryIndex", (req, res) => {
-    // TODO
-})
-
-// --- Patch Routes ---
-
-// Patch new item or modify quantity
+// PATCH /users/:id/characters/:name/inventory/:inventoryIndex/:itemIndex - Modify an inventory/item
 router.patch("/:id/characters/:name/inventory/:inventoryIndex/:itemIndex", (req, res) => {
     // TODO
 })
 
-// Delete a character from a user.
-router.delete("/:id/characters/:name", (req, res) => {
-    // TODO
-})
-
-// Delete an inventory from a character.
+// DELETE /users/:id/characters/:name/inventory/:inventoryIndex - Delete an inventory from a character.
 router.delete("/:id/characters/:name/inventory/:inventoryIndex", (req, res) => {
-    // TODO
-})
-
-// Delete an item from an inventory.
-router.delete("/:id/characters/:name/inventory/:inventoryIndex/items/:itemIndex", (req, res) => {
     // TODO
 })
 
