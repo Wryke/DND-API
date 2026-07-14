@@ -4,251 +4,297 @@ const {
     createUser,
     updateUserById,
     deleteUserById,
+
     findCharactersByUserId,
     findCharacterByUserIdAndName,
     createCharacter,
     updateCharacterById,
     deleteCharacterById
+    
 } = require("./userQueries")
 
-const db = require("./connection")
+const {
+    findItemByIndex
+} = require("./itemQueries")
 
 describe("Database User Queries", () => {
+    let testUser
+    let testCharacter
+    let testItems
+    let additionalUserIds
+
+    beforeEach(() => {
+        const uniqueSuffix =
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+        testUser = createUser({
+            username: `TestUser_${uniqueSuffix}`,
+            password: "testpass"
+        })
+
+        testCharacter = createCharacter({
+            user_id: testUser.user_id,
+            name: `TestCharacter_${uniqueSuffix}`,
+            max_weight: 100
+        })
+
+        /*
+         * These are existing item definitions from the seeded items table.
+         * They are not owned inventory entries yet, so they should not be
+         * deleted after each test.
+         */
+        testItems = {
+            backpack: findItemByIndex("backpack"),
+            pouch: findItemByIndex("pouch"),
+            torch: findItemByIndex("torch")
+        }
+
+        additionalUserIds = []
+    })
 
     afterEach(() => {
-        db.prepare(`
-            DELETE FROM characters
-            WHERE name LIKE 'TestCharacter%'
-        `).run()
+        /*
+         * This also removes the test character and any future inventory
+         * entries through ON DELETE CASCADE.
+         *
+         * If a test already deleted testUser, this simply returns false.
+         */
+        deleteUserById(testUser.user_id)
 
-        db.prepare(`
-            DELETE FROM users
-            WHERE username LIKE 'TestUser_%'
-            OR username LIKE 'DuplicateUser_%'
-        `).run()
+        for (const userId of additionalUserIds) {
+            deleteUserById(userId)
+        }
     })
-    
+
     // --- User Queries ---
 
-    // findUserById
-    test("findUserById returns undefined for missing user", () => {
-        const user = findUserById(999)
-        expect(user).toBeUndefined()
-    })
+    describe("findUserById", () => {
+        test("returns an existing user", () => {
+            const user = findUserById(testUser.user_id)
 
-    // findUserByUsername
-    test("findUserByUsername returns undefined for missing user", () => {
-        const username = findUserByUsername('FortuneFinder')
-        expect(username).toBeUndefined()
-    })
-
-    // createUser
-    test("createUser creates a new user", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username,
-            password: "testpass"
+            expect(user).toBeDefined()
+            expect(user.user_id).toBe(testUser.user_id)
+            expect(user.username).toBe(testUser.username)
         })
 
-        expect(user).toHaveProperty("user_id")
-        expect(user.username).toBe(username)
+        test("returns undefined for a missing user", () => {
+            const user = findUserById(999999999)
+
+            expect(user).toBeUndefined()
+        })
     })
 
-    test("duplicate username throws", () => {
-        const username = `DuplicateUser_${Date.now()}`
+    describe("findUserByUsername", () => {
+        test("returns an existing user", () => {
+            const user = findUserByUsername(testUser.username)
 
-        createUser({ username, password: "one" })
-
-        expect(() => {
-            createUser({ username, password: "two" })
-        }).toThrow("UNIQUE constraint failed")
-    })
-
-    // updateUserById
-    test("updateUserById updates the username of an existing user", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username: username,
-            password: "testpass"
+            expect(user).toBeDefined()
+            expect(user.user_id).toBe(testUser.user_id)
         })
 
-        const newUsername = `${username}9090`
-        const result = updateUserById(
-            user.user_id, 
-            {
+        test("returns undefined for a missing user", () => {
+            const user = findUserByUsername("FortuneFinder")
+
+            expect(user).toBeUndefined()
+        })
+    })
+
+    describe("createUser", () => {
+        test("creates a new user", () => {
+            const user = createUser({
+                username: `TestUser_Additional_${Date.now()}`,
+                password: "testpass"
+            })
+
+            additionalUserIds.push(user.user_id)
+
+            expect(user).toHaveProperty("user_id")
+            expect(user.username).toContain("TestUser_Additional_")
+        })
+
+        test("throws for a duplicate username", () => {
+            expect(() => {
+                createUser({
+                    username: testUser.username,
+                    password: "different-password"
+                })
+            }).toThrow("UNIQUE constraint failed")
+        })
+    })
+
+    describe("updateUserById", () => {
+        test("updates the username of an existing user", () => {
+            const newUsername = `${testUser.username}_Updated`
+
+            const result = updateUserById(testUser.user_id, {
                 username: newUsername
             })
 
-        expect(result.user_id).toBe(user.user_id)
-        expect(result.username).toBe(newUsername)
-    })
+            expect(result.user_id).toBe(testUser.user_id)
+            expect(result.username).toBe(newUsername)
 
-    test("deleteUserById returns false for missing user", () => {
-        const result = deleteUserById(999999)
+            const storedUser = findUserById(testUser.user_id)
 
-        expect(result).toBe(false)
-    })
-
-    // deleteUserById
-    test("deleteUserById deletes an existing user", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username: username,
-            password: "testpass"
+            expect(storedUser.username).toBe(newUsername)
         })
 
-        const result = deleteUserById(user.user_id)
+        test("returns undefined for a missing user", () => {
+            const result = updateUserById(999999999, {
+                username: "MissingUser"
+            })
 
-        expect(result).toBe(true)
+            expect(result).toBeUndefined()
+        })
     })
 
-    test("deleteUserById returns false for missing user", () => {
-        const result = deleteUserById(999999)
+    describe("deleteUserById", () => {
+        test("deletes an existing user", () => {
+            const deleted = deleteUserById(testUser.user_id)
 
-        expect(result).toBe(false)
+            expect(deleted).toBe(true)
+            expect(findUserById(testUser.user_id)).toBeUndefined()
+        })
+
+        test("returns false for a missing user", () => {
+            const deleted = deleteUserById(999999999)
+
+            expect(deleted).toBe(false)
+        })
     })
 
     // --- Character Queries ---
 
-    // findCharactersByUserId
-    test("findCharactersByUserId returns an array", () => {
-        const characters = findCharactersByUserId(1)
+    describe("findCharactersByUserId", () => {
+        test("returns the user's characters", () => {
+            const characters =
+                findCharactersByUserId(testUser.user_id)
 
-        expect(Array.isArray(characters)).toBe(true)
-    })
+            expect(Array.isArray(characters)).toBe(true)
 
-    test("findCharactersByUserId returns characters for a user", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username: username,
-            password: "testpass"
+            expect(
+                characters.some(character =>
+                    character.character_id ===
+                    testCharacter.character_id
+                )
+            ).toBe(true)
         })
 
-        const character = createCharacter({
-            user_id: user.user_id,
-            name: "TestCharacter",
-            max_weight: 100
-        })
-
-        const characters = findCharactersByUserId(user.user_id)
-
-        expect(Array.isArray(characters)).toBe(true)
-
-        expect(
-            characters.some(c => c.character_id === character.character_id)
-        ).toBe(true)
-
-        expect(
-            characters.some(c => c.name === "TestCharacter")
-        ).toBe(true)
-    })
-
-    // findCharacterByUserIdAndName
-    test("findCharacterByUserIdAndName returns an existing character for a user", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username: username,
-            password: "testpass"
-        })
-
-        const characterName = "TestCharacter"
-
-        const newCharacter = createCharacter({
-            user_id: user.user_id,
-            name: characterName,
-            max_weight: 100
-        })
-
-        const character = findCharacterByUserIdAndName(user.user_id, characterName)
-
-        expect(character.name).toBe(characterName)
-        expect(character.user_id).toBe(user.user_id)
-    })
-
-    // createCharacter
-    test("updateUserById updates the username of an existing user", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username: username,
-            password: "testpass"
-        })
-
-        const name = "TestCharacter"
-        const character = createCharacter({
-            user_id: user.user_id,
-            name: name,
-            max_weight: 100
-        })
-        
-        expect(character.user_id).toBe(user.user_id)
-        expect(character.name).toBe(name)
-    })
-
-    // updateCharacterById
-    test("updateCharacterById updates the name of an existing character", () => {
-        const username = `TestUser_${Date.now()}`
-
-        const user = createUser({
-            username: username,
-            password: "testpass"
-        })
-
-        const name = "TestCharacter"
-        const character = createCharacter({
-            user_id: user.user_id,
-            name: name,
-            max_weight: 100
-        })
-
-        const newName = `${name}9090`
-        const result = updateCharacterById(
-            user.user_id, 
-            {
-                name: newName,
-                max_weight: character.max_weight
+        test("returns an empty array for a user with no characters", () => {
+            const additionalUser = createUser({
+                username: `TestUser_Empty_${Date.now()}`,
+                password: "testpass"
             })
 
-        expect(result.character_id).toBe(character.character_id)
-        expect(result.name).toBe(newName)
-        expect(result.max_weight).toBe(character.max_weight)
+            additionalUserIds.push(additionalUser.user_id)
+
+            const characters =
+                findCharactersByUserId(additionalUser.user_id)
+
+            expect(characters).toEqual([])
+        })
     })
 
-    // deleteCharacterById
-    test("deleteCharacterById deletes an existing character", () => {
-        const user = createUser({
-            username: `TestUser_${Date.now()}`,
-            password: "testpass"
+    describe("findCharacterByUserIdAndName", () => {
+        test("returns an existing character", () => {
+            const character = findCharacterByUserIdAndName(
+                testUser.user_id,
+                testCharacter.name
+            )
+
+            expect(character).toBeDefined()
+            expect(character.character_id)
+                .toBe(testCharacter.character_id)
+            expect(character.user_id).toBe(testUser.user_id)
+            expect(character.name).toBe(testCharacter.name)
         })
 
-        const character = createCharacter({
-            user_id: user.user_id,
-            name: "TestCharacter",
-            max_weight: 100
+        test("returns undefined for a missing character", () => {
+            const character = findCharacterByUserIdAndName(
+                testUser.user_id,
+                "MissingCharacter"
+            )
+
+            expect(character).toBeUndefined()
+        })
+    })
+
+    describe("createCharacter", () => {
+        test("creates another character for the user", () => {
+            const character = createCharacter({
+                user_id: testUser.user_id,
+                name: `TestCharacter_Additional_${Date.now()}`,
+                max_weight: 120
+            })
+
+            expect(character).toHaveProperty("character_id")
+            expect(character.user_id).toBe(testUser.user_id)
+            expect(character.max_weight).toBe(120)
+        })
+    })
+
+    describe("updateCharacterById", () => {
+        test("updates an existing character", () => {
+            const newName = `${testCharacter.name}_Updated`
+
+            const result = updateCharacterById(
+                testCharacter.character_id,
+                {
+                    name: newName,
+                    max_weight: 150
+                }
+            )
+
+            expect(result.character_id)
+                .toBe(testCharacter.character_id)
+            expect(result.name).toBe(newName)
+            expect(result.max_weight).toBe(150)
+
+            const storedCharacter =
+                findCharacterByUserIdAndName(
+                    testUser.user_id,
+                    newName
+                )
+
+            expect(storedCharacter).toBeDefined()
+            expect(storedCharacter.max_weight).toBe(150)
         })
 
-        const deleted = deleteCharacterById(character.character_id)
+        test("returns undefined for a missing character", () => {
+            const result = updateCharacterById(
+                999999999,
+                {
+                    name: "MissingCharacter",
+                    max_weight: 100
+                }
+            )
 
-        expect(deleted).toBe(true)
-
-        const foundCharacter = findCharacterByUserIdAndName(
-            user.user_id,
-            "TestCharacter"
-        )
-
-        expect(foundCharacter).toBeUndefined()
+            expect(result).toBeUndefined()
+        })
     })
 
-    test("deleteCharacterById returns false for a missing character", () => {
-        const deleted = deleteCharacterById(999999999)
+    describe("deleteCharacterById", () => {
+        test("deletes an existing character", () => {
+            const deleted = deleteCharacterById(
+                testCharacter.character_id
+            )
 
-        expect(deleted).toBe(false)
+            expect(deleted).toBe(true)
+
+            const foundCharacter =
+                findCharacterByUserIdAndName(
+                    testUser.user_id,
+                    testCharacter.name
+                )
+
+            expect(foundCharacter).toBeUndefined()
+        })
+
+        test("returns false for a missing character", () => {
+            const deleted = deleteCharacterById(999999999)
+
+            expect(deleted).toBe(false)
+        })
     })
 
-    // --- Inventory Queries ---
+    // Inventory-query tests can be added here later.
 })

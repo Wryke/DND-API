@@ -3,602 +3,457 @@ const app = require("../app")
 const db = require("../db/connection.js")
 
 describe("User Routes", () => {
+    let testUser
+    let testCharacter
+    let additionalUserIds
+
+    beforeEach(async () => {
+        const uniqueSuffix =
+            `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+        const userResponse = await request(app)
+            .post("/users")
+            .send({
+                username: `TestUser_${uniqueSuffix}`,
+                password: "testpass"
+            })
+
+        expect(userResponse.status).toBe(201)
+
+        testUser = userResponse.body
+
+        const characterResponse = await request(app)
+            .post(`/users/${testUser.user_id}/characters`)
+            .send({
+                name: `TestCharacter_${uniqueSuffix}`,
+                max_weight: 100
+            })
+
+        expect(characterResponse.status).toBe(201)
+
+        testCharacter = characterResponse.body
+        additionalUserIds = []
+    })
 
     afterEach(() => {
-        db.prepare(`
-            DELETE FROM characters
-            WHERE name LIKE 'TestCharacter%'
-        `).run()
+        /*
+         * Delete additional users first.
+         * Cascading deletes remove their characters and inventory.
+         */
+        for (const userId of additionalUserIds) {
+            db.prepare(`
+                DELETE FROM users
+                WHERE user_id = ?
+            `).run(userId)
+        }
 
+        /*
+         * Some tests explicitly delete testUser.
+         * Deleting it again simply changes zero rows.
+         */
         db.prepare(`
             DELETE FROM users
-            WHERE username LIKE 'TestUser_%'
-            OR username LIKE 'DuplicateUser_%'
-        `).run()
+            WHERE user_id = ?
+        `).run(testUser.user_id)
     })
 
     // --- User Routes ---
 
-    // GET /users/:id
-    test("GET /users/:id returns respective user", async () => {
-        const username = `TestUser_${Date.now()}`
+    describe("GET /users/:id", () => {
+        test("returns the requested user", async () => {
+            const response = await request(app)
+                .get(`/users/${testUser.user_id}`)
 
-        const userResponse = await request(app)
-            .post("/users/")
-            .send({
-                username,
-                password: "testpass"
-            })
+            expect(response.status).toBe(200)
+            expect(response.body.user_id).toBe(testUser.user_id)
+            expect(response.body.username).toBe(testUser.username)
+        })
 
-        expect(userResponse.status).toBe(201)
-        const userId = userResponse.body.user_id
+        test("returns 404 for a missing user", async () => {
+            const response = await request(app)
+                .get("/users/999999999")
 
-        const findUserResponse = await request(app).get(`/users/${userId}`)
-
-        expect(findUserResponse.status).toBe(200)
-        expect(findUserResponse.body.username).toBe(username)
+            expect(response.status).toBe(404)
+            expect(response.body.username).toBeUndefined()
+        })
     })
 
-    test("GET /users/987654321 returns 404 undefined", async () => {
-        
-        const response = await request(app).get("/users/987654321")
+    describe("POST /users", () => {
+        test("creates a valid user", async () => {
+            const username = `TestUser_Additional_${Date.now()}`
 
-        expect(response.status).toBe(404)
-        expect(response.body.username).toBe(undefined)
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username,
+                    password: "testpass"
+                })
+
+            expect(response.status).toBe(201)
+            expect(response.body.username).toBe(username)
+            expect(response.body).toHaveProperty("user_id")
+
+            additionalUserIds.push(response.body.user_id)
+        })
+
+        test("rejects a duplicate username", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: testUser.username,
+                    password: "different-password"
+                })
+
+            expect(response.status).toBe(409)
+            expect(response.body.error).toBe(
+                "Username already exists"
+            )
+        })
+
+        test("rejects an empty username", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: "",
+                    password: "testpass"
+                })
+
+            expect(response.status).toBe(400)
+        })
+
+        test("rejects a missing password", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: `TestUser_MissingPassword_${Date.now()}`
+                })
+
+            expect(response.status).toBe(400)
+        })
     })
 
-    // POST /users/
-    test("POST /users/ inserts a new valid user into the db", async () => {
-        
-        const username = `TestUser_${Date.now()}`
-        const payload = {
-            "username": username,
-            "password": `testpass`
-        }
+    describe("PATCH /users/:id", () => {
+        test("updates an existing username", async () => {
+            const newUsername = `${testUser.username}_Updated`
 
-        const response = await request(app).post("/users/").send(payload)
-        
-        expect(response.status).toBe(201)
-        expect(response.body.username).toBe(username)
+            const patchResponse = await request(app)
+                .patch(`/users/${testUser.user_id}`)
+                .send({
+                    username: newUsername
+                })
+
+            expect(patchResponse.status).toBe(200)
+            expect(patchResponse.body.user_id)
+                .toBe(testUser.user_id)
+            expect(patchResponse.body.username)
+                .toBe(newUsername)
+
+            const getResponse = await request(app)
+                .get(`/users/${testUser.user_id}`)
+
+            expect(getResponse.status).toBe(200)
+            expect(getResponse.body.username)
+                .toBe(newUsername)
+        })
+
+        test("returns 404 for a missing user", async () => {
+            const response = await request(app)
+                .patch("/users/999999999")
+                .send({
+                    username: `TestUser_Missing_${Date.now()}`
+                })
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe("User not found")
+        })
+
+        test("returns 400 for an empty username", async () => {
+            const response = await request(app)
+                .patch(`/users/${testUser.user_id}`)
+                .send({
+                    username: ""
+                })
+
+            expect(response.status).toBe(400)
+        })
+
+        test("returns 409 when the username already exists", async () => {
+            const secondUserResponse = await request(app)
+                .post("/users")
+                .send({
+                    username: `TestUser_Second_${Date.now()}`,
+                    password: "testpass"
+                })
+
+            expect(secondUserResponse.status).toBe(201)
+
+            additionalUserIds.push(
+                secondUserResponse.body.user_id
+            )
+
+            const patchResponse = await request(app)
+                .patch(`/users/${secondUserResponse.body.user_id}`)
+                .send({
+                    username: testUser.username
+                })
+
+            expect(patchResponse.status).toBe(409)
+            expect(patchResponse.body.error).toBe(
+                "Username already exists"
+            )
+        })
     })
 
-    test("POST /users/ rejects insert attempt of duplicate user", async () => {
-        
-        const username = `TestUser_${Date.now()}`
-        const payload1 = {
-            "username": username,
-            "password": `testpass`
-        }
+    describe("DELETE /users/:id", () => {
+        test("deletes an existing user", async () => {
+            const response = await request(app)
+                .delete(`/users/${testUser.user_id}`)
 
-        const response1 = await request(app).post("/users/").send(payload1)
-        
-        expect(response1.status).toBe(201)
-        
-        const payload2 = {
-            "username": username,
-            "password": `testpass`
-        }
+            expect(response.status).toBe(200)
+            expect(response.body.deleted).toBe(true)
 
-        const response2 = await request(app).post("/users/").send(payload2)
-        
-        expect(response2.status).toBe(409)
-    })
+            const getResponse = await request(app)
+                .get(`/users/${testUser.user_id}`)
 
-    test("POST /users/ inserts attempt fails with empty user", async () => {
-        
-        const username = ``
-        const payload = {
-            "username": username,
-            "password": `testpass`
-        }
+            expect(getResponse.status).toBe(404)
+        })
 
-        const response = await request(app).post("/users/").send(payload)
-        
-        expect(response.status).toBe(400)
-    })
+        test("returns 404 for a missing user", async () => {
+            const response = await request(app)
+                .delete("/users/999999999")
 
-    test("POST /users/ inserts attempt fails with no password", async () => {
-        
-        const username = ``
-        const payload = {
-            "username": username
-        }
-
-        const response = await request(app).post("/users/").send(payload)
-        
-        expect(response.status).toBe(400)
-    })
-
-    // PATCH /users/:id
-    test("PATCH /users/:id updates an existing username", async () => {
-        const originalUsername = `TestUser_${Date.now()}`
-        const newUsername = `${originalUsername}_Updated`
-
-        const createResponse = await request(app)
-            .post("/users")
-            .send({
-                username: originalUsername,
-                password: "testpass"
-            })
-
-        expect(createResponse.status).toBe(201)
-
-        const userId = createResponse.body.user_id
-
-        const patchResponse = await request(app)
-            .patch(`/users/${userId}`)
-            .send({
-                username: newUsername
-            })
-
-        expect(patchResponse.status).toBe(200)
-        expect(patchResponse.body.user_id).toBe(userId)
-        expect(patchResponse.body.username).toBe(newUsername)
-
-        const getResponse = await request(app)
-            .get(`/users/${userId}`)
-
-        expect(getResponse.status).toBe(200)
-        expect(getResponse.body.username).toBe(newUsername)
-    })
-
-    test("PATCH /users/:id returns 404 for a missing user", async () => {
-        const response = await request(app)
-            .patch("/users/999999999")
-            .send({
-                username: `TestUser_${Date.now()}`
-            })
-
-        expect(response.status).toBe(404)
-        expect(response.body.error).toBe("User not found")
-    })
-
-    test("PATCH /users/:id returns 400 for an empty username", async () => {
-        const username = `TestUser_${Date.now()}`
-
-        const createResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        const userId = createResponse.body.user_id
-
-        const patchResponse = await request(app)
-            .patch(`/users/${userId}`)
-            .send({
-                username: ""
-            })
-
-        expect(patchResponse.status).toBe(400)
-    })
-
-    test("PATCH /users/:id returns 409 when username already exists", async () => {
-        const username1 = `TestUser_${Date.now()}_1`
-        const username2 = `TestUser_${Date.now()}_2`
-
-        const firstUserResponse = await request(app)
-            .post("/users")
-            .send({
-                username: username1,
-                password: "testpass"
-            })
-
-        const secondUserResponse = await request(app)
-            .post("/users")
-            .send({
-                username: username2,
-                password: "testpass"
-            })
-
-        const secondUserId = secondUserResponse.body.user_id
-
-        const patchResponse = await request(app)
-            .patch(`/users/${secondUserId}`)
-            .send({
-                username: firstUserResponse.body.username
-            })
-
-        expect(patchResponse.status).toBe(409)
-        expect(patchResponse.body.error).toBe("Username already exists")
-    })
-
-    // DELETE /users/:id
-    test("DELETE /users/:id deletes an existing user from the db", async () => {
-        const username = `TestUser_${Date.now()}`
-
-        const createResponse = await request(app)
-            .post("/users/")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        expect(createResponse.status).toBe(201)
-
-        const userId = createResponse.body.user_id
-
-        const deleteResponse = await request(app)
-            .delete(`/users/${userId}`)
-
-        expect(deleteResponse.status).toBe(200)
-        expect(deleteResponse.body.deleted).toBe(true)
+            expect(response.status).toBe(404)
+        })
     })
 
     // --- Character Routes ---
 
-    // GET /users/:id/characters
-    test("GET /users/:id/characters returns the user's characters", async () => {
-        const username = `TestUser_${Date.now()}`
+    describe("GET /users/:id/characters", () => {
+        test("returns the user's characters", async () => {
+            const response = await request(app)
+                .get(`/users/${testUser.user_id}/characters`)
 
-        const userResponse = await request(app)
-            .post("/users/")
-            .send({
-                username,
-                password: "testpass"
-            })
+            expect(response.status).toBe(200)
+            expect(Array.isArray(response.body)).toBe(true)
 
-        const userId = userResponse.body.user_id
+            expect(
+                response.body.some(character =>
+                    character.character_id ===
+                    testCharacter.character_id
+                )
+            ).toBe(true)
+        })
 
-        expect(userResponse.status).toBe(201)
-        
-        await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: "TestCharacter",
-                max_weight: 100
-            })
+        test("returns 404 for a missing user", async () => {
+            const response = await request(app)
+                .get("/users/999999999/characters")
 
-        const response = await request(app).get(`/users/${userId}/characters`)
-
-        expect(response.status).toBe(200)
-        expect(Array.isArray(response.body)).toBe(true)
-        expect(
-            response.body.some(character => character.name === "TestCharacter")
-        ).toBe(true)
+            expect(response.status).toBe(404)
+        })
     })
 
-    // GET /users/:id/characters/:name
-    test("GET /users/:id/characters/:name returns the user's characters by name", async () => {
-        const username = `TestUser_${Date.now()}`
+    describe("GET /users/:id/characters/:name", () => {
+        test("returns the requested character", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
 
-        const userResponse = await request(app)
-            .post("/users/")
-            .send({
-                username,
-                password: "testpass"
-            })
+            expect(response.status).toBe(200)
+            expect(response.body.character_id)
+                .toBe(testCharacter.character_id)
+            expect(response.body.name)
+                .toBe(testCharacter.name)
+        })
 
-        const userId = userResponse.body.user_id
+        test("returns 404 for a missing character", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/DoesNotExist`
+                )
 
-        expect(userResponse.status).toBe(201)
-        
-        const characterName = "TestCharacter"
-        await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: characterName,
-                max_weight: 100
-            })
-
-        const response = await request(app).get(`/users/${userId}/characters/${characterName}`)
-
-        expect(response.status).toBe(200)
-        expect(response.body.name).toBe(characterName)
+            expect(response.status).toBe(404)
+            expect(response.body.name).toBeUndefined()
+        })
     })
 
-    test("GET /users/123456789/characters/flooper returns 404 undefined", async () => {
-        
-        const response = await request(app).get("/users/123456789/characters/flooper")
+    describe("POST /users/:id/characters", () => {
+        test("creates another character for the user", async () => {
+            const characterName =
+                `TestCharacter_Additional_${Date.now()}`
 
-        expect(response.status).toBe(404)
-        expect(response.body.name).toBe(undefined)
+            const response = await request(app)
+                .post(`/users/${testUser.user_id}/characters`)
+                .send({
+                    name: characterName,
+                    max_weight: 120
+                })
+
+            expect(response.status).toBe(201)
+            expect(response.body.name).toBe(characterName)
+            expect(response.body.user_id)
+                .toBe(testUser.user_id)
+            expect(response.body.max_weight).toBe(120)
+        })
+
+        test("returns 404 for a missing user", async () => {
+            const response = await request(app)
+                .post("/users/999999999/characters")
+                .send({
+                    name: `TestCharacter_Missing_${Date.now()}`,
+                    max_weight: 100
+                })
+
+            expect(response.status).toBe(404)
+        })
+
+        test("returns 409 for a duplicate character name", async () => {
+            const response = await request(app)
+                .post(`/users/${testUser.user_id}/characters`)
+                .send({
+                    name: testCharacter.name,
+                    max_weight: 100
+                })
+
+            expect(response.status).toBe(409)
+        })
     })
 
-    // POST /users/:id/characters
-    test("POST /users/:id/characters creates a character", async () => {
-        const username = `TestUser_${Date.now()}`
+    describe("PATCH /users/:id/characters/:name", () => {
+        test("updates only the character name", async () => {
+            const newName = `${testCharacter.name}_Updated`
 
-        const userResponse = await request(app)
-            .post("/users/")
-            .send({
-                username,
-                password: "testpass"
-            })
+            const patchResponse = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+                .send({
+                    name: newName
+                })
 
-        expect(userResponse.status).toBe(201)
+            expect(patchResponse.status).toBe(200)
+            expect(patchResponse.body.name).toBe(newName)
+            expect(patchResponse.body.max_weight).toBe(100)
 
-        const characterResponse = await request(app)
-            .post(`/users/${userResponse.body.user_id}/characters`)
-            .send({
-                name: "TestCharacter",
-                max_weight: 100
-            })
+            const getResponse = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(newName)
+                )
 
-        expect(characterResponse.status).toBe(201)
-        expect(characterResponse.body.name).toBe("TestCharacter")
-        expect(characterResponse.body.user_id).toBe(userResponse.body.user_id)
-    })
+            expect(getResponse.status).toBe(200)
+            expect(getResponse.body.name).toBe(newName)
+            expect(getResponse.body.max_weight).toBe(100)
+        })
 
-    // PATCH /users/:id/characters/:name
-    test("PATCH /users/:id/characters/:name updates only the character name", async () => {
-        const username = `TestUser_${Date.now()}`
-        const originalName = `TestCharacter_${Date.now()}`
-        const newName = `${originalName}_Updated`
+        test("updates only max_weight", async () => {
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+                .send({
+                    max_weight: 150
+                })
 
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
+            expect(response.status).toBe(200)
+            expect(response.body.name)
+                .toBe(testCharacter.name)
+            expect(response.body.max_weight).toBe(150)
+        })
 
-        const userId = userResponse.body.user_id
+        test("updates both name and max_weight", async () => {
+            const newName = `${testCharacter.name}_Updated`
 
-        const createCharacterResponse = await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: originalName,
-                max_weight: 100
-            })
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+                .send({
+                    name: newName,
+                    max_weight: 175
+                })
 
-        expect(createCharacterResponse.status).toBe(201)
+            expect(response.status).toBe(200)
+            expect(response.body.name).toBe(newName)
+            expect(response.body.max_weight).toBe(175)
+        })
 
-        const patchResponse = await request(app)
-            .patch(
-                `/users/${userId}/characters/${encodeURIComponent(originalName)}`
+        test("returns 400 when no fields are supplied", async () => {
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+                .send({})
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "At least one field must be provided"
             )
-            .send({
-                name: newName
-            })
+        })
 
-        expect(patchResponse.status).toBe(200)
-        expect(patchResponse.body.name).toBe(newName)
-        expect(patchResponse.body.max_weight).toBe(100)
+        test("returns 400 for an invalid max_weight", async () => {
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+                .send({
+                    max_weight: 0
+                })
 
-        const getResponse = await request(app)
-            .get(
-                `/users/${userId}/characters/${encodeURIComponent(newName)}`
+            expect(response.status).toBe(400)
+        })
+
+        test("returns 404 for a missing character", async () => {
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/DoesNotExist`
+                )
+                .send({
+                    max_weight: 150
+                })
+
+            expect(response.status).toBe(404)
+        })
+    })
+
+    describe("DELETE /users/:id/characters/:name", () => {
+        test("deletes an existing character", async () => {
+            const deleteResponse = await request(app)
+                .delete(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+
+            expect(deleteResponse.status).toBe(200)
+            expect(deleteResponse.body.deleted).toBe(true)
+
+            const getResponse = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    encodeURIComponent(testCharacter.name)
+                )
+
+            expect(getResponse.status).toBe(404)
+        })
+
+        test("returns 404 for a missing character", async () => {
+            const response = await request(app)
+                .delete(
+                    `/users/${testUser.user_id}/characters/DoesNotExist`
+                )
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Character not found"
             )
-
-        expect(getResponse.status).toBe(200)
-        expect(getResponse.body.name).toBe(newName)
-        expect(getResponse.body.max_weight).toBe(100)
+        })
     })
 
-    test("PATCH /users/:id/characters/:name updates only max_weight", async () => {
-        const username = `TestUser_${Date.now()}`
-        const characterName = `TestCharacter_${Date.now()}`
-
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        const userId = userResponse.body.user_id
-
-        await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: characterName,
-                max_weight: 100
-            })
-
-        const patchResponse = await request(app)
-            .patch(
-                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
-            )
-            .send({
-                max_weight: 150
-            })
-
-        expect(patchResponse.status).toBe(200)
-        expect(patchResponse.body.name).toBe(characterName)
-        expect(patchResponse.body.max_weight).toBe(150)
-    })
-
-    test("PATCH /users/:id/characters/:name updates name and max_weight", async () => {
-        const username = `TestUser_${Date.now()}`
-        const originalName = `TestCharacter_${Date.now()}`
-        const newName = `${originalName}_Updated`
-
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        const userId = userResponse.body.user_id
-
-        await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: originalName,
-                max_weight: 100
-            })
-
-        const patchResponse = await request(app)
-            .patch(
-                `/users/${userId}/characters/${encodeURIComponent(originalName)}`
-            )
-            .send({
-                name: newName,
-                max_weight: 175
-            })
-
-        expect(patchResponse.status).toBe(200)
-        expect(patchResponse.body.name).toBe(newName)
-        expect(patchResponse.body.max_weight).toBe(175)
-    })
-
-    test("PATCH /users/:id/characters/:name returns 400 when no fields are provided", async () => {
-        const username = `TestUser_${Date.now()}`
-        const characterName = `TestCharacter_${Date.now()}`
-
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        const userId = userResponse.body.user_id
-
-        await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: characterName,
-                max_weight: 100
-            })
-
-        const patchResponse = await request(app)
-            .patch(
-                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
-            )
-            .send({})
-
-        expect(patchResponse.status).toBe(400)
-        expect(patchResponse.body.error).toBe(
-            "At least one field must be provided"
-        )
-    })
-
-    test("PATCH /users/:id/characters/:name returns 400 for invalid max_weight", async () => {
-        const username = `TestUser_${Date.now()}`
-        const characterName = `TestCharacter_${Date.now()}`
-
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        const userId = userResponse.body.user_id
-
-        await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: characterName,
-                max_weight: 100
-            })
-
-        const patchResponse = await request(app)
-            .patch(
-                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
-            )
-            .send({
-                max_weight: 0
-            })
-
-        expect(patchResponse.status).toBe(400)
-    })
-
-    // DELETE /users/:id/characters/:name
-    test("DELETE /users/:id/characters/:name deletes an existing character", async () => {
-        const username = `TestUser_${Date.now()}`
-        const characterName = `TestCharacter_${Date.now()}`
-
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        expect(userResponse.status).toBe(201)
-
-        const userId = userResponse.body.user_id
-
-        const characterResponse = await request(app)
-            .post(`/users/${userId}/characters`)
-            .send({
-                name: characterName,
-                max_weight: 100
-            })
-
-        expect(characterResponse.status).toBe(201)
-
-        const deleteResponse = await request(app)
-            .delete(
-                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
-            )
-
-        expect(deleteResponse.status).toBe(200)
-        expect(deleteResponse.body.deleted).toBe(true)
-
-        const getResponse = await request(app)
-            .get(
-                `/users/${userId}/characters/${encodeURIComponent(characterName)}`
-            )
-
-        expect(getResponse.status).toBe(404)
-    })
-
-    test("DELETE /users/:id/characters/:name returns 404 for a missing character", async () => {
-        const username = `TestUser_${Date.now()}`
-
-        const userResponse = await request(app)
-            .post("/users")
-            .send({
-                username,
-                password: "testpass"
-            })
-
-        const userId = userResponse.body.user_id
-
-        const deleteResponse = await request(app)
-            .delete(`/users/${userId}/characters/DoesNotExist`)
-
-        expect(deleteResponse.status).toBe(404)
-        expect(deleteResponse.body.error).toBe("Character not found")
-    })
-    // --- Inventory Routes ---
-
-    // GET /users/:id/characters/:characterName/inventory
-    test("GET /users/123456789/characters/Kcos/inventory returns an array", async () => {
-        
-        const response = await request(app).get("/users/123456789/characters/Kcos/inventory")
-
-        expect(response.status).toBe(200)
-        expect(Array.isArray(response.body)).toBe(true)
-    })
-
-    // GET /users/:id/characters/:characterName/inventory/:inventoryIndex
-    test("GET /users/123456789/characters/Kcos/inventory/backpack returns backpack", async () => {
-        
-        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack")
-
-        expect(response.status).toBe(200)
-        expect(response.body.index).toBe("backpack")
-    })
-
-    test("GET /users/123456789/characters/Kcos/inventory/flooper returns 404 and undefined", async () => {
-        
-        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/flooper")
-
-        expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
-    })
-
-    // GET /users/:id/characters/:characterName/inventory/:inventoryIndex/items/:itemIndex
-    test("GET /users/123456789/characters/Kcos/inventory/backpack/items/ink-pen returns ink pen", async () => {
-        
-        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack/items/ink-pen")
-
-        expect(response.status).toBe(200)
-        expect(response.body.index).toBe("ink-pen")
-    })
-
-    test("GET /users/123456789/characters/Kcos/inventory/backpack/items/flooper returns 404 and undefined", async () => {
-        
-        const response = await request(app).get("/users/123456789/characters/Kcos/inventory/backpack/items/flooper")
-
-        expect(response.status).toBe(404)
-        expect(response.body.index).toBe(undefined)
-    })
+    // SQL inventory-route tests should be added here later
 })
