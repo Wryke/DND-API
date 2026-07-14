@@ -4,44 +4,81 @@ const {
     findItemsByCategory
 } = require("./itemQueries")
 
-describe("Database Item Quieres", () => {
-    // findItemByIndex
-    test("findItemByIndex with arg 'backpack' returns backpack", () => {
-        const item = findItemByIndex("backpack")
-        expect(item.item_index).toBe("backpack")
+describe("Database Item Queries", () => {
+    let testItems
+
+    beforeEach(() => {
+        testItems = {
+            backpack: findItemByIndex("backpack"),
+            armor: findItemsByCategory("armor")
+        }
     })
 
-    test("findItemByIndex with arg 'flooper' returns undefined", () => {
-        const item = findItemByIndex("flooper")
-        expect(item).toBeUndefined()
+    describe("findItemByIndex", () => {
+        test("returns the backpack item", () => {
+            const item = findItemByIndex("backpack")
+
+            expect(item).toBeDefined()
+            expect(item.item_index).toBe("backpack")
+            expect(item.name).toBe("Backpack")
+        })
+
+        test("returns undefined for a missing item", () => {
+            const item = findItemByIndex("flooper")
+
+            expect(item).toBeUndefined()
+        })
     })
 
-    // findAllItems
-    test("findAllItems returns an array greater than 0 with all relavent columns", () => {
-        const items = findAllItems()
-        expect(Array.isArray(items)).toBe(true)
-        expect(items.length).toBeGreaterThan(0)
+    describe("findAllItems", () => {
+        test("returns a non-empty array of item objects", () => {
+            const items = findAllItems()
 
-        expect(items[0]).toHaveProperty("item_id")
-        expect(items[0]).toHaveProperty("item_index")
-        expect(items[0]).toHaveProperty("name")
-        expect(items[0]).toHaveProperty("item_category")
+            expect(Array.isArray(items)).toBe(true)
+            expect(items.length).toBeGreaterThan(0)
+
+            expect(items[0]).toHaveProperty("item_id")
+            expect(items[0]).toHaveProperty("item_index")
+            expect(items[0]).toHaveProperty("name")
+            expect(items[0]).toHaveProperty("item_category")
+        })
+
+        test("contains the backpack item", () => {
+            const items = findAllItems()
+
+            expect(
+                items.some(item =>
+                    item.item_id === testItems.backpack.item_id
+                )
+            ).toBe(true)
+        })
     })
 
-    // findItemsByCategory
-    test("findItemsByCategory with arg 'armor' returns a list of items with category armor", () => {
-        const items = findItemsByCategory("armor")
-        expect(Array.isArray(items)).toBe(true)
-        expect(items.length).toBeGreaterThan(0)
+    describe("findItemsByCategory", () => {
+        test("returns only items from the requested category", () => {
+            const items = findItemsByCategory("armor")
 
-        expect(
-            items.every(item => item.item_category === "armor")
-        ).toBe(true)
-    })
+            expect(Array.isArray(items)).toBe(true)
+            expect(items.length).toBeGreaterThan(0)
 
-    test("findItemsByCategory with bad arg 'flooper' returns an empty array", () => {
-        const items = findItemsByCategory("flooper")
-        expect(Array.isArray(items)).toBe(true)
-        expect(items).toHaveLength(0)
+            expect(
+                items.every(item =>
+                    item.item_category === "armor"
+                )
+            ).toBe(true)
+        })
+
+        test("returns the same armor items created in beforeEach", () => {
+            const items = findItemsByCategory("armor")
+
+            expect(items).toEqual(testItems.armor)
+        })
+
+        test("returns an empty array for a missing category", () => {
+            const items = findItemsByCategory("flooper")
+
+            expect(Array.isArray(items)).toBe(true)
+            expect(items).toHaveLength(0)
+        })
     })
 })
