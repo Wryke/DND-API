@@ -33,6 +33,30 @@ describe("User Routes", () => {
 
         testCharacter = characterResponse.body
         additionalUserIds = []
+
+        testItems = {
+            backpack: db.prepare(`
+                SELECT *
+                FROM items
+                WHERE item_index = ?
+            `).get("backpack"),
+
+            pouch: db.prepare(`
+                SELECT *
+                FROM items
+                WHERE item_index = ?
+            `).get("pouch"),
+
+            torch: db.prepare(`
+                SELECT *
+                FROM items
+                WHERE item_index = ?
+            `).get("torch")
+        }
+
+        expect(testItems.backpack).toBeDefined()
+        expect(testItems.pouch).toBeDefined()
+        expect(testItems.torch).toBeDefined()
     })
 
     afterEach(() => {
@@ -455,5 +479,507 @@ describe("User Routes", () => {
         })
     })
 
-    // SQL inventory-route tests should be added here later
+    // --- Inventory Routes ---
+
+    describe("GET /users/:id/characters/:name/inventory", () => {
+        test("returns an empty array when the character has no inventory", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+
+            expect(response.status).toBe(200)
+            expect(response.body).toEqual([])
+        })
+
+        test("returns only the character's root inventory entries", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(backpackResponse.status).toBe(201)
+
+            const backpackId =
+                backpackResponse.body.inventory_id
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id: backpackId,
+                    quantity: 2
+                })
+
+            expect(torchResponse.status).toBe(201)
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+
+            expect(response.status).toBe(200)
+            expect(Array.isArray(response.body)).toBe(true)
+            expect(response.body).toHaveLength(1)
+            expect(response.body[0].item_index).toBe("backpack")
+            expect(response.body[0].parent_inventory_id)
+                .toBeNull()
+        })
+
+        test("returns 404 for a missing character", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `DoesNotExist/inventory`
+                )
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Character not found"
+            )
+        })
+    })
+
+    describe("POST /users/:id/characters/:name/inventory", () => {
+        test("creates a root inventory entry", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(response.status).toBe(201)
+            expect(response.body).toHaveProperty("inventory_id")
+            expect(response.body.character_id)
+                .toBe(testCharacter.character_id)
+            expect(response.body.item_id)
+                .toBe(testItems.backpack.item_id)
+            expect(response.body.parent_inventory_id)
+                .toBeNull()
+            expect(response.body.quantity).toBe(1)
+        })
+
+        test("creates an inventory entry inside another entry", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(backpackResponse.status).toBe(201)
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id:
+                        backpackResponse.body.inventory_id,
+                    quantity: 2
+                })
+
+            expect(torchResponse.status).toBe(201)
+            expect(torchResponse.body.parent_inventory_id)
+                .toBe(backpackResponse.body.inventory_id)
+            expect(torchResponse.body.quantity).toBe(2)
+        })
+    })
+
+    describe("GET /users/:id/characters/:name/inventory/:inventoryId", () => {
+        test("returns a specific inventory entry", async () => {
+            const createResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(createResponse.status).toBe(201)
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    createResponse.body.inventory_id
+                )
+
+            expect(response.status).toBe(200)
+            expect(response.body.inventory_id)
+                .toBe(createResponse.body.inventory_id)
+            expect(response.body.item_index).toBe("backpack")
+            expect(response.body.quantity).toBe(1)
+        })
+
+        test("returns 404 for a missing inventory entry", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/999999999`
+                )
+
+            expect(response.status).toBe(404)
+        })
+    })
+
+    describe("GET /users/:id/characters/:name/inventory/:inventoryId/children", () => {
+        test("returns the direct children of an inventory entry", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const backpackId =
+                backpackResponse.body.inventory_id
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id: backpackId,
+                    quantity: 2
+                })
+
+            expect(torchResponse.status).toBe(201)
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    `${backpackId}/children`
+                )
+
+            expect(response.status).toBe(200)
+            expect(Array.isArray(response.body)).toBe(true)
+            expect(response.body).toHaveLength(1)
+            expect(response.body[0].item_index).toBe("torch")
+            expect(response.body[0].parent_inventory_id)
+                .toBe(backpackId)
+        })
+
+        test("returns an empty array when the entry has no children", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    `${backpackResponse.body.inventory_id}/children`
+                )
+
+            expect(response.status).toBe(200)
+            expect(response.body).toEqual([])
+        })
+    })
+
+    describe("PATCH /users/:id/characters/:name/inventory/:inventoryId", () => {
+        test("updates only the inventory quantity", async () => {
+            const createResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id: null,
+                    quantity: 2
+                })
+
+            const inventoryId =
+                createResponse.body.inventory_id
+
+            const patchResponse = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    inventoryId
+                )
+                .send({
+                    quantity: 5
+                })
+
+            expect(patchResponse.status).toBe(200)
+            expect(patchResponse.body.inventory_id)
+                .toBe(inventoryId)
+            expect(patchResponse.body.quantity).toBe(5)
+            expect(patchResponse.body.parent_inventory_id)
+                .toBeNull()
+        })
+
+        test("moves an inventory entry into another entry", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id: null,
+                    quantity: 2
+                })
+
+            const patchResponse = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    torchResponse.body.inventory_id
+                )
+                .send({
+                    parent_inventory_id:
+                        backpackResponse.body.inventory_id
+                })
+
+            expect(patchResponse.status).toBe(200)
+            expect(patchResponse.body.parent_inventory_id)
+                .toBe(backpackResponse.body.inventory_id)
+            expect(patchResponse.body.quantity).toBe(2)
+        })
+
+        test("moves an inventory entry back to the root", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id:
+                        backpackResponse.body.inventory_id,
+                    quantity: 2
+                })
+
+            const patchResponse = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    torchResponse.body.inventory_id
+                )
+                .send({
+                    parent_inventory_id: null
+                })
+
+            expect(patchResponse.status).toBe(200)
+            expect(patchResponse.body.parent_inventory_id)
+                .toBeNull()
+        })
+
+        test("returns 400 when no update fields are supplied", async () => {
+            const createResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id: null,
+                    quantity: 2
+                })
+
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    createResponse.body.inventory_id
+                )
+                .send({})
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "At least one update field is required"
+            )
+        })
+
+        test("returns 400 when an entry is moved into itself", async () => {
+            const createResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const inventoryId =
+                createResponse.body.inventory_id
+
+            const response = await request(app)
+                .patch(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    inventoryId
+                )
+                .send({
+                    parent_inventory_id: inventoryId
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "An inventory entry cannot contain itself"
+            )
+        })
+    })
+
+    describe("DELETE /users/:id/characters/:name/inventory/:inventoryId", () => {
+        test("deletes an existing inventory entry", async () => {
+            const createResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.torch.item_id,
+                    parent_inventory_id: null,
+                    quantity: 2
+                })
+
+            const inventoryId =
+                createResponse.body.inventory_id
+
+            const deleteResponse = await request(app)
+                .delete(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    inventoryId
+                )
+
+            expect(deleteResponse.status).toBe(200)
+            expect(deleteResponse.body.deleted).toBe(true)
+
+            const getResponse = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    inventoryId
+                )
+
+            expect(getResponse.status).toBe(404)
+        })
+
+        test("promotes direct children to the root when deleting a container", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.backpack.item_id,
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const pouchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_id: testItems.pouch.item_id,
+                    parent_inventory_id:
+                        backpackResponse.body.inventory_id,
+                    quantity: 1
+                })
+
+            const deleteResponse = await request(app)
+                .delete(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    backpackResponse.body.inventory_id
+                )
+
+            expect(deleteResponse.status).toBe(200)
+
+            const pouchResponseAfterDelete = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
+                    pouchResponse.body.inventory_id
+                )
+
+            expect(pouchResponseAfterDelete.status).toBe(200)
+            expect(
+                pouchResponseAfterDelete.body.parent_inventory_id
+            ).toBeNull()
+        })
+
+        test("returns 404 for a missing inventory entry", async () => {
+            const response = await request(app)
+                .delete(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/999999999`
+                )
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Inventory entry not found"
+            )
+        })
+    })
 })

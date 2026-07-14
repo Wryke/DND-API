@@ -504,6 +504,7 @@ router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) =
 
 // POST /users/:id/characters/:name/inventory - Add a new inventory to a character
 router.post("/:id/characters/:name/inventory", (req, res) => {
+    
     const userId = Number(req.params.id)
     const name = req.params.name
 
@@ -511,14 +512,27 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
         !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0
-    ) {
+       ) {
         return res.status(400).json({
             error: "A valid user ID and character name are required"
         })
     }
 
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
     try {
-        const entry = createInventoryEntry(req.body)
+        const entry = createInventoryEntry({
+            character_id: character.character_id,
+            item_id: req.body.item_id,
+            parent_inventory_id: req.body.parent_inventory_id ?? null,
+            quantity: req.body.quantity
+        })
         return res.status(201).json(entry)
     } catch (error) {
         return res.status(500).json({
@@ -659,7 +673,7 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
             error: "Inventory entry not found"
         })
     }
-    
+
     try {
         const deleted = deleteInventoryEntry(inventoryId)
 
