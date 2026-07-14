@@ -13,7 +13,17 @@ const findAllItemsStmt = db.prepare(`
 `).all()
 
 function findAllItems() {
-    return findAllItemsStmt
+    return findAllItemsStmt.all()
+}
+
+const findAllItemCategoriesStmt = db.prepare(`
+    SELECT DISTINCT item_category
+    FROM items
+    ORDER BY item_category
+`)
+
+function findAllItemCategories() {
+    return findAllItemCategoriesStmt.all().map(row => row.item_category)
 }
 
 const findItemByIndexStmt = db.prepare(`
@@ -36,20 +46,33 @@ function findItemByName(name) {
     return findItemByNameStmt.get(name)
 }
 
-const findItemsByCategoryStmt = db.prepare(`
+const findItemByIndexAndCategoryStmt = db.prepare(`
     SELECT *
     FROM items
-    WHERE item_category = ?
-    ORDER by name
+    WHERE item_id= ?
+      AND item_category = ?
 `)
 
-function findItemsByCategory(category) {
-    return findItemsByCategoryStmt.all(category)
+function findItemByIndexAndCategory(itemId, category) {
+    return findItemByIndexAndCategoryStmt.get(itemId, category)
+}
+
+const findItemByNameAndCategoryStmt = db.prepare(`
+    SELECT *
+    FROM items
+    WHERE name = ?
+      AND item_category = ?
+`)
+
+function findItemByNameAndCategory(itemId, category) {
+    return findItemByNameAndCategoryStmt.get(itemId, category)
 }
 
 module.exports = {
     findAllItems,
+    findAllItemCategories,
     findItemByIndex,
     findItemByName,
-    findItemsByCategory
+    findItemByIndexAndCategory,
+    findItemByNameAndCategory
 }

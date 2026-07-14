@@ -2,95 +2,80 @@ const express = require("express")
 const router = express.Router()
 
 const {
-    loadItems,
-    loadMagicItems,
-    loadCategories,
-    findItem,
-    findAnyItem
-} = require("../helpers/itemHelpers.js")
-
-const {
     findAllItems,
+    findAllItemCategories,
     findItemByIndex,
-    findItemsByCategory
+    findItemByName,
+    findItemsByIdAndCategory,
+    findItemsByNameAndCategory
 } = require("../db/itemQueries.js")
 
 // --- Get Routes ---
+// GET /items
+//     Get all items
+//     Optional: ?category=armor
 
-// GET /items/equipment
-// GET /items/equipment/:index
-// GET /items/magic
-// GET /items/magic/:index
-// GET /items/all/:index
+// GET /items/categories
+//     Get all category names
 
-// GET /items/equipment - Get all equipment items of a specific category.
-router.get("/equipment", (req, res) => {
-    const { category } = req.query;
+// GET /items/name/:name
+//     Find item by display name
+//     Optional: ?category=armor
+
+// GET /items/:index
+//     Find item by stable item index
+//     Optional: ?category=armor
+
+// GET /items?category - Get a list of all existing items in a category 
+router.get('/', (req, res) => {
+    const { category } = req.query
 
     const items = category
         ? findItemsByCategory(category)
-        : findAllItems();
+        : findAllItems()
 
-    res.json(items);
-});
-
-// GET /items/equipment/:index - Get item from equipment.
-router.get('/equipment/:index', (req, res) => {
-    const index = req.params.index
-
-    let item = findItemByIndex(index)
-
-    if(!item){
-        return res.status(404).json({
-            error: "Item not found"
-        })
-    }
-
-    res.json(item)
+    return res.status(200).json(items)
 })
 
-// Get all magic items. //TODO migrate to query system
-router.get('/magic', (req, res) => {
-    const items = loadMagicItems()
-    res.json(items)
+// GET /items/categories - Get a list of all unique categories
+router.get('/categories/', (req, res) => {
+    const categories = findAllItemCategories()
+
+    return res.status(200).json(categories)
 })
 
-// Get item from magic items. //TODO migrate to query system
-router.get('/magic/:index', (req, res) => {
-    const index = req.params.index
+// GET /items/:index?category - Get an item with specified index
+router.get('/:index', (req, res) => {
     
-    const items = loadMagicItems()
+    const index = Number(req.params.index)
+    const { category } = req.query
 
-    let item = findItem(items, index)
-
-    if(!item){
-        return res.status(404).json({
-            error: "Item not found"
-        })
-    }
-
-    res.json(item)
-})
-
-// Get item from all items.
-router.get("/all/:index", (req, res) => {
-    const index = req.params.index
-
-    const item = findAnyItem(index)
+    const item = findItemByIndex(index)
 
     if(!item){
         return res.status(404).json({
-            error: "Item not found"
+            error: "Item could not be found"
         })
     }
 
-    res.json(item)
+    return res.status(200).json(item)
 })
 
-// Get all existing categories. //TODO migrate to query
-router.get("/categories/", (req, res) => {
-    const categories = loadCategories()
-    res.json(categories)
+// Get /items/name/:name - Get an item with a specific name
+router.get('/name/:name', (req, res) => {
+
+    const name = req.params.name
+    
+
+    const item = findItemByName(name)
+
+    if(!item){
+        return res.status(404).json({
+            error: "Item could not be found"
+        })
+    }
+
+    return res.status(200).json(item)
 })
 
 module.exports = router

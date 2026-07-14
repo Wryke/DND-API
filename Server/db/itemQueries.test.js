@@ -1,6 +1,7 @@
 const {
     findAllItems,
     findItemByIndex,
+    findItemByName, // TODO testing
     findItemsByCategory
 } = require("./itemQueries")
 
