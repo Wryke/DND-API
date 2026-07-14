@@ -507,12 +507,13 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
     
     const userId = Number(req.params.id)
     const name = req.params.name
+    const { item_id, parent_inventory_id, quantity } = req.body
 
     if (
         !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0
-       ) {
+    ) {
         return res.status(400).json({
             error: "A valid user ID and character name are required"
         })
@@ -526,15 +527,45 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
         })
     }
 
+    if (
+        !Number.isInteger(item_id) ||
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+    ) {
+        return res.status(400).json({
+            error: "A valid item ID and positive quantity are required"
+        })
+    }
+
+    const parentInventoryId = parent_inventory_id ?? null
+
+    if (parentInventoryId !== null && !Number.isInteger(parentInventoryId)) {
+        return res.status(400).json({
+            error: "Parent inventory ID must be an integer or null"
+        })
+    }
+
+    if (parentInventoryId !== null) {
+        const parentEntry = findInventoryEntryById(character.character_id, parentInventoryId)
+
+        if (!parentEntry) {
+            return res.status(404).json({
+                error: "Parent inventory entry not found"
+            })
+        }
+    }
+
     try {
         const entry = createInventoryEntry({
             character_id: character.character_id,
-            item_id: req.body.item_id,
-            parent_inventory_id: req.body.parent_inventory_id ?? null,
-            quantity: req.body.quantity
+            item_id,
+            parent_inventory_id: parentInventoryId,
+            quantity
         })
+
         return res.status(201).json(entry)
-    } catch (error) {
+    }
+    catch (error) {
         return res.status(500).json({
             error: "Internal server error"
         })
