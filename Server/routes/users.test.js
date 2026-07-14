@@ -6,6 +6,7 @@ describe("User Routes", () => {
     let testUser
     let testCharacter
     let additionalUserIds
+    let testItems
 
     beforeEach(async () => {
         const uniqueSuffix =
