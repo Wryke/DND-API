@@ -16,40 +16,42 @@ const {
     createUser,
     updateUserById,
     deleteUserById,
+
     findCharactersByUserId,
     findCharacterByUserIdAndName,
     createCharacter,
     updateCharacterById,
-    deleteCharacterById
+    deleteCharacterById,
+
+    findInventoryEntryById,
+    findRootInventoryByCharacterId,
+    findInventoryChildren,
+    createInventoryEntry,
+    updateInventoryQuantity,
+    moveInventoryEntry,
+    deleteInventoryEntry
  } = require("../db/userQueries.js")
 
-
-function isValidIndex(index, res) {
-    if (!index || typeof index !== "string") {
-        return false
-    }
-    return true
-}
-
 // --- User Routes ---
-// GET /users/:id
-// POST /users/
-// PATCH /users/:id
+// GET    /users/:id
+// POST   /users/
+// PATCH  /users/:id
 // DELETE /users/:id
 
 // --- Character Routes ---
-// GET /users/:id/characters
-// GET /users/:id/characters/:name
-// POST /users/:id/characters
-// PATCH /users/:id/characters/:name
+// GET    /users/:id/characters
+// GET    /users/:id/characters/:name
+// POST   /users/:id/characters
+// PATCH  /users/:id/characters/:name
 // DELETE /users/:id/characters/:name
 
 // --- Inventory Routes ---
-// GET /users/:id/characters/:name/inventory
-// GET /users/:id/characters/:name/inventory/:inventoryIndex
-// PUT /users/:id/characters/:name/inventory
-// PATCH /users/:id/characters/:name/inventory/:inventoryIndex
-// DELETE /users/:id/characters/:name/inventory/:inventoryIndex
+// GET    /users/:id/characters/:name/inventory
+// GET    /users/:id/characters/:name/inventory/:inventoryId
+// GET    /users/:id/characters/:name/inventory/:inventoryId/children
+// POST   /users/:id/characters/:name/inventory
+// PATCH  /users/:id/characters/:name/inventory/:inventoryId
+// DELETE /users/:id/characters/:name/inventory/:inventoryId
 
 // --- User Routes ---
 
@@ -398,205 +400,283 @@ router.delete("/:id/characters/:name", (req,res) => {
 // GET /users/:id/characters/:name/inventory - get a characters entire inventory
 router.get("/:id/characters/:name/inventory", (req, res) => {
 
-    const id = req.params.id
+    const userId = Number(req.params.id)
+    const name = req.params.name
 
-    if(!isValidIndex(id)){
-        return res.status(404).json({
-            err: "Invalid ID"
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID and character name are required"
         })
     }
 
-    const users = loadUsers()
-    const user = findUser(users, id)
+    const character = findCharacterByUserIdAndName(userId, name.trim())
 
-    if(!user){
+    if (!character) {
         return res.status(404).json({
-            err: "User not found"
+            error: "Character not found"
         })
     }
 
-    const characterName = req.params.name
+    const rootInventory = findRootInventoryByCharacterId(character.character_id)
 
-    if(!isValidIndex(characterName)){
-        return res.status(404).json({
-            err: "Invalid character name"
-        })
-    }
-
-    const character = findCharacter(user, characterName)
-
-    if(!character){
-        return res.status(404).json({
-            err: "Invalid character"
-        })
-    }
-
-    const inventories = character.inventories
-
-    if(!inventories){
-        return res.status(404).json({
-            err: "Invalid inventory"
-        })
-    }
-
-    res.json(inventories)
+    return res.status(200).json(rootInventory)
 })
 
-// GET /users/:id/characters/:name/inventory/:inventoryId - Get all items in a specific inventory
+// GET /users/:id/characters/:name/inventory/:inventoryId - Get a specific inventory entry
 router.get("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
+    
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const inventoryId = Number(req.params.inventoryId)
 
-    const id = req.params.id
-
-    if(!isValidIndex(id)){
-        return res.status(404).json({
-            err: "Invalid ID"
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(inventoryId)
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID, character name, and inventory ID are required"
         })
     }
 
-    const users = loadUsers()
-    const user = findUser(users, id)
+    const character = findCharacterByUserIdAndName(userId, name.trim())
 
-    if(!user){
+    if (!character) {
         return res.status(404).json({
-            err: "User not found"
+            error: "Character not found"
         })
     }
 
-    const characterName = req.params.name
+    const inventory = findInventoryEntryById(character.character_id, inventoryId)
 
-    if(!isValidIndex(characterName)){
+    if (!inventory) {
         return res.status(404).json({
-            err: "Invalid character name"
+            error: "Inventory not found"
         })
     }
 
-    const character = findCharacter(user, characterName)
-
-    if(!character){
-        return res.status(404).json({
-            err: "Invalid character"
-        })
-    }
-
-    const inventories = character.inventories
-
-    if(!inventories){
-        return res.status(404).json({
-            err: "Invalid inventory"
-        })
-    }
-
-    const inventoryIndex = req.params.inventoryIndex
-
-    if(!isValidIndex(inventoryIndex)){
-        return res.status(404).json({
-            err: "Invalid inventory index"
-        })
-    }
-
-    const inventory = findInventory(inventories, inventoryIndex)
-
-    if(!inventory){
-        return res.status(404).json({
-            err: "Invalid inventory"
-        })
-    }
-
-    res.json(inventory)
+    return res.status(200).json(inventory)
 })
 
-// GET /users/:id/characters/:name/inventory/:inventoryId/items/itemIndex - Get a specific item from a characters inventory
-router.get("/:id/characters/:name/inventory/:inventoryId/items/:itemIndex", (req, res) => {
+// GET /users/:id/characters/:name/inventory/:inventoryId/children - Get the children of a specific inventory
+router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) => {
 
-    const id = req.params.id
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const inventoryId = Number(req.params.inventoryId)
 
-    if(!isValidIndex(id)){
-        return res.status(404).json({
-            err: "Invalid ID"
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(inventoryId)
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID, character name, and inventory ID are required"
         })
     }
 
-    const users = loadUsers()
-    const user = findUser(users, id)
+    const character = findCharacterByUserIdAndName(userId, name.trim())
 
-    if(!user){
+    if (!character) {
         return res.status(404).json({
-            err: "User not found"
+            error: "Character not found"
         })
     }
 
-    const characterName = req.params.name
+    const parentEntry = findInventoryEntryById(character.character_id, inventoryId)
 
-    if(!isValidIndex(characterName)){
+    if (!parentEntry) {
         return res.status(404).json({
-            err: "Invalid character name"
+            error: "Inventory entry not found"
         })
     }
 
-    const character = findCharacter(user, characterName)
+    const inventory = findInventoryChildren(character.character_id, inventoryId)
 
-    if(!character){
-        return res.status(404).json({
-            err: "Invalid character"
-        })
-    }
-
-    const inventories = character.inventories
-
-    if(!inventories){
-        return res.status(404).json({
-            err: "Invalid inventory"
-        })
-    }
-
-    const inventoryIndex = req.params.inventoryIndex
-
-    if(!isValidIndex(inventoryIndex)){
-        return res.status(404).json({
-            err: "Invalid inventory index"
-        })
-    }
-
-    const inventory = findInventory(inventories, inventoryIndex)
-
-    if(!inventory){
-        return res.status(404).json({
-            err: "Invalid inventory"
-        })
-    }
-
-    const itemIndex = req.params.itemIndex
-
-    if(!isValidIndex(itemIndex)){
-        return res.status(404).json({
-            err: "Invalid index"
-        })
-    }
-
-    const item = findItem(inventory, itemIndex)
-
-    if(!item){
-        return res.status(404).json({
-            err: "Item not found"
-        })
-    }
-
-    res.json(item)
+    return res.status(200).json(inventory)
 })
 
 // POST /users/:id/characters/:name/inventory - Add a new inventory to a character
 router.post("/:id/characters/:name/inventory", (req, res) => {
-    // TODO
+    const userId = Number(req.params.id)
+    const name = req.params.name
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID and character name are required"
+        })
+    }
+
+    try {
+        const entry = createInventoryEntry(req.body)
+        return res.status(201).json(entry)
+    } catch (error) {
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
-// PATCH /users/:id/characters/:name/inventory/:inventoryIndex/:itemIndex - Modify an inventory/item
-router.patch("/:id/characters/:name/inventory/:inventoryIndex/:itemIndex", (req, res) => {
-    // TODO
+// PATCH /users/:id/characters/:name/inventory/:inventoryId - Modify an inventory/item
+router.patch("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
+    
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const inventoryId = Number(req.params.inventoryId)
+    const { quantity, parent_inventory_id } = req.body
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(inventoryId)
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID, character name, and inventory ID are required"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const existingEntry = findInventoryEntryById( character.character_id, inventoryId)
+
+    if (!existingEntry) {
+        return res.status(404).json({
+            error: "Inventory entry not found"
+        })
+    }
+
+    const hasQuantity = quantity !== undefined
+    const hasParentInventoryId = parent_inventory_id !== undefined
+
+    // No arguments provided
+    if (!hasQuantity && !hasParentInventoryId) {
+        return res.status(400).json({
+            error: "At least one update field is required"
+        })
+    }
+
+    // Invalid quantity arg
+    if (hasQuantity && (!Number.isInteger(quantity) || quantity <= 0)) {
+        return res.status(400).json({
+            error: "Quantity must be a positive integer"
+        })
+    }
+
+    // Invalid parentId arg
+    if (hasParentInventoryId && parent_inventory_id !== null && !Number.isInteger(parent_inventory_id)) {
+        return res.status(400).json({
+            error: "Parent inventory ID must be an integer or null"
+        })
+    }
+
+    // Invalid self reference
+    if (parent_inventory_id === inventoryId) {
+        return res.status(400).json({
+            error: "An inventory entry cannot contain itself"
+        })
+    }
+
+    // Check if the new parent entry exists
+    if (hasParentInventoryId && parent_inventory_id !== null) {
+        const parentEntry = findInventoryEntryById(character.character_id, parent_inventory_id)
+
+        if (!parentEntry) {
+            return res.status(404).json({
+                error: "Parent inventory entry not found"
+            })
+        }
+    }
+
+    try {
+        if (hasQuantity) {
+            updateInventoryQuantity(inventoryId, quantity)
+        }
+
+        if (hasParentInventoryId) {
+            moveInventoryEntry(inventoryId, parent_inventory_id)
+        }
+
+        const updatedEntry = findInventoryEntryById(character.character_id, inventoryId)
+
+        return res.status(200).json(updatedEntry)
+    }
+    catch (error) {
+        console.error(error)
+
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
-// DELETE /users/:id/characters/:name/inventory/:inventoryIndex - Delete an inventory from a character.
-router.delete("/:id/characters/:name/inventory/:inventoryIndex", (req, res) => {
-    // TODO
+// DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory from a character
+router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
+
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const inventoryId = Number(req.params.inventoryId)
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(inventoryId)
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID, character name, and inventory ID are required"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const existingEntry = findInventoryEntryById( character.character_id, inventoryId)
+
+    if (!existingEntry) {
+        return res.status(404).json({
+            error: "Inventory entry not found"
+        })
+    }
+    
+    try {
+        const deleted = deleteInventoryEntry(inventoryId)
+
+        if (!deleted) {
+            return res.status(500).json({
+                error: "Entry could not be deleted"
+            })
+        }
+
+        return res.status(200).json({
+            deleted: true
+        })
+    } catch(error) {
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
 module.exports = router

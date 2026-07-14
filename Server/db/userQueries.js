@@ -138,6 +138,27 @@ function deleteCharacterById (characterId) {
 
 // --- Inventory Queries ---
 
+const findInventoryEntryByIdStmt = db.prepare(`
+    SELECT
+        inventory.inventory_id,
+        inventory.character_id,
+        inventory.item_id,
+        inventory.parent_inventory_id,
+        items.item_index,
+        items.name,
+        items.item_category,
+        inventory.quantity
+    FROM inventory
+    JOIN items 
+        ON inventory.item_id = items.item_id
+    WHERE inventory.character_id = ?
+      AND inventory.inventory_id = ?
+`)
+
+function findInventoryEntryById(characterId, inventoryId) {
+    return findInventoryEntryByIdStmt.get(characterId, inventoryId)
+}
+
 const findRootInventoryByCharacterIdStmt = db.prepare(`
     SELECT
         inventory.inventory_id,
@@ -280,6 +301,7 @@ module.exports = {
     updateCharacterById,
     deleteCharacterById,
 
+    findInventoryEntryById,
     findRootInventoryByCharacterId,
     findInventoryChildren,
     createInventoryEntry,

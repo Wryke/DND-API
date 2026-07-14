@@ -13,6 +13,7 @@ const {
     updateCharacterById,
     deleteCharacterById,
 
+    findInventoryEntryById,
     findRootInventoryByCharacterId,
     findInventoryChildren,
     createInventoryEntry,
