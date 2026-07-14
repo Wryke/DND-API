@@ -157,7 +157,7 @@ const findRootInventoryByCharacterIdStmt = db.prepare(`
 `)
 
 function findRootInventoryByCharacterId (characterId) {
-    const result = findRootInventoryByCharacterIdStmt.all(characterId)
+    return findRootInventoryByCharacterIdStmt.all(characterId)
 }
 
 const findInventoryChildrenStmt = db.prepare(`
@@ -179,12 +179,7 @@ const findInventoryChildrenStmt = db.prepare(`
 `)
 
 function findInventoryChildren(characterId, parentInventoryId) {
-    const result = findInventoryChildrenStmt.all(characterId, parentInventoryId)
-
-    return {
-        character_id,
-        parent_inventory_id,
-    }
+    return findInventoryChildrenStmt.all(characterId, parentInventoryId)
 }
 
 const createInventoryEntryStmt = db.prepare(`
