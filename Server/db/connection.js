@@ -1,7 +1,25 @@
-const Database = require("better-sqlite3");
+const path = require("path")
+const Database = require("better-sqlite3")
 
-const db = new Database("Database/dnd.db");
+// Select the appropriate database based on the current environment
+let databaseName
+switch (process.env.NODE_ENV) {
+    case "test":
+        databaseName = "test.db"
+        break
 
-db.pragma("foreign_keys = ON");
+    case "development":
+    default:
+        databaseName = "dnd.db"
+}
 
-module.exports = db;
+console.log(`Using database: ${databaseName}`)
+
+// Open the SQLite database and enforce foreign key constraints
+const db = new Database(
+    path.join(__dirname, "../../Database", databaseName)
+)
+
+db.pragma("foreign_keys = ON")
+
+module.exports = db

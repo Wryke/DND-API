@@ -1,5 +1,7 @@
 const db = require("./connection")
 
+// --- Item Queries ---
+
 const findAllItemsStmt = db.prepare(`
     SELECT *
     FROM items

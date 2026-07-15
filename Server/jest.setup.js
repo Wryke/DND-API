@@ -1,0 +1,10 @@
+const { execSync } = require("child_process")
+
+module.exports = async () => {
+    execSync(
+        "npm run init-test-db",
+        {
+            stdio: "inherit"
+        }
+    )
+}

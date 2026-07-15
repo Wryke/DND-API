@@ -15,8 +15,13 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "node --no-warnings Server/server.js",
-    "test": "jest"
+    "start": "set NODE_ENV=development&& node Server/server.js",
+    "init-test-db": "node server/db/initTestDb.js",
+    "generate-seed": "node Server/db/generateSeed.js",
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "globalSetup": "./Server/jest.setup.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

@@ -263,6 +263,7 @@ function moveInventoryEntry(inventoryId, parentInventoryId) {
     }
 }
 
+// Atomically update an inventory entry's quantity and parent
 const updateInventoryEntryTransaction = db.transaction(
     (inventoryId, {quantity, parent_inventory_id} ) => {
         
@@ -291,13 +292,15 @@ const deleteInventoryEntryStmt = db.prepare(`
     WHERE inventory_id = ?
 `)
 
+// Promote direct children to the root before deleting a container
 const moveChildrenToRootStmt = db.prepare(`
     UPDATE inventory
     SET parent_inventory_id = NULL
     WHERE parent_inventory_id = ?
 `)
 
-const deleteInventoryEntryAndPromoteChildrenupdateInventoryEntryTransaction = db.transaction(
+// Atomically delete an inventory entry while promoting its children
+const deleteInventoryEntryTransaction = db.transaction(
     (inventoryId) => {
         moveChildrenToRootStmt.run(inventoryId)
 
@@ -308,7 +311,7 @@ const deleteInventoryEntryAndPromoteChildrenupdateInventoryEntryTransaction = db
 )
 
 function deleteInventoryEntry (inventoryId) {
-    return deleteInventoryEntryAndPromoteChildrenupdateInventoryEntryTransaction(inventoryId)
+    return deleteInventoryEntryTransaction(inventoryId)
 }
 
 module.exports = {

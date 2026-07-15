@@ -12,16 +12,13 @@ const {
 } = require("../db/itemQueries.js")
 
 // --- Item Routes ---
-// GET /items
-// GET /items?category=armor
-// GET /items/categories
-// GET /items/index/:index
-// GET /items/index/:index?category=armor
-// GET /items/name/:name
-// GET /items/name/:name?category=armor
+// GET /items - Return all items, optionally filtered by category
+// GET /items/categories - Return all unique item categories
+// GET /items/name/:name - Return an item by name, optionally filtered by category
+// GET /items/index/:index - Return an item by index, optionally filtered by category
+// --- ----------- ---
 
-// GET /items
-// Optional: ?category=armor
+// GET /items - Return all items, optionally filtered by category
 router.get("/", (req, res) => {
     const category =
         typeof req.query.category === "string"
@@ -35,15 +32,14 @@ router.get("/", (req, res) => {
     return res.status(200).json(items)
 })
 
-// GET /items/categories
+// GET /items/categories - Return all unique item categories
 router.get("/categories", (req, res) => {
     const categories = findAllItemCategories()
 
     return res.status(200).json(categories)
 })
 
-// GET /items/name/:name
-// Optional: ?category=armor
+// GET /items/name/:name - Return an item by name, optionally filtered by category
 router.get("/name/:name", (req, res) => {
     const name = req.params.name
     const category =
@@ -73,8 +69,7 @@ router.get("/name/:name", (req, res) => {
     return res.status(200).json(item)
 })
 
-// GET /items/index/:index
-// Optional: ?category=armor
+// GET /items/index/:index - Return an item by index, optionally filtered by category
 router.get("/index/:index", (req, res) => {
     const index = req.params.index
     const category =

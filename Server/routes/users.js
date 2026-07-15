@@ -1,15 +1,6 @@
 const express = require("express")
 const router = express.Router()
 
-const {
-    loadUsers,
-    saveUsers,
-    findUser,
-    findCharacter,
-    findInventory,
-    findItem
-} = require("../helpers/userHelpers.js")
-
 const { 
     findUserById,
     findUserByUsername,
@@ -34,29 +25,29 @@ const {
  } = require("../db/userQueries.js")
 
 // --- User Routes ---
-// GET    /users/:id
-// POST   /users/
-// PATCH  /users/:id
-// DELETE /users/:id
+// GET /users/:id - Return a user by ID
+// POST /users - Create a user
+// PATCH /users/:id - Update a user's information
+// DELETE /users/:id - Delete a user
 
 // --- Character Routes ---
-// GET    /users/:id/characters
-// GET    /users/:id/characters/:name
-// POST   /users/:id/characters
-// PATCH  /users/:id/characters/:name
-// DELETE /users/:id/characters/:name
+// GET /users/:id/characters - Return all characters owned by a user
+// GET /users/:id/characters/:name - Return a character by name
+// POST /users/:id/characters - Create a character for a user
+// PATCH /users/:id/characters/:name - Update a character
+// DELETE /users/:id/characters/:name - Delete a character
 
 // --- Inventory Routes ---
-// GET    /users/:id/characters/:name/inventory
-// GET    /users/:id/characters/:name/inventory/:inventoryId
-// GET    /users/:id/characters/:name/inventory/:inventoryId/children
-// POST   /users/:id/characters/:name/inventory
-// PATCH  /users/:id/characters/:name/inventory/:inventoryId
-// DELETE /users/:id/characters/:name/inventory/:inventoryId
+// GET /users/:id/characters/:name/inventory - Return a character's root inventory entries
+// GET /users/:id/characters/:name/inventory/:inventoryId - Return an inventory entry
+// GET /users/:id/characters/:name/inventory/:inventoryId/children - Return the direct children of an inventory entry
+// POST /users/:id/characters/:name/inventory - Create an inventory entry
+// PATCH /users/:id/characters/:name/inventory/:inventoryId - Update an inventory entry
+// DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory entry
 
 // --- User Routes ---
 
-// GET /users/:id - get a user by id
+// GET /users/:id - Return a user by ID
 router.get("/:id", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -78,7 +69,7 @@ router.get("/:id", (req, res) => {
     return res.status(200).json(user)
 })
 
-// POST /users/ - Add a new user
+// POST /users - Create a user
 router.post("/", (req, res) => {
 
     const username = req.body.username
@@ -106,7 +97,7 @@ router.post("/", (req, res) => {
     }
 })
 
-// PATCH /users/:id - update a user
+// PATCH /users/:id - Update a user's information
 router.patch("/:id", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -153,7 +144,7 @@ router.patch("/:id", (req, res) => {
     }
 })
 
-// DELETE /users/:id - delete a user
+// DELETE /users/:id - Delete a user
 router.delete("/:id", (req, res) => {
 
     const deleted = deleteUserById(req.params.id)
@@ -171,7 +162,7 @@ router.delete("/:id", (req, res) => {
 
 // --- Character Routes ---
 
-// GET /users/:id/characters - get a users list of characters
+// GET /users/:id/characters - Return all characters owned by a user
 router.get("/:id/characters", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -195,7 +186,7 @@ router.get("/:id/characters", (req, res) => {
     return res.status(200).json(characters)
 })
 
-// GET /users/:id/characters/:name - get a user's specific character
+// GET /users/:id/characters/:name - Return a character by name
 router.get("/:id/characters/:name", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -230,7 +221,7 @@ router.get("/:id/characters/:name", (req, res) => {
     return res.status(200).json(character)
 })
 
-// POST /users/:id/characters - Add a new character
+// POST /users/:id/characters - Create a character for a user
 router.post("/:id/characters", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -283,7 +274,7 @@ router.post("/:id/characters", (req, res) => {
     }
 })
 
-// PATCH /users/:id - update a user
+// PATCH /users/:id/characters/:name - Update a character
 router.patch("/:id/characters/:name", (req, res) => {
     
     const userId = Number(req.params.id)
@@ -398,7 +389,7 @@ router.delete("/:id/characters/:name", (req,res) => {
 
 // --- Inventory Routes ---
 
-// GET /users/:id/characters/:name/inventory - get a characters entire inventory
+// GET /users/:id/characters/:name/inventory - Return a character's root inventory entries
 router.get("/:id/characters/:name/inventory", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -427,7 +418,7 @@ router.get("/:id/characters/:name/inventory", (req, res) => {
     return res.status(200).json(rootInventory)
 })
 
-// GET /users/:id/characters/:name/inventory/:inventoryId - Get a specific inventory entry
+// GET /users/:id/characters/:name/inventory/:inventoryId - Return an inventory entry
 router.get("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     
     const userId = Number(req.params.id)
@@ -464,7 +455,7 @@ router.get("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     return res.status(200).json(inventory)
 })
 
-// GET /users/:id/characters/:name/inventory/:inventoryId/children - Get the children of a specific inventory
+// GET /users/:id/characters/:name/inventory/:inventoryId/children - Return the direct children of an inventory entry
 router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) => {
 
     const userId = Number(req.params.id)
@@ -504,7 +495,7 @@ router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) =
 })
 
 // TODO: Figure out if/how items should be flagged for containing itemsand write a check for that
-// POST /users/:id/characters/:name/inventory - Add a new inventory to a character
+// POST /users/:id/characters/:name/inventory - Create an inventory entry
 router.post("/:id/characters/:name/inventory", (req, res) => {
     
     const userId = Number(req.params.id)
@@ -575,7 +566,7 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
     }
 })
 
-// PATCH /users/:id/characters/:name/inventory/:inventoryId - Modify an inventory/item
+// PATCH /users/:id/characters/:name/inventory/:inventoryId - Update an inventory entry
 router.patch("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     
     const userId = Number(req.params.id)
@@ -708,7 +699,7 @@ function wouldCreateInventoryCycle(characterId, inventoryId, proposedParentId) {
     return false
 }
 
-// DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory from a character
+// DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory entry
 router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
 
     const userId = Number(req.params.id)
