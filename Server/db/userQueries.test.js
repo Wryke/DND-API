@@ -19,6 +19,7 @@ const {
     createInventoryEntry,
     updateInventoryQuantity,
     moveInventoryEntry,
+    updateInventoryEntry,
     deleteInventoryEntry
 } = require("./userQueries")
 
@@ -547,6 +548,101 @@ describe("Database User Queries", () => {
             )
 
             expect(moved).toBeUndefined()
+        })
+    })
+    
+    describe("updateInventoryEntry", () => {
+        test("updates quantity and parent inventory together", () => {
+            const backpack = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.backpack.item_id,
+                parent_inventory_id: null,
+                quantity: 1
+            })
+
+            const torch = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.torch.item_id,
+                parent_inventory_id: null,
+                quantity: 2
+            })
+
+            const updated = updateInventoryEntry(
+                torch.inventory_id,
+                {
+                    quantity: 5,
+                    parent_inventory_id:
+                        backpack.inventory_id
+                }
+            )
+
+            expect(updated).toEqual({
+                inventory_id: torch.inventory_id,
+                quantity: 5,
+                parent_inventory_id:
+                    backpack.inventory_id
+            })
+
+            const storedEntry = findInventoryEntryById(
+                testCharacter.character_id,
+                torch.inventory_id
+            )
+
+            expect(storedEntry.quantity).toBe(5)
+            expect(storedEntry.parent_inventory_id)
+                .toBe(backpack.inventory_id)
+        })
+
+        test("updates quantity and moves an entry back to root", () => {
+            const backpack = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.backpack.item_id,
+                parent_inventory_id: null,
+                quantity: 1
+            })
+
+            const torch = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.torch.item_id,
+                parent_inventory_id:
+                    backpack.inventory_id,
+                quantity: 2
+            })
+
+            const updated = updateInventoryEntry(
+                torch.inventory_id,
+                {
+                    quantity: 7,
+                    parent_inventory_id: null
+                }
+            )
+
+            expect(updated).toEqual({
+                inventory_id: torch.inventory_id,
+                quantity: 7,
+                parent_inventory_id: null
+            })
+
+            const storedEntry = findInventoryEntryById(
+                testCharacter.character_id,
+                torch.inventory_id
+            )
+
+            expect(storedEntry.quantity).toBe(7)
+            expect(storedEntry.parent_inventory_id)
+                .toBeNull()
+        })
+
+        test("throws for a missing inventory entry", () => {
+            expect(() => {
+                updateInventoryEntry(
+                    999999999,
+                    {
+                        quantity: 5,
+                        parent_inventory_id: null
+                    }
+                )
+            }).toThrow("Inventory entry not found")
         })
     })
 

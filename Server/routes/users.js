@@ -29,6 +29,7 @@ const {
     createInventoryEntry,
     updateInventoryQuantity,
     moveInventoryEntry,
+    updateInventoryEntry,
     deleteInventoryEntry
  } = require("../db/userQueries.js")
 
@@ -661,11 +662,11 @@ router.patch("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     }
 
     try {
-        if (hasQuantity) {
+        if(hasQuantity && hasParentInventoryId) {
+            updateInventoryEntry(inventoryId, {quantity, parent_inventory_id})
+        } else if (hasQuantity) {
             updateInventoryQuantity(inventoryId, quantity)
-        }
-
-        if (hasParentInventoryId) {
+        } else {
             moveInventoryEntry(inventoryId, parent_inventory_id)
         }
 

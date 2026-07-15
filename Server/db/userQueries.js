@@ -263,6 +263,29 @@ function moveInventoryEntry(inventoryId, parentInventoryId) {
     }
 }
 
+const updateInventoryEntryTransaction = db.transaction(
+    (inventoryId, {quantity, parent_inventory_id} ) => {
+        
+        const quantityResult = updateInventoryQuantityStmt.run(quantity, inventoryId)
+
+        const parentResult = moveInventoryEntryStmt.run(parent_inventory_id, inventoryId)
+
+        if (quantityResult.changes === 0 || parentResult.changes === 0) {
+            throw new Error("Inventory entry not found")
+        }
+
+        return {
+            inventory_id: inventoryId,
+            quantity,
+            parent_inventory_id
+        }
+    }
+)
+
+function updateInventoryEntry(inventoryId, {quantity, parent_inventory_id}) {
+    return updateInventoryEntryTransaction(inventoryId, {quantity, parent_inventory_id})
+}
+
 const deleteInventoryEntryStmt = db.prepare(`
     DELETE FROM inventory
     WHERE inventory_id = ?
@@ -274,7 +297,7 @@ const moveChildrenToRootStmt = db.prepare(`
     WHERE parent_inventory_id = ?
 `)
 
-const deleteInventoryEntryAndPromoteChildren = db.transaction(
+const deleteInventoryEntryAndPromoteChildrenupdateInventoryEntryTransaction = db.transaction(
     (inventoryId) => {
         moveChildrenToRootStmt.run(inventoryId)
 
@@ -285,7 +308,7 @@ const deleteInventoryEntryAndPromoteChildren = db.transaction(
 )
 
 function deleteInventoryEntry (inventoryId) {
-    return deleteInventoryEntryAndPromoteChildren(inventoryId)
+    return deleteInventoryEntryAndPromoteChildrenupdateInventoryEntryTransaction(inventoryId)
 }
 
 module.exports = {
@@ -307,5 +330,6 @@ module.exports = {
     createInventoryEntry,
     updateInventoryQuantity,
     moveInventoryEntry,
+    updateInventoryEntry,
     deleteInventoryEntry
 }
