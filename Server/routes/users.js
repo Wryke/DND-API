@@ -502,6 +502,7 @@ router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) =
     return res.status(200).json(inventory)
 })
 
+// TODO: Figure out if/how items should be flagged for containing itemsand write a check for that
 // POST /users/:id/characters/:name/inventory - Add a new inventory to a character
 router.post("/:id/characters/:name/inventory", (req, res) => {
     
@@ -545,6 +546,7 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
         })
     }
 
+    // Ensure parent exists
     if (parentInventoryId !== null) {
         const parentEntry = findInventoryEntryById(character.character_id, parentInventoryId)
 
@@ -649,6 +651,15 @@ router.patch("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
         }
     }
 
+    // Check to ensure no descendants can be parents of their ancestors
+    if (
+        wouldCreateInventoryCycle(character.character_id, inventoryId, parent_inventory_id)
+    ) {
+        return res.status(400).json({
+            error: "An inventory entry cannot be moved into one of its descendants"
+        })
+    }
+
     try {
         if (hasQuantity) {
             updateInventoryQuantity(inventoryId, quantity)
@@ -670,6 +681,31 @@ router.patch("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
         })
     }
 })
+
+// Helper for patch route to ensure decendant inventory cannot be parent of any ancestor
+function wouldCreateInventoryCycle(characterId, inventoryId, proposedParentId) {
+    
+    let currentParentId = proposedParentId
+
+    while (currentParentId !== null) {
+        if (currentParentId === inventoryId) {
+            return true
+        }
+
+        const currentEntry = findInventoryEntryById(
+            characterId,
+            currentParentId
+        )
+
+        if (!currentEntry) {
+            return false
+        }
+
+        currentParentId = currentEntry.parent_inventory_id
+    }
+
+    return false
+}
 
 // DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory from a character
 router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {

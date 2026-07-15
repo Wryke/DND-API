@@ -37,6 +37,7 @@ const findItemByNameStmt = db.prepare(`
     where name = ? COLLATE NOCASE
 `)
 
+// TODO: name is not unique in db schema
 function findItemByName(name) {
     return findItemByNameStmt.get(name)
 }
