@@ -34,7 +34,7 @@ function findItemByIndex(itemIndex) {
 const findItemByNameStmt = db.prepare(`
     SELECT *
     FROM items
-    WHERE name = ?
+    where name = ? COLLATE NOCASE
 `)
 
 function findItemByName(name) {
@@ -65,7 +65,7 @@ function findItemByIndexAndCategory(itemIndex, category) {
 const findItemByNameAndCategoryStmt = db.prepare(`
     SELECT *
     FROM items
-    WHERE name = ?
+    where name = ? COLLATE NOCASE
       AND item_category = ?
 `)
 
