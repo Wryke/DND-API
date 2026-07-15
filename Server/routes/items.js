@@ -3,32 +3,30 @@ const router = express.Router()
 
 const {
     findAllItems,
-    findAllItemCategories,
+    findItemsByCategory,
     findItemByIndex,
     findItemByName,
-    findItemsByIdAndCategory,
-    findItemsByNameAndCategory
+    findAllItemCategories,
+    findItemByIndexAndCategory,
+    findItemByNameAndCategory
 } = require("../db/itemQueries.js")
 
-// --- Get Routes ---
+// --- Item Routes ---
 // GET /items
-//     Get all items
-//     Optional: ?category=armor
-
+// GET /items?category=armor
 // GET /items/categories
-//     Get all category names
-
+// GET /items/index/:index
+// GET /items/index/:index?category=armor
 // GET /items/name/:name
-//     Find item by display name
-//     Optional: ?category=armor
+// GET /items/name/:name?category=armor
 
-// GET /items/:index
-//     Find item by stable item index
-//     Optional: ?category=armor
-
-// GET /items?category - Get a list of all existing items in a category 
-router.get('/', (req, res) => {
-    const { category } = req.query
+// GET /items
+// Optional: ?category=armor
+router.get("/", (req, res) => {
+    const category =
+        typeof req.query.category === "string"
+            ? req.query.category.trim()
+            : undefined
 
     const items = category
         ? findItemsByCategory(category)
@@ -37,22 +35,36 @@ router.get('/', (req, res) => {
     return res.status(200).json(items)
 })
 
-// GET /items/categories - Get a list of all unique categories
-router.get('/categories/', (req, res) => {
+// GET /items/categories
+router.get("/categories", (req, res) => {
     const categories = findAllItemCategories()
 
     return res.status(200).json(categories)
 })
 
-// GET /items/:index?category - Get an item with specified index
-router.get('/:index', (req, res) => {
-    
-    const index = Number(req.params.index)
-    const { category } = req.query
+// GET /items/name/:name
+// Optional: ?category=armor
+router.get("/name/:name", (req, res) => {
+    const name = req.params.name
+    const category =
+        typeof req.query.category === "string"
+            ? req.query.category.trim()
+            : undefined
 
-    const item = findItemByIndex(index)
+    if (
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid item name is required"
+        })
+    }
 
-    if(!item){
+    const item = category
+        ? findItemByNameAndCategory(name.trim(), category)
+        : findItemByName(name.trim())
+
+    if (!item) {
         return res.status(404).json({
             error: "Item could not be found"
         })
@@ -61,15 +73,29 @@ router.get('/:index', (req, res) => {
     return res.status(200).json(item)
 })
 
-// Get /items/name/:name - Get an item with a specific name
-router.get('/name/:name', (req, res) => {
+// GET /items/index/:index
+// Optional: ?category=armor
+router.get("/index/:index", (req, res) => {
+    const index = req.params.index
+    const category =
+        typeof req.query.category === "string"
+            ? req.query.category.trim()
+            : undefined
 
-    const name = req.params.name
-    
+    if (
+        typeof index !== "string" ||
+        index.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid item index is required"
+        })
+    }
 
-    const item = findItemByName(name)
+    const item = category
+        ? findItemByIndexAndCategory(index.trim(), category)
+        : findItemByIndex(index.trim())
 
-    if(!item){
+    if (!item) {
         return res.status(404).json({
             error: "Item could not be found"
         })

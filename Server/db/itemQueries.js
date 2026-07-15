@@ -1,29 +1,24 @@
 const db = require("./connection")
 
-const tables = db.prepare(`
-    SELECT name
-    FROM sqlite_master
-    WHERE type = 'table'
-`).all()
-
 const findAllItemsStmt = db.prepare(`
     SELECT *
     FROM items
-    ORDER by name
-`).all()
+    ORDER BY name
+`)
 
 function findAllItems() {
     return findAllItemsStmt.all()
 }
 
-const findAllItemCategoriesStmt = db.prepare(`
-    SELECT DISTINCT item_category
+const findItemsByCategoryStmt = db.prepare(`
+    SELECT *
     FROM items
-    ORDER BY item_category
+    WHERE item_category = ?
+    ORDER BY name
 `)
 
-function findAllItemCategories() {
-    return findAllItemCategoriesStmt.all().map(row => row.item_category)
+function findItemsByCategory(category) {
+    return findItemsByCategoryStmt.all(category)
 }
 
 const findItemByIndexStmt = db.prepare(`
@@ -46,15 +41,25 @@ function findItemByName(name) {
     return findItemByNameStmt.get(name)
 }
 
+const findAllItemCategoriesStmt = db.prepare(`
+    SELECT DISTINCT item_category
+    FROM items
+    ORDER BY item_category
+`)
+
+function findAllItemCategories() {
+    return findAllItemCategoriesStmt.all().map(row => row.item_category)
+}
+
 const findItemByIndexAndCategoryStmt = db.prepare(`
     SELECT *
     FROM items
-    WHERE item_id= ?
+    WHERE item_index = ?
       AND item_category = ?
 `)
 
-function findItemByIndexAndCategory(itemId, category) {
-    return findItemByIndexAndCategoryStmt.get(itemId, category)
+function findItemByIndexAndCategory(itemIndex, category) {
+    return findItemByIndexAndCategoryStmt.get(itemIndex, category)
 }
 
 const findItemByNameAndCategoryStmt = db.prepare(`
@@ -64,15 +69,16 @@ const findItemByNameAndCategoryStmt = db.prepare(`
       AND item_category = ?
 `)
 
-function findItemByNameAndCategory(itemId, category) {
-    return findItemByNameAndCategoryStmt.get(itemId, category)
+function findItemByNameAndCategory(name, category) {
+    return findItemByNameAndCategoryStmt.get(name, category)
 }
 
 module.exports = {
     findAllItems,
-    findAllItemCategories,
+    findItemsByCategory,
     findItemByIndex,
     findItemByName,
+    findAllItemCategories,
     findItemByIndexAndCategory,
     findItemByNameAndCategory
 }
