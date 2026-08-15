@@ -69,8 +69,8 @@ CREATE TABLE items (
     item_index TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     description TEXT,
-    weight DECIMAL(10,2),
-    cost_quantity INTEGER,
+    weight DECIMAL(10,2) CHECK (weight >= 0),
+    cost_quantity INTEGER CHECK (cost_quantity >= 0),
     currency_unit_id INTEGER,
     item_type_id INTEGER,
 
@@ -100,31 +100,15 @@ CREATE TABLE inventory (
         ON DELETE SET NULL
 );
 
--- Bridge Tables --
-
-CREATE TABLE item_to_category (
-    item_id INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
-
-    PRIMARY KEY (item_id, category_id),
-
-    FOREIGN KEY (item_id)
-        REFERENCES items(item_id)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (category_id)
-        REFERENCES categories_lookup(category_id)
-);
-
--- Type/Subtype Tables --
+-- Type Tables --
 
 CREATE TABLE weapons (
     item_id INTEGER PRIMARY KEY,
     weapon_category TEXT NOT NULL,
-    range_normal INTEGER,
-    range_long INTEGER,
-    throw_range_normal INTEGER,
-    throw_range_long INTEGER,
+    range_normal INTEGER CHECK (range_normal >= 0),
+    range_long INTEGER CHECK (range_long >= 0),
+    throw_range_normal INTEGER CHECK (throw_range_normal >= 0),
+    throw_range_long INTEGER CHECK (throw_range_long >= 0),
     mastery_id INTEGER,
 
     FOREIGN KEY (item_id)
@@ -134,6 +118,70 @@ CREATE TABLE weapons (
     FOREIGN KEY (mastery_id)
         REFERENCES weapon_mastery_lookup(mastery_id)
 );
+
+CREATE TABLE armor (
+    item_id INTEGER PRIMARY KEY,
+    armor_category TEXT NOT NULL,
+    base_ac INTEGER NOT NULL CHECK (base_ac >= 0),
+    dex_bonus BOOLEAN,
+    max_bonus INTEGER CHECK (max_bonus >= 0),
+    strength_minimum INTEGER,
+    stealth_disadvantage BOOLEAN,
+    don_time INTEGER CHECK (don_time > 0),
+    don_time_unit TEXT,
+    doff_time INTEGER CHECK (doff_time > 0),
+    doff_time_unit TEXT,
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE containers (
+    item_id INTEGER PRIMARY KEY,
+    max_volume TEXT,
+    max_carry_weight INTEGER CHECK (max_carry_weight > 0),
+    max_item_count INTEGER CHECK (max_item_count > 0),
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE ammunition (
+    item_id INTEGER PRIMARY KEY,
+    bundle_quantity INTEGER CHECK (bundle_quantity > 0),
+    storage_item_id INTEGER,
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (storage_item_id)
+        REFERENCES items(item_id)
+);
+
+CREATE TABLE tools (
+    item_id INTEGER PRIMARY KEY,
+    ability_score_id INTEGER,
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (ability_score_id)
+        REFERENCES ability_lookup(ability_score_id)
+);
+
+CREATE TABLE equipment_packs (
+    item_id INTEGER PRIMARY KEY,
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE
+);
+
+-- Subtype Tables --
 
 CREATE TABLE weapon_damage_components (
     damage_component_id INTEGER PRIMARY KEY,
@@ -150,3 +198,91 @@ CREATE TABLE weapon_damage_components (
         REFERENCES damage_type_lookup(damage_type_id)
 );
 
+CREATE TABLE tool_utilize (
+    utilize_id INTEGER PRIMARY KEY,
+    item_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    ability_score_id INTEGER NOT NULL,
+    dc_value INTEGER NOT NULL CHECK (dc_value >= 0),
+    success_type TEXT NOT NULL,
+
+    FOREIGN KEY (item_id)
+        REFERENCES tools(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (ability_score_id)
+        REFERENCES ability_lookup(ability_score_id)
+);
+
+-- Bridge Tables --
+
+CREATE TABLE item_to_category (
+    item_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+
+    PRIMARY KEY (item_id, category_id),
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (category_id)
+        REFERENCES categories_lookup(category_id)
+);
+
+CREATE TABLE weapon_to_property (
+    item_id INTEGER NOT NULL,
+    property_id INTEGER NOT NULL,
+
+    PRIMARY KEY (item_id, property_id),
+
+    FOREIGN KEY (item_id)
+        REFERENCES weapons(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (property_id)
+        REFERENCES weapon_property_lookup(property_id)
+);
+
+CREATE TABLE armor_to_resistance (
+    item_id INTEGER NOT NULL,
+    damage_type_id INTEGER NOT NULL,
+
+    PRIMARY KEY (item_id, damage_type_id),
+
+    FOREIGN KEY (item_id)
+        REFERENCES armor(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (damage_type_id)
+        REFERENCES damage_type_lookup(damage_type_id)
+);
+
+CREATE TABLE tool_craft (
+    item_id INTEGER NOT NULL,
+    crafted_item_id INTEGER NOT NULL,
+
+    PRIMARY KEY (item_id, crafted_item_id),
+
+    FOREIGN KEY (item_id)
+        REFERENCES tools(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (crafted_item_id)
+        REFERENCES items(crafted_item_id)
+);
+
+CREATE TABLE pack_contents (
+    pack_item_id INTEGER NOT NULL,
+    contained_item_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+
+    PRIMARY KEY (pack_item_id, contained_item_id),
+
+    FOREIGN KEY (pack_item_id)
+        REFERENCES equipment_packs(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (contained_item_id)
+        REFERENCES items(item_id)
+);
