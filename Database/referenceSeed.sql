@@ -62,4 +62,183 @@ VALUES
         5,
         'pp',
         'Platinum Piece'
-    )
+    );
+
+INSERT INTO damage_type_lookup (
+    damage_type_id,
+    damage_index,
+    damage_name
+)
+
+VALUES
+    (
+        1,
+        'acid',
+        'Acid'
+    ),
+    (
+        2,
+        'bludgeoning',
+        'Bludgeoning'
+    ),
+    (
+        3,
+        'cold',
+        'Cold'
+    ),
+    (
+        4,
+        'fire',
+        'Fire'
+    ),
+    (
+        5,
+        'force',
+        'Force'
+    ),
+    (
+        6,
+        'lightning',
+        'Lightning'
+    ),
+    (
+        7,
+        'necrotic',
+        'Necrotic'
+    ),
+    (
+        8,
+        'piercing',
+        'Piercing'
+    ),
+    (
+        9,
+        'poison',
+        'Poison'
+    ),
+    (
+        10,
+        'psychic',
+        'Psychic'
+    ),
+    (
+        11,
+        'radiant',
+        'Radiant'
+    ),
+    (
+        12,
+        'slashing',
+        'Slashing'
+    ),
+    (
+        13,
+        'thunder',
+        'Thunder'
+    );
+
+INSERT INTO weapon_mastery_lookup (
+    mastery_id,
+    mastery_index,
+    mastery_name
+)
+
+VALUES 
+    (
+        1,
+        'ammunition',
+        'Ammunition'
+    ),
+    (
+        2,
+        'finesse',
+        'Finesse'
+    ),
+    (
+        3,
+        'heavy',
+        'Heavy'
+    ),
+    (
+        4,
+        'light',
+        'Light'
+    ),
+    (
+        5,
+        'loading',
+        'Loading'
+    ),
+    (
+        6,
+        'range',
+        'Range'
+    ),
+    (
+        7,
+        'reach',
+        'Reach'
+    ),
+    (
+        8,
+        'thrown',
+        'Thrown'
+    ),
+    (
+        9,
+        'two-handed',
+        'Two-Handed'
+    ),
+    (
+        10,
+        'versatile',
+        'Versatile'
+    );
+
+INSERT INTO weapons_property_lookup (
+    property_id,
+    property_index,
+    property_name
+)
+
+VALUES 
+    (
+        1,
+        'cleave',
+        'Cleave'
+    ),
+    (
+        2,
+        'graze',
+        'Graze'
+    ),
+    (
+        3,
+        'nick',
+        'Nick'
+    ),
+    (
+        4,
+        'push',
+        'Push'
+    ),
+    (
+        5,
+        'sap',
+        'Sap'
+    ),
+    (
+        6,
+        'slow',
+        'Slow'
+    ),
+    (
+        7,
+        'topple',
+        'Topple'
+    ),
+    (
+        8,
+        'vex',
+        'Vex'
+    );
