@@ -13,6 +13,11 @@ const schemaPath = path.join(
     "../../Database/schema.sql"
 )
 
+const referencePath = path.join(
+    __dirname,
+    "../../Database/referenceSeed.sql"
+)
+
 const seedPath = path.join(
     __dirname,
     "../../Database/seed.sql"
@@ -32,6 +37,10 @@ const schema = fs.readFileSync(schemaPath, "utf8")
 db.exec(schema)
 
 // Populate lookup/reference data
+const reference = fs.readFileSync(referencePath, "utf8")
+db.exec(reference)
+
+// Populate item seed data
 const seed = fs.readFileSync(seedPath, "utf8")
 db.exec(seed)
 
