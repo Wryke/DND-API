@@ -16,7 +16,8 @@
   "main": "index.js",
   "scripts": {
     "start": "set NODE_ENV=development&& node Server/server.js",
-    "init-test-db": "node server/db/initTestDb.js",
+    "init-db": "node Server/db/initDb.js",
+    "init-test-db": "node Server/db/initTestDb.js",
     "generate-seed": "node Server/db/generateSeed.js",
     "test": "jest --runInBand"
   },
