@@ -26,7 +26,11 @@ const items = db.prepare(`
         item_id,
         item_index,
         name,
-        item_category
+        description,
+        weight,
+        cost_quantity,
+        currency_unit_id,
+        item_type_id
     FROM items
     ORDER BY item_id
 `).all()
@@ -43,8 +47,7 @@ function toSqlValue(value) {
         return String(value)
     }
 
-    const escapedValue = String(value)
-        .replaceAll("'", "''")
+    const escapedValue = String(value).replaceAll("'", "''")
 
     return `'${escapedValue}'`
 }
