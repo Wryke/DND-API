@@ -19,6 +19,8 @@
     "init-db": "node Server/db/initDb.js",
     "init-test-db": "node Server/db/initTestDb.js",
     "generate-seed": "node Server/db/generateSeed.js",
+    "check-db": "set NODE_ENV=development&& node Server/db/checkDb.js",
+    "check-test-db": "set NODE_ENV=test&& node Server/db/checkDb.js",
     "test": "jest --runInBand"
   },
   "jest": {
