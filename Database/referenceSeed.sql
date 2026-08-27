@@ -137,10 +137,10 @@ VALUES
         'Thunder'
     );
 
-INSERT INTO weapon_mastery_lookup (
-    mastery_id,
-    mastery_index,
-    mastery_name
+INSERT INTO weapon_property_lookup (
+    property_id,
+    property_index,
+    property_name
 )
 
 VALUES 
@@ -195,10 +195,10 @@ VALUES
         'Versatile'
     );
 
-INSERT INTO weapons_property_lookup (
-    property_id,
-    property_index,
-    property_name
+INSERT INTO weapon_mastery_lookup (
+    mastery_id,
+    mastery_index,
+    mastery_name
 )
 
 VALUES 
@@ -242,3 +242,41 @@ VALUES
         'vex',
         'Vex'
     );
+
+INSERT INTO ability_lookup (
+    ability_score_id,
+    ability_index,
+    ability_name
+)
+
+VALUES
+    (
+        1,
+        'str',
+        'STR'
+    ),
+    (
+        2,
+        'dex',
+        'DEX'
+    ),
+    (
+        3,
+        'con',
+        'CON'
+    ),
+    (
+        4,
+        'int',
+        'INT'
+    ),
+    (
+        5,
+        'wis',
+        'WIS'
+    ),
+    (
+        6,
+        'cha',
+        'CHA'
+    )

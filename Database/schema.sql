@@ -269,7 +269,7 @@ CREATE TABLE tool_craft (
         ON DELETE CASCADE,
 
     FOREIGN KEY (crafted_item_id)
-        REFERENCES items(crafted_item_id)
+        REFERENCES items(item_id)
 );
 
 CREATE TABLE pack_contents (
