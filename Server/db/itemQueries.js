@@ -144,7 +144,18 @@ function findWeaponDetails(itemId) {
 }
 
 const findArmorDetailsStmt = db.prepare(`
-    SELECT *
+    SELECT
+        item_id,
+        armor_category,
+        base_ac,
+        dex_bonus,
+        max_bonus,
+        strength_minimum,
+        stealth_disadvantage,
+        don_time,
+        don_time_unit,
+        doff_time,
+        doff_time_unit
     FROM armor
     WHERE item_id = ?
 `)
@@ -176,7 +187,11 @@ function findArmorDetails(itemId) {
 }
 
 const findContainerDetailsStmt = db.prepare(`
-    SELECT *
+    SELECT
+        item_id,
+        max_volume,
+        max_carry_weight,
+        max_item_count
     FROM containers
     WHERE item_id = ?
 `)
@@ -186,7 +201,10 @@ function findContainerDetails(itemId) {
 }
 
 const findAmmunitionDetailsStmt = db.prepare(`
-    SELECT *
+    SELECT
+        item_id,
+        bundle_quantity,
+        storage_item_id
     FROM ammunition
     WHERE item_id = ?
 `)
@@ -195,18 +213,91 @@ function findAmmunitionDetails(itemId) {
     return findAmmunitionDetailsStmt.get(itemId)
 }
 
-const findToolDetailsStmt = db.prepare(``)
+const findToolDetailsStmt = db.prepare(`
+    SELECT
+        tools.item_id,
+        ability_lookup.ability_index,
+        ability_lookup.ability_name
+    FROM tools
+    JOIN ability_lookup
+        ON tools.ability_score_id = ability_lookup.ability_score_id
+    WHERE tools.item_id = ?
+`)
+
+const findToolCraftsStmt = db.prepare(`
+    SELECT
+        tool_craft.crafted_item_id,
+        items.item_index,
+        items.name
+    FROM tool_craft
+    JOIN items
+        ON tool_craft.crafted_item_id = items.item_id
+    WHERE tool_craft.item_id = ?
+`)
+
+const findToolUtilizeStmt = db.prepare(`
+    SELECT
+        tool_utilize.name,
+        ability_lookup.ability_index,
+        ability_lookup.ability_name,
+        tool_utilize.dc_value,
+        tool_utilize.success_type
+    FROM tool_utilize
+    JOIN ability_lookup
+        ON tool_utilize.ability_score_id = ability_lookup.ability_score_id
+    WHERE tool_utilize.item_id = ?
+`)
 
 function findToolDetails(itemId) {
-    // TODO
-    return findToolDetailsStmt.get(itemId)
+    const tool = findToolDetailsStmt.get(itemId)
+
+    if (!tool) {
+        return undefined
+    }
+
+    const crafts = findToolCraftsStmt.all(itemId)
+
+    const utilizes = findToolUtilizeStmt.all(itemId)
+
+    return {
+        ...tool,
+        crafts,
+        utilizes
+    }
 }
 
-const findEquipmentPackDetailsStmt = db.prepare(``)
+const findEquipmentPackDetailsStmt = db.prepare(`
+    SELECT
+        item_id
+    FROM equipment_packs
+    WHERE item_id = ?
+`)
+
+const findEquipmentPackContentsStmt = db.prepare(`
+    SELECT
+        pack_contents.contained_item_id,
+        items.item_index,
+        items.name,
+        pack_contents.quantity
+    FROM pack_contents
+    JOIN items
+        ON pack_contents.contained_item_id = items.item_id
+    WHERE pack_contents.pack_item_id = ?
+`)
 
 function findEquipmentPackDetails(itemId) {
-    // TODO
-    return findEquipmentPackDetailsStmt.get(itemId)
+    const pack = findEquipmentPackDetailsStmt.get(itemId)
+
+    if (!pack) {
+        return undefined
+    }
+
+    const contents = findEquipmentPackContentsStmt.all(itemId)
+
+    return {
+        ...pack,
+        contents
+    }
 }
 
 module.exports = {
