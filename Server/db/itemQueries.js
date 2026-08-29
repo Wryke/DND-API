@@ -13,14 +13,19 @@ function findAllItems() {
 }
 
 const findItemsByCategoryStmt = db.prepare(`
-    SELECT *
+    SELECT items.*
     FROM items
-    WHERE item_category = ?
-    ORDER BY name
+    JOIN item_to_category
+        ON items.item_id = item_to_category.item_id
+    JOIN categories_lookup
+        ON item_to_category.category_id =
+            categories_lookup.category_id
+    WHERE categories_lookup.category_index = ?
+    ORDER BY items.name
 `)
 
-function findItemsByCategory(category) {
-    return findItemsByCategoryStmt.all(category)
+function findItemsByCategory(categoryIndex) {
+    return findItemsByCategoryStmt.all(categoryIndex)
 }
 
 const findItemByIndexStmt = db.prepare(`
@@ -41,39 +46,49 @@ const findItemByNameStmt = db.prepare(`
 
 // TODO: name is not unique in db schema
 function findItemByName(name) {
-    return findItemByNameStmt.get(name)
+    return findItemByNameStmt.all(name)
 }
 
 const findAllItemCategoriesStmt = db.prepare(`
-    SELECT DISTINCT item_category
-    FROM items
-    ORDER BY item_category
+    SELECT *
+    FROM categories_lookup
+    ORDER BY category_name
 `)
 
 function findAllItemCategories() {
-    return findAllItemCategoriesStmt.all().map(row => row.item_category)
+    return findAllItemCategoriesStmt.all()
 }
 
 const findItemByIndexAndCategoryStmt = db.prepare(`
-    SELECT *
+    SELECT items.*
     FROM items
-    WHERE item_index = ?
-      AND item_category = ?
+    JOIN item_to_category
+        ON items.item_id = item_to_category.item_id
+    JOIN categories_lookup
+        ON item_to_category.category_id = categories_lookup.category_id
+    WHERE items.item_index = ?
+        AND categories_lookup.category_index = ?
+    ORDER BY items.name
 `)
 
-function findItemByIndexAndCategory(itemIndex, category) {
-    return findItemByIndexAndCategoryStmt.get(itemIndex, category)
+function findItemByIndexAndCategory(itemIndex, categoryIndex) {
+    return findItemByIndexAndCategoryStmt.get(itemIndex, categoryIndex)
 }
 
 const findItemByNameAndCategoryStmt = db.prepare(`
-    SELECT *
+    SELECT items.*
     FROM items
-    where name = ? COLLATE NOCASE
-      AND item_category = ?
+    JOIN item_to_category
+        ON items.item_id = item_to_category.item_id
+    JOIN categories_lookup
+        ON item_to_category.category_id = categories_lookup.category_id
+    WHERE items.name = ? COLLATE NOCASE
+        AND categories_lookup.category_index = ?
+    ORDER BY items.name
 `)
 
-function findItemByNameAndCategory(name, category) {
-    return findItemByNameAndCategoryStmt.get(name, category)
+function findItemByNameAndCategory(name, categoryIndex) {
+    return findItemByNameAndCategoryStmt.all(name, categoryIndex)
 }
 
 // --- Item Detail Queries ---
