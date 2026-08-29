@@ -79,22 +79,49 @@ function findItemByNameAndCategory(name, category) {
 // --- Item Detail Queries ---
 
 const findWeaponDetailsStmt = db.prepare(`
-    SELECT *
+    SELECT
+        item_id,
+        weapon_category,
+        range_normal,
+        range_long,
+        throw_range_normal,
+        throw_range_long
     FROM weapons
     WHERE item_id = ?
 `)
 
-const findWeaponToMasteryStmt = db.prepare(`
+const findWeaponMasteryStmt = db.prepare(`
     SELECT
         weapon_mastery_lookup.mastery_index,
         weapon_mastery_lookup.mastery_name
     FROM weapons
     JOIN weapon_mastery_lookup
         ON weapons.mastery_id = weapon_mastery_lookup.mastery_id
-    WHERE weapon.item_id = ?
+    WHERE weapons.item_id = ?
 `)
 
-//TODO: FINISH THIS FUNCTION
+const findWeaponPropertyStmt = db.prepare(`
+    SELECT
+        weapon_property_lookup.property_index,
+        weapon_property_lookup.property_name
+    FROM weapon_to_property
+    JOIN weapon_property_lookup
+        ON weapon_to_property.property_id = weapon_property_lookup.property_id
+    WHERE weapon_to_property.item_id = ?
+`)
+
+const findWeaponDamageComponentsStmt = db.prepare(`
+    SELECT 
+        weapon_damage_components.damage_dice,
+        weapon_damage_components.damage_mode,
+        damage_type_lookup.damage_index,
+        damage_type_lookup.damage_name
+    FROM weapon_damage_components
+    JOIN damage_type_lookup
+        ON weapon_damage_components.damage_type_id = damage_type_lookup.damage_type_id
+    WHERE weapon_damage_components.item_id = ?
+`)
+
 function findWeaponDetails(itemId) {
     const weapon = findWeaponDetailsStmt.get(itemId)
 
@@ -102,11 +129,17 @@ function findWeaponDetails(itemId) {
         return undefined
     }
 
-    const mastery = findWeaponToMasteryStmt.all(itemId)
+    const mastery = findWeaponMasteryStmt.get(itemId)
+
+    const properties = findWeaponPropertyStmt.all(itemId)
+
+    const damage = findWeaponDamageComponentsStmt.all(itemId)
 
     return {
         ...weapon,
-        mastery
+        mastery,
+        properties,
+        damage
     }
 }
 
@@ -183,5 +216,12 @@ module.exports = {
     findItemByName,
     findAllItemCategories,
     findItemByIndexAndCategory,
-    findItemByNameAndCategory
+    findItemByNameAndCategory,
+
+    findWeaponDetails,
+    findArmorDetails,
+    findContainerDetails,
+    findAmmunitionDetails,
+    findToolDetails,
+    findEquipmentPackDetails
 }
