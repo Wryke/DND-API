@@ -3,9 +3,22 @@ const db = require("./connection")
 // --- Item Queries ---
 
 const findAllItemsStmt = db.prepare(`
-    SELECT *
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM items
-    ORDER BY name
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
+    ORDER BY items.name
 `)
 
 function findAllItems() {
@@ -13,8 +26,21 @@ function findAllItems() {
 }
 
 const findItemsByCategoryStmt = db.prepare(`
-    SELECT items.*
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM items
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
     JOIN item_to_category
         ON items.item_id = item_to_category.item_id
     JOIN categories_lookup
@@ -29,9 +55,22 @@ function findItemsByCategory(categoryIndex) {
 }
 
 const findItemByIndexStmt = db.prepare(`
-    SELECT *
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM items
-    WHERE item_index = ?
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
+    WHERE items.item_index = ?
 `)
 
 function findItemByIndex(itemIndex) {
@@ -39,18 +78,33 @@ function findItemByIndex(itemIndex) {
 }
 
 const findItemByNameStmt = db.prepare(`
-    SELECT *
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM items
-    where name = ? COLLATE NOCASE
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
+    where items.name = ? COLLATE NOCASE
 `)
 
-// TODO: name is not unique in db schema
 function findItemByName(name) {
     return findItemByNameStmt.all(name)
 }
 
 const findAllItemCategoriesStmt = db.prepare(`
-    SELECT *
+    SELECT
+        category_id,
+        category_index,
+        category_name
     FROM categories_lookup
     ORDER BY category_name
 `)
@@ -60,8 +114,21 @@ function findAllItemCategories() {
 }
 
 const findItemByIndexAndCategoryStmt = db.prepare(`
-    SELECT items.*
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM items
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
     JOIN item_to_category
         ON items.item_id = item_to_category.item_id
     JOIN categories_lookup
@@ -76,8 +143,21 @@ function findItemByIndexAndCategory(itemIndex, categoryIndex) {
 }
 
 const findItemByNameAndCategoryStmt = db.prepare(`
-    SELECT items.*
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM items
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
     JOIN item_to_category
         ON items.item_id = item_to_category.item_id
     JOIN categories_lookup
@@ -217,11 +297,14 @@ function findContainerDetails(itemId) {
 
 const findAmmunitionDetailsStmt = db.prepare(`
     SELECT
-        item_id,
-        bundle_quantity,
-        storage_item_id
+        ammunition.item_id,
+        ammunition.bundle_quantity,
+        items.item_index AS storage_item_index,
+        items.name AS storage_item_name
     FROM ammunition
-    WHERE item_id = ?
+    LEFT JOIN items
+        ON ammunition.storage_item_id = items.item_id
+    WHERE ammunition.item_id = ?
 `)
 
 function findAmmunitionDetails(itemId) {
