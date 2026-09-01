@@ -20,13 +20,13 @@ const {
 
 // GET /items - Return all items, optionally filtered by category
 router.get("/", (req, res) => {
-    const category =
+    const categoryIndex =
         typeof req.query.category === "string"
             ? req.query.category.trim()
             : undefined
 
-    const items = category
-        ? findItemsByCategory(category)
+    const items = categoryIndex
+        ? findItemsByCategory(categoryIndex)
         : findAllItems()
 
     return res.status(200).json(items)
@@ -42,7 +42,7 @@ router.get("/categories", (req, res) => {
 // GET /items/name/:name - Return an item by name, optionally filtered by category
 router.get("/name/:name", (req, res) => {
     const name = req.params.name
-    const category =
+    const categoryIndex =
         typeof req.query.category === "string"
             ? req.query.category.trim()
             : undefined
@@ -56,11 +56,11 @@ router.get("/name/:name", (req, res) => {
         })
     }
 
-    const item = category
-        ? findItemByNameAndCategory(name.trim(), category)
+    const item = categoryIndex
+        ? findItemByNameAndCategory(name.trim(), categoryIndex)
         : findItemByName(name.trim())
 
-    if (!item) {
+    if (!Array.isArray(item) || item.length === 0) {
         return res.status(404).json({
             error: "Item could not be found"
         })
@@ -72,7 +72,7 @@ router.get("/name/:name", (req, res) => {
 // GET /items/index/:index - Return an item by index, optionally filtered by category
 router.get("/index/:index", (req, res) => {
     const index = req.params.index
-    const category =
+    const categoryIndex =
         typeof req.query.category === "string"
             ? req.query.category.trim()
             : undefined
@@ -86,8 +86,8 @@ router.get("/index/:index", (req, res) => {
         })
     }
 
-    const item = category
-        ? findItemByIndexAndCategory(index.trim(), category)
+    const item = categoryIndex
+        ? findItemByIndexAndCategory(index.trim(), categoryIndex)
         : findItemByIndex(index.trim())
 
     if (!item) {
