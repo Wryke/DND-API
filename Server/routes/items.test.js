@@ -356,8 +356,6 @@ describe("Item Routes", () => {
             const response = await request(app)
                 .get("/items/index/backpack/details")
 
-            console.log(response.body)
-
             expect(response.status).toBe(200)
             expect(response.body.item_id).toBeDefined()
             expect(response.body).toHaveProperty("max_volume")
