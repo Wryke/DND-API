@@ -23,6 +23,7 @@ const {
     updateInventoryEntry,
     deleteInventoryEntry
  } = require("../db/userQueries.js")
+const { findItemByIndex } = require("../db/itemQueries.js")
 
 // --- User Routes ---
 // GET /users/:id - Return a user by ID
@@ -494,13 +495,12 @@ router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) =
     return res.status(200).json(inventory)
 })
 
-// TODO: Figure out if/how items should be flagged for containing itemsand write a check for that
 // POST /users/:id/characters/:name/inventory - Create an inventory entry
 router.post("/:id/characters/:name/inventory", (req, res) => {
     
     const userId = Number(req.params.id)
     const name = req.params.name
-    const { item_id, parent_inventory_id, quantity } = req.body
+    const { item_index, parent_inventory_id, quantity } = req.body
 
     if (
         !Number.isInteger(userId) ||
@@ -521,12 +521,13 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
     }
 
     if (
-        !Number.isInteger(item_id) ||
+        typeof item_index !== "string" || 
+        item_index.trim().length === 0 ||
         !Number.isInteger(quantity) ||
         quantity <= 0
     ) {
         return res.status(400).json({
-            error: "A valid item ID and positive quantity are required"
+            error: "A valid item index and positive quantity are required"
         })
     }
 
@@ -549,10 +550,18 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
         }
     }
 
+    // Ensure new item exists
+    const newItem = findItemByIndex(item_index.trim())
+    if(!newItem) {
+        return res.status(404).json({
+            error: "Item not found"
+        })
+    }
+
     try {
         const entry = createInventoryEntry({
             character_id: character.character_id,
-            item_id,
+            item_id: newItem.item_id,
             parent_inventory_id: parentInventoryId,
             quantity
         })

@@ -501,7 +501,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -517,7 +517,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id: backpackId,
                     quantity: 2
                 })
@@ -534,6 +534,13 @@ describe("User Routes", () => {
             expect(Array.isArray(response.body)).toBe(true)
             expect(response.body).toHaveLength(1)
             expect(response.body[0].item_index).toBe("backpack")
+            expect(response.body[0].name).toBe("Backpack")
+            expect(response.body[0]).toHaveProperty("description")
+            expect(response.body[0]).toHaveProperty("weight")
+            expect(response.body[0]).toHaveProperty("cost_quantity")
+            expect(response.body[0]).toHaveProperty("currency_code")
+            expect(response.body[0]).toHaveProperty("currency_name")
+            expect(response.body[0]).toHaveProperty("item_type_name")
             expect(response.body[0].parent_inventory_id)
                 .toBeNull()
         })
@@ -560,7 +567,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -576,6 +583,75 @@ describe("User Routes", () => {
             expect(response.body.quantity).toBe(1)
         })
 
+        test("returns 400 for an empty item index", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "   ",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "A valid item index and positive quantity are required"
+            )
+        })
+
+        test("returns 404 for a missing item index", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "does-not-exist",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe("Item not found")
+        })
+
+        test("trims the item index before looking up the item", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "  backpack  ",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(response.status).toBe(201)
+            expect(response.body.item_id)
+                .toBe(testItems.backpack.item_id)
+        })
+
+        test("returns 404 for a missing parent inventory entry", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "torch",
+                    parent_inventory_id: 999999999,
+                    quantity: 1
+                })
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Parent inventory entry not found"
+            )
+        })
+
         test("creates an inventory entry inside another entry", async () => {
             const backpackResponse = await request(app)
                 .post(
@@ -583,7 +659,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -596,7 +672,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id:
                         backpackResponse.body.inventory_id,
                     quantity: 2
@@ -617,7 +693,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -635,6 +711,13 @@ describe("User Routes", () => {
             expect(response.body.inventory_id)
                 .toBe(createResponse.body.inventory_id)
             expect(response.body.item_index).toBe("backpack")
+            expect(response.body.name).toBe("Backpack")
+            expect(response.body).toHaveProperty("description")
+            expect(response.body).toHaveProperty("weight")
+            expect(response.body).toHaveProperty("cost_quantity")
+            expect(response.body).toHaveProperty("currency_code")
+            expect(response.body).toHaveProperty("currency_name")
+            expect(response.body).toHaveProperty("item_type_name")
             expect(response.body.quantity).toBe(1)
         })
 
@@ -657,7 +740,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -671,7 +754,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id: backpackId,
                     quantity: 2
                 })
@@ -689,6 +772,13 @@ describe("User Routes", () => {
             expect(Array.isArray(response.body)).toBe(true)
             expect(response.body).toHaveLength(1)
             expect(response.body[0].item_index).toBe("torch")
+            expect(response.body[0].name).toBe("Torch")
+            expect(response.body[0]).toHaveProperty("description")
+            expect(response.body[0]).toHaveProperty("weight")
+            expect(response.body[0]).toHaveProperty("cost_quantity")
+            expect(response.body[0]).toHaveProperty("currency_code")
+            expect(response.body[0]).toHaveProperty("currency_name")
+            expect(response.body[0]).toHaveProperty("item_type_name")
             expect(response.body[0].parent_inventory_id)
                 .toBe(backpackId)
         })
@@ -700,7 +790,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -725,7 +815,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 2
                 })
@@ -749,6 +839,10 @@ describe("User Routes", () => {
             expect(patchResponse.body.quantity).toBe(5)
             expect(patchResponse.body.parent_inventory_id)
                 .toBeNull()
+            expect(patchResponse.body.item_index).toBe("torch")
+            expect(patchResponse.body.name).toBe("Torch")
+            expect(patchResponse.body)
+                .toHaveProperty("item_type_name")
         })
 
         test("moves an inventory entry into another entry", async () => {
@@ -758,7 +852,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -769,7 +863,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 2
                 })
@@ -798,7 +892,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -809,7 +903,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id:
                         backpackResponse.body.inventory_id,
                     quantity: 2
@@ -837,7 +931,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 2
                 })
@@ -863,7 +957,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -896,7 +990,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.torch.item_id,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 2
                 })
@@ -931,7 +1025,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.backpack.item_id,
+                    item_index: "backpack",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -942,7 +1036,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_id: testItems.pouch.item_id,
+                    item_index: "pouch",
                     parent_inventory_id:
                         backpackResponse.body.inventory_id,
                     quantity: 1
