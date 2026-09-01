@@ -8,7 +8,13 @@ const {
     findItemByName,
     findAllItemCategories,
     findItemByIndexAndCategory,
-    findItemByNameAndCategory
+    findItemByNameAndCategory,
+    findWeaponDetails,
+    findArmorDetails,
+    findContainerDetails,
+    findAmmunitionDetails,
+    findToolDetails,
+    findEquipmentPackDetails
 } = require("../db/itemQueries.js")
 
 // --- Item Routes ---
@@ -16,6 +22,7 @@ const {
 // GET /items/categories - Return all unique item categories
 // GET /items/name/:name - Return an item by name, optionally filtered by category
 // GET /items/index/:index - Return an item by index, optionally filtered by category
+// GET /items/index/:index/details - Return an item's details by index
 // --- ----------- ---
 
 // GET /items - Return all items, optionally filtered by category
@@ -97,6 +104,78 @@ router.get("/index/:index", (req, res) => {
     }
 
     return res.status(200).json(item)
+})
+
+// GET /items/index/:index/details - Return an item's details by index
+router.get("/index/:index/details", (req, res) => {
+    const index = req.params.index
+
+    if (
+        typeof index !== "string" ||
+        index.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid item index is required"
+        })
+    }
+
+    const item = findItemByIndex(index.trim())
+
+    if (!item) {
+        return res.status(404).json({
+            error: "Item could not be found"
+        })
+    }
+
+    const itemType = item.item_type_name
+
+    let details
+
+    try {
+        switch (itemType) {
+            case "weapon":
+                details = findWeaponDetails(item.item_id)
+                break
+
+            case "armor":
+                details = findArmorDetails(item.item_id)
+                break
+
+            case "container":
+                details = findContainerDetails(item.item_id)
+                break
+
+            case "ammunition":
+                details = findAmmunitionDetails(item.item_id)
+                break
+
+            case "tool":
+                details = findToolDetails(item.item_id)
+                break
+
+            case "equipment_pack":
+                details = findEquipmentPackDetails(item.item_id)
+                break
+
+            default:
+                details = null
+        }
+    }
+    catch (error) {
+        console.error(error)
+
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
+
+    if (itemType !== null && !details) {
+        return res.status(404).json({
+            error: "Item details could not be found"
+        })
+    }
+
+    return res.status(200).json(details)
 })
 
 module.exports = router

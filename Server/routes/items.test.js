@@ -293,4 +293,146 @@ describe("Item Routes", () => {
             )
         })
     })
+
+    describe("GET /items/index/:index/details", () => {
+        test("returns weapon details", async () => {
+            const response = await request(app)
+                .get("/items/index/longsword/details")
+
+            expect(response.status).toBe(200)
+            expect(response.body.item_id).toBeDefined()
+            expect(response.body.weapon_category).toBeDefined()
+            expect(response.body).toHaveProperty("range_normal")
+            expect(response.body).toHaveProperty("range_long")
+            expect(response.body).toHaveProperty("throw_range_normal")
+            expect(response.body).toHaveProperty("throw_range_long")
+
+            expect(response.body.mastery).toBeDefined()
+            expect(response.body.mastery)
+                .toHaveProperty("mastery_index")
+            expect(response.body.mastery)
+                .toHaveProperty("mastery_name")
+
+            expect(response.body.properties[0])
+                .toHaveProperty("property_index")
+            expect(response.body.properties[0])
+                .toHaveProperty("property_name")
+            expect(Array.isArray(response.body.damage))
+                .toBe(true)
+            expect(Array.isArray(response.body.properties))
+                .toBe(true)
+
+            expect(response.body.damage[0])
+                .toHaveProperty("damage_dice")
+            expect(response.body.damage[0])
+                .toHaveProperty("damage_index")
+            expect(response.body.damage[0])
+                .toHaveProperty("damage_name")
+            expect(response.body.damage[0])
+                .toHaveProperty("damage_mode")
+        })
+
+        test("returns armor details", async () => {
+            const response = await request(app)
+                .get("/items/index/leather-armor/details")
+
+            expect(response.status).toBe(200)
+            expect(response.body.item_id).toBeDefined()
+            expect(response.body.armor_category).toBeDefined()
+            expect(response.body.base_ac).toBeDefined()
+            expect(response.body).toHaveProperty("dex_bonus")
+            expect(response.body).toHaveProperty("max_bonus")
+            expect(response.body).toHaveProperty("strength_minimum")
+            expect(response.body).toHaveProperty("stealth_disadvantage")
+            expect(response.body).toHaveProperty("don_time")
+            expect(response.body).toHaveProperty("don_time_unit")
+            expect(response.body).toHaveProperty("doff_time")
+            expect(response.body).toHaveProperty("doff_time_unit")
+            expect(Array.isArray(response.body.resistances))
+                .toBe(true)
+        })
+
+        test("returns container details", async () => {
+            const response = await request(app)
+                .get("/items/index/backpack/details")
+
+            console.log(response.body)
+
+            expect(response.status).toBe(200)
+            expect(response.body.item_id).toBeDefined()
+            expect(response.body).toHaveProperty("max_volume")
+            expect(response.body).toHaveProperty("max_carry_weight")
+            expect(response.body).toHaveProperty("max_item_count")
+        })
+
+        test("returns ammunition details", async () => {
+            const response = await request(app)
+                .get("/items/index/arrows/details")
+
+            expect(response.status).toBe(200)
+            expect(response.body.item_id).toBeDefined()
+            expect(response.body.bundle_quantity).toBeDefined()
+            expect(response.body).toHaveProperty("storage_item_index")
+            expect(response.body).toHaveProperty("storage_item_name")
+        })
+
+        test("returns tool details", async () => {
+            const response = await request(app)
+                .get("/items/index/thieves-tools/details")
+
+            expect(response.status).toBe(200)
+            expect(response.body.item_id).toBeDefined()
+            expect(response.body).toHaveProperty("ability_index")
+            expect(response.body).toHaveProperty("ability_name")
+
+            expect(Array.isArray(response.body.utilizes))
+                .toBe(true)
+            expect(Array.isArray(response.body.crafts))
+                .toBe(true)
+
+            expect(response.body.utilizes.length)
+                .toBeGreaterThan(0)
+
+            expect(response.body.utilizes[0])
+                .toHaveProperty("name")
+            expect(response.body.utilizes[0])
+                .toHaveProperty("ability_index")
+            expect(response.body.utilizes[0])
+                .toHaveProperty("ability_name")
+            expect(response.body.utilizes[0])
+                .toHaveProperty("dc_value")
+            expect(response.body.utilizes[0])
+                .toHaveProperty("success_type")
+        })
+
+        test("returns equipment pack details", async () => {
+            const response = await request(app)
+                .get("/items/index/explorers-pack/details")
+
+            expect(response.status).toBe(200)
+            expect(response.body.item_id).toBeDefined()
+            expect(Array.isArray(response.body.contents))
+                .toBe(true)
+            expect(response.body.contents.length)
+                .toBeGreaterThan(0)
+        })
+
+        test("returns null for an item without subtype details", async () => {
+            const response = await request(app)
+                .get("/items/index/acid/details")
+
+            expect(response.status).toBe(200)
+            expect(response.body).toBeNull()
+        })
+
+        test("returns 404 for a missing item", async () => {
+            const response = await request(app)
+                .get("/items/index/flooper/details")
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Item could not be found"
+            )
+        })
+    })
 })
