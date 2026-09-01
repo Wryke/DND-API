@@ -144,13 +144,24 @@ const findInventoryEntryByIdStmt = db.prepare(`
         inventory.character_id,
         inventory.item_id,
         inventory.parent_inventory_id,
+        inventory.quantity,
+
         items.item_index,
         items.name,
-        items.item_category,
-        inventory.quantity
+        items.description,
+        items.weight,
+        items.cost_quantity,
+
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM inventory
     JOIN items 
         ON inventory.item_id = items.item_id
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
     WHERE inventory.character_id = ?
       AND inventory.inventory_id = ?
 `)
@@ -165,17 +176,29 @@ const findRootInventoryByCharacterIdStmt = db.prepare(`
         inventory.character_id,
         inventory.item_id,
         inventory.parent_inventory_id,
+        inventory.quantity,
+
         items.item_index,
         items.name,
-        items.item_category,
-        inventory.quantity
+        items.description,
+        items.weight,
+        items.cost_quantity,
+
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM inventory
     JOIN items 
         ON inventory.item_id = items.item_id
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
     WHERE inventory.character_id = ?
       AND inventory.parent_inventory_id IS NULL
     ORDER BY items.name
 `)
+
 
 function findRootInventoryByCharacterId (characterId) {
     return findRootInventoryByCharacterIdStmt.all(characterId)
@@ -187,13 +210,24 @@ const findInventoryChildrenStmt = db.prepare(`
         inventory.character_id,
         inventory.item_id,
         inventory.parent_inventory_id,
+        inventory.quantity,
+
         items.item_index,
         items.name,
-        items.item_category,
-        inventory.quantity
+        items.description,
+        items.weight,
+        items.cost_quantity,
+
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
     FROM inventory
     JOIN items 
         ON inventory.item_id = items.item_id
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
     WHERE inventory.character_id = ?
       AND inventory.parent_inventory_id = ?
     ORDER BY items.name
