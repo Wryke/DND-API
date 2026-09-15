@@ -1,24 +1,126 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
 
+import MagicClicker from './components/MagicClicker'
+import CharacterInfo from './components/CharacterInfo'
+import CharacterForm from './components/CharacterForm'
+import InventoryItem from './components/InventoryItem'
+
 function App() {
-  const [count, setCount] = useState(0)
+    
+    const [characters, setCharacters] = useState([])
+    const [selectedCharacter, setSelectedCharacter] = useState(null)
+    const [inventory, setInventory] = useState([])
 
-  const character = {
-        name: "Wryke",
-        maxWeight: 100,
-        level: 5
-  }
+    function selectCharacter(character){
+        setSelectedCharacter(character)
+    }
 
-  return (
-    <>
-      <h1>{character.name}</h1>
-      <p>Max Carry Weight: {character.maxWeight}<br></br>Current Level: {character.level}</p>
-    </>
-  )
+    function addCharacter(name, maxWeight) {
+        setCharacters((currentCharacters) => {
+            const nextId = Math.max(
+                ...currentCharacters.map((character) => character.character_id),
+                0
+            ) + 1
+
+            const newCharacter = {
+                character_id: nextId,
+                name: name,
+                max_weight: Number(maxWeight)
+            }
+
+            return [
+                ...currentCharacters,
+                newCharacter
+            ]
+        })
+    }
+
+    function removeCharacter(characterId) {
+        setCharacters((currentCharacters) => {
+            return currentCharacters.filter((character) => {
+                return character.character_id !== characterId
+            })
+        })
+    }
+
+    const characterElements = characters.map((character) => {
+        return (
+            <CharacterInfo 
+                key={character.character_id}
+                character={character}
+                selectCharacter={selectCharacter}
+                removeCharacter={removeCharacter}
+            />
+        )
+    })
+
+    const inventoryElements = inventory.map((item) => {
+        return (
+            <InventoryItem
+                key={item.inventory_id}
+                item={item}
+            />
+        )
+    })
+
+    useEffect(() => {
+        async function loadCharacters() {
+            
+            const response = await fetch("http://localhost:3000/users/1/characters")
+            
+            const data = await response.json()
+
+            setCharacters(data)
+        }
+
+        loadCharacters()
+    }, [])
+
+    useEffect(() => {
+        if (selectedCharacter === null) {
+            setInventory([])
+            return
+        }
+
+        async function loadInventory(){
+            setInventory([])
+
+            const response = await fetch(`http://localhost:3000/users/1/characters/${selectedCharacter.name}/inventory`)
+                
+            const data = await response.json()
+
+            setInventory(data)
+        }
+
+        loadInventory()
+    }, [selectedCharacter])
+
+    useEffect(() => {
+        console.log("Characters changed:", characters)
+    }, [characters])
+
+    return (
+        <>
+            <MagicClicker/>
+
+            <CharacterForm addCharacter={addCharacter}/>
+
+            {characterElements}
+
+            {selectedCharacter && (
+                <div>
+                    <h2>Selected Character</h2>
+                    <p>{selectedCharacter.name}</p>
+                </div>
+            )}
+
+            <div>
+                <h2>Inventory</h2>
+                {inventoryElements}
+            </div>
+        </>
+    )
 }
 
 export default App
