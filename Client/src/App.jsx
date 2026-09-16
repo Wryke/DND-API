@@ -60,6 +60,8 @@ function App() {
             <InventoryItem
                 key={item.inventory_id}
                 item={item}
+                userId={1}
+                characterName={selectedCharacter.name}
             />
         )
     })

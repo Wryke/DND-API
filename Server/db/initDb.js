@@ -18,6 +18,16 @@ const referencePath = path.join(
     "../../Database/referenceSeed.sql"
 )
 
+const seedPath = path.join(
+    __dirname,
+    "../../Database/seed.sql"
+)
+
+const testValuesPath = path.join(
+    __dirname,
+    "../../Database/testValues.sql"
+)
+
 // Remove the previous database so each run starts fresh
 if (fs.existsSync(databasePath)) {
     fs.unlinkSync(databasePath)
@@ -34,6 +44,14 @@ db.exec(schema)
 // Populate lookup/reference data
 const reference = fs.readFileSync(referencePath, "utf8")
 db.exec(reference)
+
+// Populate seeded item data
+const seed = fs.readFileSync(seedPath, "utf8")
+db.exec(seed)
+
+// Populate test data
+const testValues = fs.readFileSync(testValuesPath, "utf8")
+db.exec(testValues)
 
 // Close the database connection
 db.close()
