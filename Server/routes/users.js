@@ -565,8 +565,13 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
             parent_inventory_id: parentInventoryId,
             quantity
         })
+        
+        const fullEntry = findInventoryEntryById(
+            entry.character_id, 
+            entry.inventory_id
+        )
 
-        return res.status(201).json(entry)
+        return res.status(201).json(fullEntry)
     }
     catch (error) {
         return res.status(500).json({
