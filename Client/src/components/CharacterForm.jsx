@@ -6,7 +6,7 @@ function CharacterForm(props) {
     const [name, setName] = useState("")
     const [max_weight, setMaxWeight] = useState("")
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault()
 
         const numericMaxWeight = Number(max_weight)
@@ -25,20 +25,23 @@ function CharacterForm(props) {
             return
         }
 
-        setError("")
-
-        props.addCharacter(
-            name.trim(), 
+        const result = await props.addCharacter(
+            name.trim(),
             numericMaxWeight
         )
 
+        if (result !== null) {
+            setError(result)
+            return
+        }
+
+        setError("")
         setName("")
         setMaxWeight("")
     }
 
     return (
         <form onSubmit={handleSubmit}>
-            <h1>-- Create New Character --</h1>
 
             <input
                 placeholder="Name"

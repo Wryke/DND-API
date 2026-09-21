@@ -17,8 +17,6 @@ function AddInventoryItemForm(props) {
         loadItems()
     }, [])
 
-    console.log(items)
-
     async function handleSubmit(event) {
         event.preventDefault()
 

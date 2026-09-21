@@ -45,10 +45,6 @@ function App() {
         loadInventory()
     }, [selectedCharacter])
 
-    useEffect(() => {
-        console.log("Characters changed:", characters)
-    }, [characters])
-
     function selectCharacter(character){
         setSelectedCharacter(character)
     }
@@ -92,32 +88,77 @@ function App() {
         return null
     }
 
-    function addCharacter(name, maxWeight) {
-        setCharacters((currentCharacters) => {
-            const nextId = Math.max(
-                ...currentCharacters.map((character) => character.character_id),
-                0
-            ) + 1
+    async function addCharacter(name, maxWeight) {
+        
+        const newCharacter = {
+            user_id: Number(1),
+            name: name,
+            max_weight: Number(maxWeight)
+        }
 
-            const newCharacter = {
-                character_id: nextId,
-                name: name,
-                max_weight: Number(maxWeight)
+        const response = await fetch(
+            `http://localhost:3000/users/1/characters`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newCharacter)
             }
+        )
 
+        const data = await response.json()
+
+        if(!response.ok){
+            return data.error
+        }
+        
+        setCharacters((currentCharacters) => {
             return [
                 ...currentCharacters,
-                newCharacter
+                data
             ]
         })
+
+        return null
     }
 
-    function removeCharacter(characterId) {
+    async function removeCharacter(characterId) {
+        // Find the character being deleted
+        const character = characters.find((character) => {
+            return character.character_id === characterId
+        })
+
+        if (!character) {
+            return "Character not found"
+        }
+
+        // Delete the character from the database
+        const response = await fetch(
+            `http://localhost:3000/users/1/characters/${encodeURIComponent(character.name)}`,
+            {
+                method: "DELETE"
+            }
+        )
+
+        // If the DELETE failed, get the backend error
+        if (!response.ok) {
+            const data = await response.json()
+            return data.error
+        }
+
+        // Only update React state after the database DELETE succeeds
         setCharacters((currentCharacters) => {
             return currentCharacters.filter((character) => {
                 return character.character_id !== characterId
             })
         })
+
+        if (selectedCharacter?.character_id === characterId) {
+            selectCharacter(null)
+        }
+
+        return null
     }
 
     const characterElements = characters.map((character) => {
@@ -154,11 +195,6 @@ function App() {
                 <div>
                     <h1>-- Selected Character --</h1>
                     <p>{selectedCharacter.name} | {selectedCharacter.max_weight} lbs</p>
-                </div>
-            )}
-
-            {inventory.length !== 0 && (
-                <div>
                     <AddInventoryItemForm addInventoryItem={addInventoryItem} />
                     <h2>-- Inventory --</h2>
                     {inventoryElements}
