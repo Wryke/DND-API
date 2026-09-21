@@ -55,11 +55,20 @@ function App() {
     }
 
     // -- Other Functions --
-    async function addInventoryItem() {
+    async function addInventoryItem(itemIndex, quantity) {
+        if (
+            typeof itemIndex !== "string" ||
+            itemIndex === "" ||
+            !Number.isInteger(quantity) ||
+            quantity <= 0
+        ) {
+            return "Invalid Inventory Request"
+        }
+        
         const newEntry = {
-            item_index: "acid",
+            item_index: itemIndex,
             parent_inventory_id: null,
-            quantity: 2
+            quantity: quantity
         }
 
         const response = await fetch(
@@ -75,9 +84,13 @@ function App() {
 
         const data = await response.json()
 
-        setInventory([...inventory,data])
+        if (!response.ok) {
+            return data.error
+        }
+
+        setInventory([...inventory, data])
         
-        console.log(data)
+        return null
     }
 
     function addCharacter(name, maxWeight) {
@@ -149,14 +162,8 @@ function App() {
                 <h2>Inventory</h2>
                 {inventoryElements}
 
-                <AddInventoryItemForm />
+                <AddInventoryItemForm addInventoryItem={addInventoryItem} />
             </div>
-
-            {selectedCharacter && (
-                <button onClick={addInventoryItem}>
-                    Test Add Acid
-                </button>
-            )}
         </>
     )
 }

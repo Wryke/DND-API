@@ -24,7 +24,8 @@ function InventoryItem(props) {
     }
     return (
         <div>
-            <p>{props.item.name} | Quantity: {props.item.quantity}, Weight: {props.item.weight}, Type: {props.item.item_type_name}</p>
+            <p>{props.item.name} | Quantity: {props.item.quantity}, Weight: {props.item.weight},
+                 Type: {props.item.item_type_name === null ? "generic" : props.item.item_type_name}</p>
             
             {props.item.item_type_name === "container" && (
                 <button onClick = {handleContainerClick}>
