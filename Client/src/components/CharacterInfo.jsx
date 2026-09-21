@@ -3,8 +3,7 @@ import { useState } from 'react'
 function CharacterInfo(props) {
     return (
         <div>
-            <h1>Character: {props.character.name}</h1>
-            <p>Max Carry Weight: {props.character.max_weight}</p>
+            <h2>{props.character.name} | Max Carry Weight: {props.character.max_weight}</h2>
 
             <button onClick={() => props.selectCharacter(props.character)}>
                 Select

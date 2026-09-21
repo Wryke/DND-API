@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-import MagicClicker from './components/MagicClicker'
 import CharacterInfo from './components/CharacterInfo'
 import CharacterForm from './components/CharacterForm'
 import InventoryItem from './components/InventoryItem'
@@ -145,25 +144,26 @@ function App() {
 
     return (
         <>
-            <MagicClicker/>
-
-            <CharacterForm addCharacter={addCharacter}/>
-
-            {characterElements}
+            <div>
+                <h1>-- Characters --</h1>
+                <CharacterForm addCharacter={addCharacter}/>
+                {characterElements}
+            </div>
 
             {selectedCharacter && (
                 <div>
-                    <h2>Selected Character</h2>
-                    <p>{selectedCharacter.name}</p>
+                    <h1>-- Selected Character --</h1>
+                    <p>{selectedCharacter.name} | {selectedCharacter.max_weight} lbs</p>
                 </div>
             )}
 
-            <div>
-                <h2>Inventory</h2>
-                {inventoryElements}
-
-                <AddInventoryItemForm addInventoryItem={addInventoryItem} />
-            </div>
+            {inventory.length !== 0 && (
+                <div>
+                    <AddInventoryItemForm addInventoryItem={addInventoryItem} />
+                    <h2>-- Inventory --</h2>
+                    {inventoryElements}
+                </div>
+            )}
         </>
     )
 }

@@ -38,7 +38,7 @@ function CharacterForm(props) {
 
     return (
         <form onSubmit={handleSubmit}>
-            <h2>Create Character</h2>
+            <h1>-- Create New Character --</h1>
 
             <input
                 placeholder="Name"
