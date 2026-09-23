@@ -3,18 +3,24 @@ import { convertToGold } from '../utils/currency'
 import EditInventoryItemForm from './EditInventoryItemForm'
 
 function InventoryItem(props) {
+
+    // --- State ---
     const [isOpen, setIsOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
 
-    const shouldShowChildren = isOpen || props.isFiltering
-
+    // --- Derived data ---
     const children = props.inventory.filter((item) => {
         return item.parent_inventory_id === props.item.inventory_id
     })
 
     const visibleChildren = children.filter((child) => {
-        return (!props.isFiltering || props.visibleInventoryIds.has(child.inventory_id))
+        return (
+            !props.isFiltering ||
+            props.visibleInventoryIds.has(child.inventory_id)
+        )
     })
+
+    const shouldShowChildren = isOpen || props.isFiltering
 
     const cumulativeWeight = props.item.weight * props.item.quantity
 
@@ -25,10 +31,30 @@ function InventoryItem(props) {
 
     const totalGoldValue = unitGoldValue * props.item.quantity
 
-    function handleContainerClick() {
+    // --- Event Handlers ---
+    function handleExpandClick() {
         setIsOpen(!isOpen)
     }
 
+    function handleEditClose() {
+        setIsEditOpen(false)
+    }
+
+    function handleEditClick() {
+        setIsEditOpen(true)
+    }
+
+    async function handleRemoveClick() {
+        const errorMessage = await props.removeInventoryItem(
+            props.item.inventory_id
+        )
+
+        if (errorMessage) {
+            console.error(errorMessage)
+        }
+    }
+
+    // --- Render ---
     return (
         <div>
             <div className="inventory-row">
@@ -38,51 +64,36 @@ function InventoryItem(props) {
                         paddingLeft: `${props.depth * 1.5}rem`
                     }}
                 >
+                    {props.item.item_type_name === "container" ? (
+                        <button
+                            className="inventory-expand-button"
+                            onClick={handleExpandClick}
+                        >
+                            {isOpen ? "−" : "+"}
+                        </button>
+                    ) : (
+                        <span className="inventory-expand-placeholder"></span>
+                    )}
 
-                {props.item.item_type_name === "container" ? (
-                    <button
-                        className="inventory-expand-button"
-                        onClick={handleContainerClick}
-                    >
-                        {isOpen ? "−" : "+"}
-                    </button>
-                ) : (
-                    <span className="inventory-expand-placeholder"></span>
-                )}
-
-            {props.item.name}
-
+                    {props.item.name}
                 </span>
+
                 <span>{props.item.quantity}</span>
                 <span>{props.item.weight} lbs</span>
                 <span>{cumulativeWeight} lbs</span>
                 <span>{unitGoldValue} gp</span>
                 <span>{totalGoldValue} gp</span>
 
-                <button
-                    onClick={() => {
-                        setIsEditOpen(true)
-                    }}
-                >
+                <button onClick={handleEditClick}>
                     Edit
                 </button>
 
-                <button
-                    onClick={async () => {
-                        const error = await props.removeInventoryItem(
-                            props.item.inventory_id
-                        )
-
-                        if (error) {
-                            console.error(error)
-                        }
-                    }}
-                >
+                <button onClick={handleRemoveClick}>
                     Remove
                 </button>
             </div>
 
-            {shouldShowChildren && (
+            {shouldShowChildren && 
                 visibleChildren.map((child) => {
                     return (
                         <InventoryItem
@@ -97,25 +108,25 @@ function InventoryItem(props) {
                         />
                     )
                 })
-            )}
+            }
 
             {isEditOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content">
+
                         <h2>Edit {props.item.name}</h2>
+
                         <EditInventoryItemForm
                             item={props.item}
                             inventory={props.inventory}
                             updateInventoryItem={props.updateInventoryItem}
-                            onItemUpdated={() => {setIsEditOpen(false)}}
+                            onItemUpdated={handleEditClose}
                         />
-                        <button
-                            onClick={() => {
-                                setIsEditOpen(false)
-                            }}
-                        >
+
+                        <button onClick={handleEditClose}>
                             Cancel
                         </button>
+
                     </div>
                 </div>
             )}
