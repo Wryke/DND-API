@@ -2,14 +2,57 @@ import { useState } from 'react'
 
 function EditInventoryItemForm(props) {
 
+    const [error, setError] = useState("")
+
     const [quantity, setQuantity] = useState(
         props.item.quantity
     )
 
+    function getDescendantIds(inventoryId, inventory) {
+        const descendantIds = new Set()
+
+        function findChildren(parentId) {
+            const children = inventory.filter((item) => {
+                return item.parent_inventory_id === parentId
+            })
+
+            children.forEach((child) => {
+                descendantIds.add(child.inventory_id)
+                findChildren(child.inventory_id)
+            })
+        }
+
+        findChildren(inventoryId)
+
+        return descendantIds
+    }
+
+    const descendantIds = getDescendantIds(
+        props.item.inventory_id,
+        props.inventory
+    )
+
+    function getContainerPath(container, inventory) {
+        if (container.parent_inventory_id === null) {
+            return container.name
+        }
+
+        const parent = inventory.find((item) => {
+            return item.inventory_id === container.parent_inventory_id
+        })
+
+        if (!parent) {
+            return container.name
+        }
+
+        return getContainerPath(parent, inventory) + " > " + container.name
+    }
+
     const containers = props.inventory.filter((item) => {
         return (
             item.item_type_name === "container" &&
-            item.inventory_id !== props.item.inventory_id
+            item.inventory_id !== props.item.inventory_id &&
+            !descendantIds.has(item.inventory_id)
         )
     })
 
@@ -25,13 +68,15 @@ function EditInventoryItemForm(props) {
                 key={container.inventory_id}
                 value={container.inventory_id}
             >
-                {container.name}
+                {getContainerPath(container, props.inventory)}
             </option>
         )
     })
-    
+
     async function handleSubmit(event) {
         event.preventDefault()
+
+        setError("")
 
         const numericQuantity = Number(quantity)
 
@@ -39,16 +84,18 @@ function EditInventoryItemForm(props) {
             ? null
             : Number(parentInventoryId)
 
-        const error = await props.updateInventoryItem(
+        const errorMessage = await props.updateInventoryItem(
             props.item.inventory_id,
             numericQuantity,
             parentId
         )
 
-        if (error) {
-            console.error(error)
+        if (errorMessage) {
+            setError(errorMessage)
             return
         }
+
+        props.onItemUpdated()
     }
 
     return (
@@ -88,6 +135,12 @@ function EditInventoryItemForm(props) {
                         {containerElements}
                     </select>
                 </div>
+
+                {error && (
+                    <p className="form-error">
+                        {error}
+                    </p>
+                )}
 
                 <button type="submit">
                     Save Changes

@@ -107,6 +107,7 @@ function InventoryItem(props) {
                             item={props.item}
                             inventory={props.inventory}
                             updateInventoryItem={props.updateInventoryItem}
+                            onItemUpdated={() => {setIsEditOpen(false)}}
                         />
                         <button
                             onClick={() => {

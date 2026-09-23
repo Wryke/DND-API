@@ -1,29 +1,44 @@
 import { useEffect, useState } from 'react'
-
-function getContainerPath(container, inventory) {
-    if (container.parent_inventory_id === null) {
-        return container.name
-    }
-
-    const parent = inventory.find((item) => {
-        return item.inventory_id === container.parent_inventory_id
-    })
-
-    return getContainerPath(parent, inventory) + " > " + container.name
-}
+import { getContainerPath } from '../utils/inventory'
 
 function AddInventoryItemForm(props) {
+
+    // --- State ---
     const [error, setError] = useState("")
     const [itemIndex, setItemIndex] = useState("")
     const [quantity, setQuantity] = useState("")
     const [items, setItems] = useState([])
     const [parentInventoryId, setParentInventoryId] = useState("")
 
+    // --- Effects ---
+    useEffect(() => {
+        async function loadItems() {
+            try {
+                const response = await fetch("http://localhost:3000/items")
+                const data = await response.json()
+
+                if (!response.ok) {
+                    setError(data.error)
+                    return
+                }
+
+                setItems(data)
+            }
+            catch (error) {
+                console.error(error)
+                setError("Failed to pull item data. Please refresh the page or check your network connection.")
+            }
+        }
+
+        loadItems()
+    }, [])
+
+    // --- Derived data ---
     const containers = props.inventory.filter((item) => {
         return item.item_type_name === "container"
     })
 
-    const containerElements = containers.map((container) => {
+    const containerOptions = containers.map((container) => {
         return (
             <option
                 key={container.inventory_id}
@@ -34,43 +49,7 @@ function AddInventoryItemForm(props) {
         )
     })
 
-    useEffect(() => {
-        async function loadItems() {
-            const response = await fetch("http://localhost:3000/items")
-            const data = await response.json()
-
-            setItems(data)
-        }
-
-        loadItems()
-    }, [])
-
-    async function handleSubmit(event) {
-        event.preventDefault()
-
-        const parentId = parentInventoryId === ""
-            ? null
-            : Number(parentInventoryId)
-            
-        const error = await props.addInventoryItem(
-            itemIndex,
-            Number(quantity),
-            parentId
-        )
-
-        if(error !== null){
-            setError(error)
-            return
-        }
-
-        props.onItemAdded()
-        setError("")
-        setItemIndex("")
-        setQuantity("")
-        setParentInventoryId("")
-    }
-
-    const itemElement = items.map((item) => {
+    const itemOptions = items.map((item) => {
         return (
             <option
                 key={item.item_id}
@@ -81,9 +60,38 @@ function AddInventoryItemForm(props) {
         )
     })
 
+    // --- Event handlers ---
+    async function handleSubmit(event) {
+        event.preventDefault()
+
+        const parentId = parentInventoryId === ""
+            ? null
+            : Number(parentInventoryId)
+            
+        const errorMessage = await props.addInventoryItem(
+            itemIndex,
+            Number(quantity),
+            parentId
+        )
+
+        if(errorMessage !== null){
+            setError(errorMessage)
+            return
+        }
+
+        props.onItemAdded()
+        setError("")
+        setItemIndex("")
+        setQuantity("")
+        setParentInventoryId("")
+    }
+
+    // --- Render ---
     return (
         <form className="add-item-form" onSubmit={handleSubmit}>
+
             <div className="form-field">
+
                 <label htmlFor="item">Item</label>
 
                 <select
@@ -96,11 +104,12 @@ function AddInventoryItemForm(props) {
                     <option value="">
                         Select an item
                     </option>
-                    {itemElement}
+                    {itemOptions}
                 </select>
             </div>
 
             <div className="form-field">
+
                 <label htmlFor="quantity">Quantity</label>
 
                 <input
@@ -114,6 +123,7 @@ function AddInventoryItemForm(props) {
             </div>
 
             <div className="form-field">
+
                 <label htmlFor="parentInventory">
                     Store Inside
                 </label>
@@ -129,7 +139,7 @@ function AddInventoryItemForm(props) {
                         Root Inventory
                     </option>
 
-                    {containerElements}
+                    {containerOptions}
                 </select>
             </div>
             
