@@ -14,4 +14,23 @@ function getContainerPath(container, inventory) {
     return getContainerPath(parent, inventory) + " > " + container.name
 }
 
-export { getContainerPath }
+function getDescendantIds(inventoryId, inventory) {
+    const descendantIds = new Set()
+
+    function findChildren(parentId) {
+        const children = inventory.filter((item) => {
+            return item.parent_inventory_id === parentId
+        })
+
+        children.forEach((child) => {
+            descendantIds.add(child.inventory_id)
+            findChildren(child.inventory_id)
+        })
+    }
+
+    findChildren(inventoryId)
+
+    return descendantIds
+}
+
+export { getContainerPath, getDescendantIds }

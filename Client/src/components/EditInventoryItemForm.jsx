@@ -1,52 +1,24 @@
 import { useState } from 'react'
+import { getContainerPath, getDescendantIds } from '../utils/inventory'
 
 function EditInventoryItemForm(props) {
 
+    // --- State ---
     const [error, setError] = useState("")
 
-    const [quantity, setQuantity] = useState(
-        props.item.quantity
+    const [quantity, setQuantity] = useState(props.item.quantity)
+
+    const [parentInventoryId, setParentInventoryId] = useState(
+        props.item.parent_inventory_id === null
+            ? ""
+            : String(props.item.parent_inventory_id)
     )
 
-    function getDescendantIds(inventoryId, inventory) {
-        const descendantIds = new Set()
-
-        function findChildren(parentId) {
-            const children = inventory.filter((item) => {
-                return item.parent_inventory_id === parentId
-            })
-
-            children.forEach((child) => {
-                descendantIds.add(child.inventory_id)
-                findChildren(child.inventory_id)
-            })
-        }
-
-        findChildren(inventoryId)
-
-        return descendantIds
-    }
-
+    // --- Derived data ---
     const descendantIds = getDescendantIds(
         props.item.inventory_id,
         props.inventory
     )
-
-    function getContainerPath(container, inventory) {
-        if (container.parent_inventory_id === null) {
-            return container.name
-        }
-
-        const parent = inventory.find((item) => {
-            return item.inventory_id === container.parent_inventory_id
-        })
-
-        if (!parent) {
-            return container.name
-        }
-
-        return getContainerPath(parent, inventory) + " > " + container.name
-    }
 
     const containers = props.inventory.filter((item) => {
         return (
@@ -56,13 +28,7 @@ function EditInventoryItemForm(props) {
         )
     })
 
-    const [parentInventoryId, setParentInventoryId] = useState(
-        props.item.parent_inventory_id === null
-            ? ""
-            : String(props.item.parent_inventory_id)
-    )
-
-    const containerElements = containers.map((container) => {
+    const containerOptions = containers.map((container) => {
         return (
             <option
                 key={container.inventory_id}
@@ -73,6 +39,7 @@ function EditInventoryItemForm(props) {
         )
     })
 
+    // --- Event Handlers ---
     async function handleSubmit(event) {
         event.preventDefault()
 
@@ -98,8 +65,9 @@ function EditInventoryItemForm(props) {
         props.onItemUpdated()
     }
 
+    // --- Render ---
     return (
-        <form 
+        <form
             className="add-item-form"
             onSubmit={handleSubmit}
         >
@@ -116,36 +84,37 @@ function EditInventoryItemForm(props) {
                         setQuantity(event.target.value)
                     }}
                 />
-                <div className="form-field">
-                    <label htmlFor={`edit-parent-${props.item.inventory_id}`}>
-                        Store Inside
-                    </label>
-
-                    <select
-                        id={`edit-parent-${props.item.inventory_id}`}
-                        value={parentInventoryId}
-                        onChange={(event) => {
-                            setParentInventoryId(event.target.value)
-                        }}
-                    >
-                        <option value="">
-                            Root Inventory
-                        </option>
-
-                        {containerElements}
-                    </select>
-                </div>
-
-                {error && (
-                    <p className="form-error">
-                        {error}
-                    </p>
-                )}
-
-                <button type="submit">
-                    Save Changes
-                </button>
             </div>
+
+            <div className="form-field">
+                <label htmlFor={`edit-parent-${props.item.inventory_id}`}>
+                    Store Inside
+                </label>
+
+                <select
+                    id={`edit-parent-${props.item.inventory_id}`}
+                    value={parentInventoryId}
+                    onChange={(event) => {
+                        setParentInventoryId(event.target.value)
+                    }}
+                >
+                    <option value="">
+                        Root Inventory
+                    </option>
+
+                    {containerOptions}
+                </select>
+            </div>
+
+            {error && (
+                <p className="form-error">
+                    {error}
+                </p>
+            )}
+
+            <button type="submit">
+                Save Changes
+            </button>
         </form>
     )
 }
