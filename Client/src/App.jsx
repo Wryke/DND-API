@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
+import InventoryPage from './pages/InventoryPage'
+
 import CharacterInfo from './components/CharacterInfo'
 import CharacterForm from './components/CharacterForm'
 import InventoryItem from './components/InventoryItem'
-import AddInventoryItemForm from './components/AddInventoryItemForm'
+import Sidebar from './components/Sidebar'
 
 function App() {
     
     const [characters, setCharacters] = useState([])
     const [selectedCharacter, setSelectedCharacter] = useState(null)
     const [inventory, setInventory] = useState([])
+    const [currentPage, setCurrentPage] = useState("home")
 
     // -- Use Effects --
     useEffect(() => {
@@ -185,19 +188,40 @@ function App() {
 
     return (
         <>
-            <div>
-                <h1>-- Characters --</h1>
-                <CharacterForm addCharacter={addCharacter}/>
-                {characterElements}
-            </div>
-
-            {selectedCharacter && (
+            <Sidebar setCurrentPage={setCurrentPage} />
+            {currentPage === "home" && (
                 <div>
-                    <h1>-- Selected Character --</h1>
-                    <p>{selectedCharacter.name} | {selectedCharacter.max_weight} lbs</p>
-                    <AddInventoryItemForm addInventoryItem={addInventoryItem} />
-                    <h2>-- Inventory --</h2>
-                    {inventoryElements}
+                    <h1>Home</h1>
+                </div>
+            )}
+
+            {currentPage === "characters" && (
+                <div>
+                    <h1>-- Characters --</h1>
+                    <CharacterForm addCharacter={addCharacter}/>
+                    {characterElements}
+
+                    {selectedCharacter && (
+                        <div>
+                            <h2>_______________________________________________________</h2>
+                            <h2>Selected Character: {selectedCharacter.name} | {selectedCharacter.max_weight} lbs</h2>
+                            <h2>_______________________________________________________</h2>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {currentPage === "inventory" && (
+                <InventoryPage
+                    selectedCharacter={selectedCharacter}
+                    addInventoryItem={addInventoryItem}
+                    inventoryElements={inventoryElements}
+                />
+            )}
+
+            {currentPage === "equipment" && (
+                <div>
+                    <h1>Equipment</h1>
                 </div>
             )}
         </>
