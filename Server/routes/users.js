@@ -15,6 +15,7 @@ const {
     deleteCharacterById,
 
     findInventoryEntryById,
+    findAllInventoryByCharacterId,
     findRootInventoryByCharacterId,
     findInventoryChildren,
     createInventoryEntry,
@@ -39,7 +40,8 @@ const { findItemByIndex } = require("../db/itemQueries.js")
 // DELETE /users/:id/characters/:name - Delete a character
 
 // --- Inventory Routes ---
-// GET /users/:id/characters/:name/inventory - Return a character's root inventory entries
+// GET /users/:id/characters/:name/inventory/all - Returns a character's entire inventory
+// GET /users/:id/characters/:name/inventory/root - Return a character's root inventory entries
 // GET /users/:id/characters/:name/inventory/:inventoryId - Return an inventory entry
 // GET /users/:id/characters/:name/inventory/:inventoryId/children - Return the direct children of an inventory entry
 // POST /users/:id/characters/:name/inventory - Create an inventory entry
@@ -390,8 +392,36 @@ router.delete("/:id/characters/:name", (req,res) => {
 
 // --- Inventory Routes ---
 
-// GET /users/:id/characters/:name/inventory - Return a character's root inventory entries
-router.get("/:id/characters/:name/inventory", (req, res) => {
+// GET /users/:id/characters/:name/inventory/all - Returns a character's entire inventory
+router.get("/:id/characters/:name/inventory/all", (req, res) => {
+    const userId = Number(req.params.id)
+    const name = req.params.name
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID and character name are required"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const inventory = findAllInventoryByCharacterId(character.character_id)
+
+    return res.status(200).json(inventory)
+})
+
+// GET /users/:id/characters/:name/inventory/root - Return a character's root inventory entries
+router.get("/:id/characters/:name/inventory/root", (req, res) => {
 
     const userId = Number(req.params.id)
     const name = req.params.name
@@ -756,8 +786,13 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
             })
         }
 
+        const updatedInventory = findAllInventoryByCharacterId(
+            character.character_id
+        )
+
         return res.status(200).json({
-            deleted: true
+            deleted: true,
+            inventory: updatedInventory
         })
     } catch(error) {
         return res.status(500).json({

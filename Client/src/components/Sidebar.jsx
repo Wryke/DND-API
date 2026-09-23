@@ -1,26 +1,60 @@
 function Sidebar(props) {
-
     return (
-        <div>
-            <button onClick={() => props.setCurrentPage("home")}>
-                Home
-            </button>
+        <div className="sidebar">
 
-            <button onClick={() => props.setCurrentPage("characters")}>
-                Characters
-            </button>
+            <div className="sidebar-navigation">
+                <button
+                    className={
+                        props.currentPage === "home"
+                            ? "sidebar-button active"
+                            : "sidebar-button"
+                    }
+                    onClick={() => props.setCurrentPage("home")}
+                >
+                    Home
+                </button>
 
-            <button onClick={() => props.setCurrentPage("inventory")}>
-                Inventory
-            </button>
+                <button
+                    className={
+                        props.currentPage === "characters"
+                            ? "sidebar-button active"
+                            : "sidebar-button"
+                    }
+                    onClick={() => props.setCurrentPage("characters")}
+                >
+                    Characters
+                </button>
 
-            <button onClick={() => props.setCurrentPage("equipment")}>
-                Equipment
-            </button>
+                <button
+                    className={
+                        props.currentPage === "inventory"
+                            ? "sidebar-button active"
+                            : "sidebar-button"
+                    }
+                    onClick={() => props.setCurrentPage("inventory")}
+                >
+                    Inventory
+                </button>
 
-            <button onClick={() => props.setCurrentPage("log out")}>
+                <button
+                    className={
+                        props.currentPage === "equipment"
+                            ? "sidebar-button active"
+                            : "sidebar-button"
+                    }
+                    onClick={() => props.setCurrentPage("equipment")}
+                >
+                    Equipment
+                </button>
+            </div>
+
+            <button
+                className="sidebar-button"
+                onClick={() => props.setCurrentPage("log out")}
+            >
                 Log Out
             </button>
+
         </div>
     )
 }

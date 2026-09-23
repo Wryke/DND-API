@@ -169,6 +169,38 @@ const findInventoryEntryByIdStmt = db.prepare(`
 function findInventoryEntryById(characterId, inventoryId) {
     return findInventoryEntryByIdStmt.get(characterId, inventoryId)
 }
+const findAllInventoryByCharacterIdStmt = db.prepare(`
+    SELECT
+        inventory.inventory_id,
+        inventory.character_id,
+        inventory.item_id,
+        inventory.parent_inventory_id,
+        inventory.quantity,
+
+        items.item_index,
+        items.name,
+        items.description,
+        items.weight,
+        items.cost_quantity,
+
+        currency_lookup.currency_code,
+        currency_lookup.currency_name,
+        item_type_lookup.item_type_name
+    FROM inventory
+    JOIN items 
+        ON inventory.item_id = items.item_id
+    LEFT JOIN currency_lookup
+        ON items.currency_unit_id = currency_lookup.currency_unit_id
+    LEFT JOIN item_type_lookup
+        ON items.item_type_id = item_type_lookup.item_type_id
+    WHERE inventory.character_id = ?
+    ORDER BY items.name
+`)
+
+function findAllInventoryByCharacterId(characterId) {
+    return findAllInventoryByCharacterIdStmt.all(characterId)
+}
+
 
 const findRootInventoryByCharacterIdStmt = db.prepare(`
     SELECT
@@ -362,6 +394,7 @@ module.exports = {
     deleteCharacterById,
 
     findInventoryEntryById,
+    findAllInventoryByCharacterId,
     findRootInventoryByCharacterId,
     findInventoryChildren,
     createInventoryEntry,

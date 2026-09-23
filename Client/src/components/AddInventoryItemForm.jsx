@@ -1,10 +1,38 @@
 import { useEffect, useState } from 'react'
 
+function getContainerPath(container, inventory) {
+    if (container.parent_inventory_id === null) {
+        return container.name
+    }
+
+    const parent = inventory.find((item) => {
+        return item.inventory_id === container.parent_inventory_id
+    })
+
+    return getContainerPath(parent, inventory) + " > " + container.name
+}
+
 function AddInventoryItemForm(props) {
     const [error, setError] = useState("")
     const [itemIndex, setItemIndex] = useState("")
     const [quantity, setQuantity] = useState("")
     const [items, setItems] = useState([])
+    const [parentInventoryId, setParentInventoryId] = useState("")
+
+    const containers = props.inventory.filter((item) => {
+        return item.item_type_name === "container"
+    })
+
+    const containerElements = containers.map((container) => {
+        return (
+            <option
+                key={container.inventory_id}
+                value={container.inventory_id}
+            >
+                {getContainerPath(container, props.inventory)}
+            </option>
+        )
+    })
 
     useEffect(() => {
         async function loadItems() {
@@ -20,19 +48,26 @@ function AddInventoryItemForm(props) {
     async function handleSubmit(event) {
         event.preventDefault()
 
-        const result = await props.addInventoryItem(
+        const parentId = parentInventoryId === ""
+            ? null
+            : Number(parentInventoryId)
+            
+        const error = await props.addInventoryItem(
             itemIndex,
-            Number(quantity)
+            Number(quantity),
+            parentId
         )
 
-        if(result !== null){
-            setError(result)
+        if(error !== null){
+            setError(error)
             return
         }
 
+        props.onItemAdded()
         setError("")
         setItemIndex("")
         setQuantity("")
+        setParentInventoryId("")
     }
 
     const itemElement = items.map((item) => {
@@ -47,27 +82,59 @@ function AddInventoryItemForm(props) {
     })
 
     return (
-        <form onSubmit={handleSubmit}>
-            <h3>Add Item</h3>
-            <select
-                value={itemIndex}
-                onChange={(event) => setItemIndex(event.target.value)}
-            >
-                <option value="">Select an item</option>
+        <form className="add-item-form" onSubmit={handleSubmit}>
+            <div className="form-field">
+                <label htmlFor="item">Item</label>
 
-                {itemElement}
-            </select>
-            <label>
-                Item Quantity:
+                <select
+                    id="item"
+                    value={itemIndex}
+                    onChange={(event) => {
+                        setItemIndex(event.target.value)
+                    }}
+                >
+                    <option value="">
+                        Select an item
+                    </option>
+                    {itemElement}
+                </select>
+            </div>
+
+            <div className="form-field">
+                <label htmlFor="quantity">Quantity</label>
+
                 <input
+                    id="quantity"
                     type="number"
                     value={quantity}
-                    onChange={(event) => setQuantity(event.target.value)}
+                    onChange={(event) => {
+                        setQuantity(event.target.value)
+                    }}
                 />
-            </label>
+            </div>
 
-            {error && <p>{error}</p>}
+            <div className="form-field">
+                <label htmlFor="parentInventory">
+                    Store Inside
+                </label>
+
+                <select
+                    id="parentInventory"
+                    value={parentInventoryId}
+                    onChange={(event) => {
+                        setParentInventoryId(event.target.value)
+                    }}
+                >
+                    <option value="">
+                        Root Inventory
+                    </option>
+
+                    {containerElements}
+                </select>
+            </div>
             
+            {error && <p>{error}</p>}
+
             <button type="submit">
                 Add Item
             </button>

@@ -482,12 +482,12 @@ describe("User Routes", () => {
 
     // --- Inventory Routes ---
 
-    describe("GET /users/:id/characters/:name/inventory", () => {
+        describe("GET /users/:id/characters/:name/inventory/root", () => {
         test("returns an empty array when the character has no inventory", async () => {
             const response = await request(app)
                 .get(
                     `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                    `${encodeURIComponent(testCharacter.name)}/inventory/root`
                 )
 
             expect(response.status).toBe(200)
@@ -527,7 +527,7 @@ describe("User Routes", () => {
             const response = await request(app)
                 .get(
                     `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                    `${encodeURIComponent(testCharacter.name)}/inventory/root`
                 )
 
             expect(response.status).toBe(200)
@@ -549,7 +549,95 @@ describe("User Routes", () => {
             const response = await request(app)
                 .get(
                     `/users/${testUser.user_id}/characters/` +
-                    `DoesNotExist/inventory`
+                    `DoesNotExist/inventory/root`
+                )
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Character not found"
+            )
+        })
+    })
+
+    describe("GET /users/:id/characters/:name/inventory/all", () => {
+        test("returns an empty array when the character has no inventory", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/all`
+                )
+
+            expect(response.status).toBe(200)
+            expect(response.body).toEqual([])
+        })
+
+        test("returns all of the character's inventory entries", async () => {
+            const backpackResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "backpack",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(backpackResponse.status).toBe(201)
+
+            const backpackId =
+                backpackResponse.body.inventory_id
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "torch",
+                    parent_inventory_id: backpackId,
+                    quantity: 2
+                })
+
+            expect(torchResponse.status).toBe(201)
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory/all`
+                )
+
+            expect(response.status).toBe(200)
+            expect(Array.isArray(response.body)).toBe(true)
+            expect(response.body).toHaveLength(2)
+
+            const backpack = response.body.find(
+                item => item.item_index === "backpack"
+            )
+
+            const torch = response.body.find(
+                item => item.item_index === "torch"
+            )
+
+            expect(backpack).toBeDefined()
+            expect(backpack.parent_inventory_id).toBeNull()
+            expect(backpack).toHaveProperty("description")
+            expect(backpack).toHaveProperty("weight")
+            expect(backpack).toHaveProperty("cost_quantity")
+            expect(backpack).toHaveProperty("currency_code")
+            expect(backpack).toHaveProperty("currency_name")
+            expect(backpack).toHaveProperty("item_type_name")
+
+            expect(torch).toBeDefined()
+            expect(torch.parent_inventory_id).toBe(backpackId)
+            expect(torch.quantity).toBe(2)
+        })
+
+        test("returns 404 for a missing character", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `DoesNotExist/inventory/all`
                 )
 
             expect(response.status).toBe(404)

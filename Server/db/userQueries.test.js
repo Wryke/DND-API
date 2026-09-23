@@ -13,6 +13,7 @@ const {
 
     findInventoryEntryById,
     findRootInventoryByCharacterId,
+    findAllInventoryByCharacterId,
     findInventoryChildren,
     createInventoryEntry,
     updateInventoryQuantity,
@@ -568,6 +569,153 @@ describe("Database User Queries", () => {
                 )
 
             const names = rootInventory.map(
+                entry => entry.name
+            )
+
+            const sortedNames = [...names].sort((a, b) =>
+                a.localeCompare(b)
+            )
+
+            expect(names).toEqual(sortedNames)
+        })
+    })
+
+    describe("findAllInventoryByCharacterId", () => {
+        test("returns all inventory entries including nested entries", () => {
+            const backpack = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.backpack.item_id,
+                parent_inventory_id: null,
+                quantity: 1
+            })
+
+            const pouch = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.pouch.item_id,
+                parent_inventory_id: backpack.inventory_id,
+                quantity: 1
+            })
+
+            createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.torch.item_id,
+                parent_inventory_id: pouch.inventory_id,
+                quantity: 2
+            })
+
+            const inventory =
+                findAllInventoryByCharacterId(
+                    testCharacter.character_id
+                )
+
+            expect(Array.isArray(inventory)).toBe(true)
+            expect(inventory).toHaveLength(3)
+
+            const backpackEntry = inventory.find(
+                entry => entry.item_index === "backpack"
+            )
+
+            const pouchEntry = inventory.find(
+                entry => entry.item_index === "pouch"
+            )
+
+            const torchEntry = inventory.find(
+                entry => entry.item_index === "torch"
+            )
+
+            expect(backpackEntry).toBeDefined()
+            expect(pouchEntry).toBeDefined()
+            expect(torchEntry).toBeDefined()
+
+            expect(backpackEntry.parent_inventory_id)
+                .toBeNull()
+
+            expect(pouchEntry.parent_inventory_id)
+                .toBe(backpack.inventory_id)
+
+            expect(torchEntry.parent_inventory_id)
+                .toBe(pouch.inventory_id)
+        })
+
+        test("returns standardized item data", () => {
+            createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.backpack.item_id,
+                parent_inventory_id: null,
+                quantity: 1
+            })
+
+            const inventory =
+                findAllInventoryByCharacterId(
+                    testCharacter.character_id
+                )
+
+            expect(inventory[0])
+                .toHaveProperty("inventory_id")
+            expect(inventory[0])
+                .toHaveProperty("character_id")
+            expect(inventory[0])
+                .toHaveProperty("item_id")
+            expect(inventory[0])
+                .toHaveProperty("parent_inventory_id")
+            expect(inventory[0])
+                .toHaveProperty("quantity")
+
+            expect(inventory[0])
+                .toHaveProperty("item_index")
+            expect(inventory[0])
+                .toHaveProperty("name")
+            expect(inventory[0])
+                .toHaveProperty("description")
+            expect(inventory[0])
+                .toHaveProperty("weight")
+            expect(inventory[0])
+                .toHaveProperty("cost_quantity")
+            expect(inventory[0])
+                .toHaveProperty("currency_code")
+            expect(inventory[0])
+                .toHaveProperty("currency_name")
+            expect(inventory[0])
+                .toHaveProperty("item_type_name")
+        })
+
+        test("returns an empty array when the character has no inventory", () => {
+            const inventory =
+                findAllInventoryByCharacterId(
+                    testCharacter.character_id
+                )
+
+            expect(inventory).toEqual([])
+        })
+
+        test("returns all inventory ordered by name", () => {
+            const backpack = createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.backpack.item_id,
+                parent_inventory_id: null,
+                quantity: 1
+            })
+
+            createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.torch.item_id,
+                parent_inventory_id: backpack.inventory_id,
+                quantity: 1
+            })
+
+            createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.pouch.item_id,
+                parent_inventory_id: backpack.inventory_id,
+                quantity: 1
+            })
+
+            const inventory =
+                findAllInventoryByCharacterId(
+                    testCharacter.character_id
+                )
+
+            const names = inventory.map(
                 entry => entry.name
             )
 
