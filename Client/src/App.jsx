@@ -11,14 +11,28 @@ import CharacterInfo from './components/CharacterInfo'
 
 import { convertToGold } from './utils/currency'
 
+import { 
+    getCharacters, 
+    createCharacter, 
+    deleteCharacter 
+} from './api/characters'
+
+import { 
+    getCharacterInventory,
+    addInventoryEntry,
+    updateInventoryEntry,
+    deleteInventoryEntry 
+} from './api/inventory'
+
 function App() {
     
+    // --- State ---
     const [characters, setCharacters] = useState([])
     const [selectedCharacter, setSelectedCharacter] = useState(null)
     const [inventory, setInventory] = useState([])
     const [currentPage, setCurrentPage] = useState("home")
 
-    
+    // --- Derived Data ---
     const currentWeight = inventory.reduce((total, item) => {
         return total + (item.weight * item.quantity)
     }, 0)
@@ -32,12 +46,14 @@ function App() {
     // -- Use Effects --
     useEffect(() => {
         async function loadCharacters() {
-            
-            const response = await fetch("http://localhost:3000/users/1/characters")
-            
-            const data = await response.json()
+            try {
+                const data = await getCharacters(1)
 
-            setCharacters(data)
+                setCharacters(data)
+            }
+            catch (error) {
+                console.error(error)
+            }
         }
 
         loadCharacters()
@@ -52,19 +68,18 @@ function App() {
         async function loadInventory(){
             setInventory([])
 
-            const response = await fetch(`http://localhost:3000/users/1/characters/${encodeURIComponent(selectedCharacter.name)}/inventory/all`)
-                
-            const data = await response.json()
+            try {
+                const data = await getCharacterInventory(1, selectedCharacter.name)
 
-            setInventory(data)
+                setInventory(data)
+            }
+            catch (error) {
+                console.error(error)
+            }
         }
 
         loadInventory()
     }, [selectedCharacter])
-
-    function selectCharacter(character){
-        setSelectedCharacter(character)
-    }
 
     // -- Other Functions --
     async function addInventoryItem(itemIndex, quantity, parentInventoryId) {
@@ -85,22 +100,7 @@ function App() {
         }
 
         try {
-            const response = await fetch(
-                `http://localhost:3000/users/1/characters/${encodeURIComponent(selectedCharacter.name)}/inventory`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(newEntry)
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                return data.error
-            }
+            const data = await addInventoryEntry(1, selectedCharacter.name, newEntry)
 
             setInventory((currentInventory) => {
                 return [...currentInventory, data]
@@ -121,22 +121,7 @@ function App() {
         }
 
         try {
-            const response = await fetch(
-                `http://localhost:3000/users/1/characters/${encodeURIComponent(selectedCharacter.name)}/inventory/${inventoryId}`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(updatedEntry)
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                return data.error
-            }
+            const data = await updateInventoryEntry(1, selectedCharacter.name, inventoryId, updatedEntry)
 
             setInventory((currentInventory) => {
                 return currentInventory.map((item) => {
@@ -158,18 +143,7 @@ function App() {
 
     async function removeInventoryItem(inventoryId) {
         try {
-            const response = await fetch(
-                `http://localhost:3000/users/1/characters/${encodeURIComponent(selectedCharacter.name)}/inventory/${inventoryId}`,
-                {
-                    method: "DELETE"
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                return data.error
-            }
+            const data = await deleteInventoryEntry(1, selectedCharacter.name, inventoryId)
 
             setInventory(data.inventory)
 
@@ -189,35 +163,24 @@ function App() {
             max_weight: Number(maxWeight)
         }
 
-        const response = await fetch(
-            `http://localhost:3000/users/1/characters`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(newCharacter)
-            }
-        )
+        try {
+            const data = await createCharacter(1, newCharacter)
 
-        const data = await response.json()
-
-        if(!response.ok){
-            return data.error
+            setCharacters((currentCharacters) => {
+                return [
+                    ...currentCharacters,
+                    data
+                ]
+            })
+        } catch(error) {
+            console.error(error)
+            return error.message
         }
-
-        setCharacters((currentCharacters) => {
-            return [
-                ...currentCharacters,
-                data
-            ]
-        })
 
         return null
     }
 
     async function removeCharacter(characterId) {
-        // Find the character being deleted
         const character = characters.find((character) => {
             return character.character_id === characterId
         })
@@ -226,34 +189,33 @@ function App() {
             return "Character not found"
         }
 
-        // Delete the character from the database
-        const response = await fetch(
-            `http://localhost:3000/users/1/characters/${encodeURIComponent(character.name)}`,
-            {
-                method: "DELETE"
-            }
-        )
+        try {
+            await deleteCharacter(1, character.name)
 
-        // If the DELETE failed, get the backend error
-        if (!response.ok) {
-            const data = await response.json()
-            return data.error
-        }
-
-        // Only update React state after the database DELETE succeeds
-        setCharacters((currentCharacters) => {
-            return currentCharacters.filter((character) => {
-                return character.character_id !== characterId
+            setCharacters((currentCharacters) => {
+                return currentCharacters.filter((character) => {
+                    return character.character_id !== characterId
+                })
             })
-        })
 
-        if (selectedCharacter?.character_id === characterId) {
-            selectCharacter(null)
+            if (selectedCharacter?.character_id === characterId) {
+                selectCharacter(null)
+            }
+        }
+        catch (error) {
+            console.error(error)
+            return error.message
         }
 
         return null
     }
 
+    // --- Event Handlers ---
+    function selectCharacter(character){
+        setSelectedCharacter(character)
+    }
+
+    // --- Render ---
     const characterElements = characters.map((character) => {
         return (
             <CharacterInfo 
