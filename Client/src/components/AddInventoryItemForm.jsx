@@ -33,7 +33,7 @@ function AddInventoryItemForm(props) {
         loadItems()
     }, [])
 
-    // --- Derived data ---
+    // --- Derived Data ---
     const containers = props.inventory.filter((item) => {
         return item.item_type_name === "container"
     })

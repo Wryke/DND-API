@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { convertToGold } from '../utils/currency'
+
 import EditInventoryItemForm from './EditInventoryItemForm'
+import Modal from './Modal'
 
 function InventoryItem(props) {
 
@@ -8,7 +10,7 @@ function InventoryItem(props) {
     const [isOpen, setIsOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
 
-    // --- Derived data ---
+    // --- Derived Data ---
     const children = props.inventory.filter((item) => {
         return item.parent_inventory_id === props.item.inventory_id
     })
@@ -111,24 +113,20 @@ function InventoryItem(props) {
             }
 
             {isEditOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
+                <Modal>
+                    <h2>Edit {props.item.name}</h2>
 
-                        <h2>Edit {props.item.name}</h2>
+                    <EditInventoryItemForm
+                        item={props.item}
+                        inventory={props.inventory}
+                        updateInventoryItem={props.updateInventoryItem}
+                        onItemUpdated={handleEditClose}
+                    />
 
-                        <EditInventoryItemForm
-                            item={props.item}
-                            inventory={props.inventory}
-                            updateInventoryItem={props.updateInventoryItem}
-                            onItemUpdated={handleEditClose}
-                        />
-
-                        <button onClick={handleEditClose}>
-                            Cancel
-                        </button>
-
-                    </div>
-                </div>
+                    <button onClick={handleEditClose}>
+                        Cancel
+                    </button>
+                </Modal>
             )}
 
             {shouldShowChildren && 

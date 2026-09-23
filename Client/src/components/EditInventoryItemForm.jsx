@@ -14,7 +14,7 @@ function EditInventoryItemForm(props) {
             : String(props.item.parent_inventory_id)
     )
 
-    // --- Derived data ---
+    // --- Derived Data ---
     const descendantIds = getDescendantIds(
         props.item.inventory_id,
         props.inventory

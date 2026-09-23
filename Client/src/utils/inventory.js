@@ -33,4 +33,20 @@ function getDescendantIds(inventoryId, inventory) {
     return descendantIds
 }
 
-export { getContainerPath, getDescendantIds }
+function addItemAndParents(item, inventory, visibleInventoryIds) {
+    visibleInventoryIds.add(item.inventory_id)
+
+    if (item.parent_inventory_id === null) {
+        return
+    }
+
+    const parent = inventory.find((inventoryItem) => {
+        return inventoryItem.inventory_id === item.parent_inventory_id
+    })
+
+    if (parent) {
+        addItemAndParents(parent, inventory, visibleInventoryIds)
+    }
+}
+
+export { getContainerPath, getDescendantIds, addItemAndParents }

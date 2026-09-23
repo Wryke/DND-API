@@ -3,13 +3,20 @@ import { useState } from 'react'
 import AddInventoryItemForm from '../components/AddInventoryItemForm'
 import CharacterHeader from '../components/CharacterHeader'
 import InventoryItem from '../components/InventoryItem'
+import Modal from '../components/Modal'
+
+import { addItemAndParents } from '../utils/inventory'
 
 function InventoryPage(props) {
 
+    // --- State ---
     const [searchText, setSearchText] = useState("")
     const [selectedType, setSelectedType] = useState("all")
     const [isAddItemOpen, setIsAddItemOpen] = useState(false)
 
+    // --- Derived Data ---
+
+    // Item type filter options
     const itemTypes = new Set()
 
     props.inventory.forEach((item) => {
@@ -32,11 +39,12 @@ function InventoryPage(props) {
         )
     })
 
+    // Search/filter calculations
     const normalizedSearchText = searchText.trim().toLowerCase()
 
-    const rootInventory = props.inventory.filter((item) => {
-        return item.parent_inventory_id === null
-    })
+    const isFiltering =
+        normalizedSearchText !== "" ||
+        selectedType !== "all"
 
     const matchingInventory = props.inventory.filter((item) => {
         const matchesSearch = item.name
@@ -51,25 +59,12 @@ function InventoryPage(props) {
         return matchesSearch && matchesType
     })
 
-    const isFiltering = normalizedSearchText !== "" || selectedType !== "all"
+    // Hierarchy
+    const rootInventory = props.inventory.filter((item) => {
+        return item.parent_inventory_id === null
+    })
 
     const visibleInventoryIds = new Set()
-
-    function addItemAndParents(item, inventory, visibleInventoryIds) {
-        visibleInventoryIds.add(item.inventory_id)
-
-        if (item.parent_inventory_id === null) {
-            return
-        }
-
-        const parent = inventory.find((inventoryItem) => {
-            return inventoryItem.inventory_id === item.parent_inventory_id
-        })
-
-        if (parent) {
-            addItemAndParents(parent, inventory, visibleInventoryIds)
-        }
-    }
 
     matchingInventory.forEach((item) => {
         addItemAndParents(
@@ -80,9 +75,22 @@ function InventoryPage(props) {
     })
 
     const visibleRootInventory = rootInventory.filter((item) => {
-        return !isFiltering || visibleInventoryIds.has(item.inventory_id)
+        return (
+            !isFiltering ||
+            visibleInventoryIds.has(item.inventory_id)
+        )
     })
 
+    // --- Event Handlers ---
+    function handleAddItemOpen() {
+        setIsAddItemOpen(true)
+    }
+
+    function handleAddItemClose() {
+        setIsAddItemOpen(false)
+    }
+
+    // --- Render ---
     const inventoryElements = visibleRootInventory.map((item) => {
         return (
             <InventoryItem
@@ -112,8 +120,9 @@ function InventoryPage(props) {
                     />
 
                     <div className="inventory-toolbar">
+
                         <button
-                            onClick={() => {setIsAddItemOpen(true)}}
+                            onClick={handleAddItemOpen}
                         >
                             Add Item
                         </button>
@@ -137,30 +146,9 @@ function InventoryPage(props) {
                             </option>
 
                             {typeOptions}
+
                         </select>
                     </div>
-
-                    {isAddItemOpen && (
-                        <div className="modal-overlay">
-                            <div className="modal-content">
-                                <h2>Add Item</h2>
-
-                                <AddInventoryItemForm
-                                    addInventoryItem={props.addInventoryItem}
-                                    inventory={props.inventory}
-                                    onItemAdded={() => {setIsAddItemOpen(false)}}
-                                />
-
-                                <button
-                                    onClick={() => {
-                                        setIsAddItemOpen(false)
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="inventory-table-header">
                         <span>Item Name</span>
@@ -172,6 +160,22 @@ function InventoryPage(props) {
                     </div>
 
                     {inventoryElements}
+
+                    {isAddItemOpen && (
+                        <Modal>
+                            <h2>Add Item</h2>
+
+                            <AddInventoryItemForm
+                                addInventoryItem={props.addInventoryItem}
+                                inventory={props.inventory}
+                                onItemAdded={handleAddItemClose}
+                            />
+
+                            <button onClick={handleAddItemClose}>
+                                Cancel
+                            </button>
+                        </Modal>
+                    )}
                 </div>
             )}
         </div>
