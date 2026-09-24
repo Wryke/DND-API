@@ -43,6 +43,11 @@ CREATE TABLE categories_lookup (
     category_name TEXT NOT NULL
 );
 
+CREATE TABLE equipment_slot_lookup (
+    equipment_slot_id INTEGER PRIMARY KEY,
+    equipment_slot_name TEXT NOT NULL UNIQUE
+);
+
 -- Core tables --
 
 CREATE TABLE users (
@@ -97,7 +102,29 @@ CREATE TABLE inventory (
 
     FOREIGN KEY (parent_inventory_id)
         REFERENCES inventory(inventory_id)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+
+    UNIQUE (character_id, inventory_id)
+);
+
+CREATE TABLE equipment (
+    equipment_id INTEGER PRIMARY KEY,
+    character_id INTEGER NOT NULL,
+    inventory_id INTEGER NOT NULL,
+    equipment_slot_id INTEGER NOT NULL,
+
+    FOREIGN KEY (equipment_slot_id)
+        REFERENCES equipment_slot_lookup(equipment_slot_id),
+
+    FOREIGN KEY (character_id)
+        REFERENCES characters(character_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (character_id, inventory_id)
+        REFERENCES inventory(character_id, inventory_id)
+        ON DELETE CASCADE,
+
+    UNIQUE(character_id, equipment_slot_id)
 );
 
 -- Type Tables --

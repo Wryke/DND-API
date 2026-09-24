@@ -1,5 +1,6 @@
 -- Static Lookup Tables --
 
+-- Database Item Types
 INSERT INTO item_type_lookup (
     item_type_id,
     item_type_name
@@ -31,6 +32,7 @@ VALUES
         'equipment_pack'
     );
 
+-- Currency Types
 INSERT INTO currency_lookup (
     currency_unit_id,
     currency_code,
@@ -64,6 +66,7 @@ VALUES
         'Platinum Piece'
     );
 
+-- Damage Types
 INSERT INTO damage_type_lookup (
     damage_type_id,
     damage_index,
@@ -137,6 +140,7 @@ VALUES
         'Thunder'
     );
 
+-- Weapon Property Types
 INSERT INTO weapon_property_lookup (
     property_id,
     property_index,
@@ -195,6 +199,7 @@ VALUES
         'Versatile'
     );
 
+-- Weapon Mastery Types
 INSERT INTO weapon_mastery_lookup (
     mastery_id,
     mastery_index,
@@ -243,6 +248,7 @@ VALUES
         'Vex'
     );
 
+-- Ability Types
 INSERT INTO ability_lookup (
     ability_score_id,
     ability_index,
@@ -279,4 +285,56 @@ VALUES
         6,
         'cha',
         'CHA'
+    );
+
+-- Equipment Slots
+INSERT INTO equipment_slot_lookup (
+    equipment_slot_id, 
+    equipment_slot_name
+) 
+
+VALUES
+    (
+        1, 
+        'head'
+    ),
+    (
+        2, 
+        'armor'
+    ),
+    (
+        3, 
+        'hands'
+    ),
+    (
+        4, 
+        'feet'
+    ),
+    (
+        5, 
+        'accessory_1'
+    ),
+    (
+        6, 
+        'accessory_2'
+    ),
+    (
+        7, 
+        'accessory_3'
+    ),
+    (
+        8, 
+        'accessory_4'
+    ),
+    (
+        9, 
+        'accessory_5'
+    ),
+    (
+        10, 
+        'main_hand'
+    ),
+    (
+        11, 
+        'off_hand'
     );

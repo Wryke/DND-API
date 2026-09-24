@@ -81,7 +81,7 @@ function App() {
         loadInventory()
     }, [selectedCharacter])
 
-    // -- Other Functions --
+    // Inventory Functions
     async function addInventoryItem(itemIndex, quantity, parentInventoryId) {
 
         if (
@@ -155,6 +155,7 @@ function App() {
         }
     }
 
+    // Character Functions
     async function addCharacter(name, maxWeight) {
 
         const newCharacter = {
