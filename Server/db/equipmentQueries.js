@@ -27,6 +27,42 @@ function findAllEquipment(characterId){
     return findAllEquipmentStmt.all(characterId)
 }
 
+const findEquipmentEntryByIdStmt = db.prepare(`
+    
+`)
+
+function findEquipmentEntryById(characterId, equipmentId){
+    return findEquipmentEntryByIdStmt.get(equipmentId)
+}
+
+const createEquipmentEntryStmt = db.prepare(`
+    
+`)
+
+function createEquipmentEntry(characterId, inventoryId, equipmentSlotId){
+    return createEquipmentEntryStmt.run()
+}
+
+const updateEquipmentEntryByIdStmt = db.prepare(`
+    
+`)
+
+function updateEquipmentEntryById(/*TODO*/){
+    return updateEquipmentEntryByIdStmt.run(/*TODO*/)
+}
+
+const deleteEquipmentEntryByIdStmt = db.prepare(`
+    
+`)
+
+function deleteEquipmentEntryById(characterId, equipmentId){
+    return deleteEquipmentEntryByIdStmt.run(characterId, equipmentId)
+}
+
 module.exports = {
-    findAllEquipment
+    findAllEquipment,
+    findEquipmentEntryById,
+    createEquipmentEntry,
+    updateEquipmentEntryById,
+    deleteEquipmentEntryById
 }

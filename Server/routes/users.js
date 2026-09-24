@@ -54,6 +54,10 @@ const {
 
 // --- Equipment Routes ---
 // GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
+// GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
+// POST /users/:id/characters/:name/equipment - Create an equipment entry
+// PATCH ??
+// DELETE /users/:id/characters/:name/equipment/:equipmentId - Delete an equipment entry
 // --- ---------------- ---
 
 // --- User Routes ---
