@@ -22,9 +22,13 @@ const {
     updateInventoryQuantity,
     moveInventoryEntry,
     updateInventoryEntry,
-    deleteInventoryEntry
+    deleteInventoryEntry,
  } = require("../db/userQueries.js")
 const { findItemByIndex } = require("../db/itemQueries.js")
+
+const {
+    findAllEquipment
+} = require("../db/equipmentQueries.js")
 
 // --- User Routes ---
 // GET /users/:id - Return a user by ID
@@ -47,6 +51,10 @@ const { findItemByIndex } = require("../db/itemQueries.js")
 // POST /users/:id/characters/:name/inventory - Create an inventory entry
 // PATCH /users/:id/characters/:name/inventory/:inventoryId - Update an inventory entry
 // DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory entry
+
+// --- Equipment Routes ---
+// GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
+// --- ---------------- ---
 
 // --- User Routes ---
 
@@ -799,6 +807,42 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
             error: "Internal server error"
         })
     }
+})
+
+// GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
+router.get("/:id/characters/:name/equipment", (req, res) => {
+    const userId = Number(req.params.id)
+    const name = req.params.name
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "Invalid user ID or character name"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if(!character){
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const equipment = findAllEquipment(character.character_id)
+
+    return res.status(200).json(equipment)
 })
 
 module.exports = router
