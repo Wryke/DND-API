@@ -27,7 +27,12 @@ const {
 const { findItemByIndex } = require("../db/itemQueries.js")
 
 const {
-    findAllEquipment
+    findEquipmentSlotById,
+    findEquipmentEntryBySlot,
+    findAllEquipment,
+    findEquipmentEntryById,
+    createEquipmentEntry,
+    deleteEquipmentEntryById
 } = require("../db/equipmentQueries.js")
 
 // --- User Routes ---
@@ -306,6 +311,14 @@ router.patch("/:id/characters/:name", (req, res) => {
         })
     }
 
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const character = findCharacterByUserIdAndName(userId, currentName.trim())
 
     if (!character) {
@@ -380,7 +393,14 @@ router.delete("/:id/characters/:name", (req,res) => {
         })
     }
 
-    
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const character = findCharacterByUserIdAndName(userId, name)
 
     if (!character) {
@@ -419,6 +439,14 @@ router.get("/:id/characters/:name/inventory/all", (req, res) => {
         })
     }
 
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const character = findCharacterByUserIdAndName(userId, name.trim())
 
     if (!character) {
@@ -445,6 +473,14 @@ router.get("/:id/characters/:name/inventory/root", (req, res) => {
     ) {
         return res.status(400).json({
             error: "A valid user ID and character name are required"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
         })
     }
 
@@ -476,6 +512,14 @@ router.get("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     ) {
         return res.status(400).json({
             error: "A valid user ID, character name, and inventory ID are required"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
         })
     }
 
@@ -516,6 +560,14 @@ router.get("/:id/characters/:name/inventory/:inventoryId/children", (req, res) =
         })
     }
 
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const character = findCharacterByUserIdAndName(userId, name.trim())
 
     if (!character) {
@@ -551,6 +603,14 @@ router.post("/:id/characters/:name/inventory", (req, res) => {
     ) {
         return res.status(400).json({
             error: "A valid user ID and character name are required"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
         })
     }
 
@@ -638,6 +698,14 @@ router.patch("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     ) {
         return res.status(400).json({
             error: "A valid user ID, character name, and inventory ID are required"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
         })
     }
 
@@ -773,6 +841,14 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
         })
     }
 
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const character = findCharacterByUserIdAndName(userId, name.trim())
 
     if (!character) {
@@ -813,6 +889,8 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     }
 })
 
+// --- Equipment Routes ---
+
 // GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
 router.get("/:id/characters/:name/equipment", (req, res) => {
     const userId = Number(req.params.id)
@@ -847,6 +925,219 @@ router.get("/:id/characters/:name/equipment", (req, res) => {
     const equipment = findAllEquipment(character.character_id)
 
     return res.status(200).json(equipment)
+})
+
+// GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
+router.get("/:id/characters/:name/equipment/:equipmentId", (req, res) => {
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const equipmentId = Number(req.params.equipmentId)
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(equipmentId)
+    ) {
+        return res.status(400).json({
+            error: "Invalid user ID, character name, or equipment ID"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if(!character){
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const equipmentEntry = findEquipmentEntryById(character.character_id, equipmentId)
+
+    if(!equipmentEntry){
+        return res.status(404).json({
+            error: "Equipment entry not found"
+        })
+    }
+
+    return res.status(200).json(equipmentEntry)
+})
+
+// POST /users/:id/characters/:name/equipment - Create an equipment entry
+router.post("/:id/characters/:name/equipment", (req, res) => {
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const { inventory_id, equipment_slot_id } = req.body
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID and character name are required"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(
+        userId, 
+        name.trim()
+    )
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    if (
+        !Number.isInteger(inventory_id) || 
+        !Number.isInteger(equipment_slot_id)
+    ) {
+        return res.status(400).json({
+            error: "Inventory ID and Slot ID must both be an integer"
+        })
+    }
+
+    // Ensure inventory entry exists
+    const inventoryEntry = findInventoryEntryById(
+        character.character_id, 
+        inventory_id
+    )
+
+    if(!inventoryEntry) {
+        return res.status(404).json({
+            error: "Inventory entry not found"
+        })
+    }
+
+    const validSlot = findEquipmentSlotById(equipment_slot_id)
+
+    if(!validSlot){
+        return res.status(404).json({
+            error: "Invalid slot ID"
+        })
+    }
+
+    const currentSlot = findEquipmentEntryBySlot(
+        character.character_id, 
+        equipment_slot_id
+    )
+
+    if(currentSlot) {
+        return res.status(409).json({
+            error: "Current slot is occupied"
+        })
+    }
+
+    try {
+        const entry = createEquipmentEntry(
+            character.character_id,
+            inventory_id,
+            equipment_slot_id
+        )
+        
+        const fullEntry = findEquipmentEntryById(
+            entry.character_id, 
+            entry.equipment_id
+        )
+
+        return res.status(201).json(fullEntry)
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
+
+})
+
+// PATCH ??
+
+// DELETE /users/:id/characters/:name/equipment/:equipmentId - Delete an equipment entry
+router.delete("/:id/characters/:name/equipment/:equipmentId", (req, res) => {
+
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const equipmentId = Number(req.params.equipmentId)
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(equipmentId)
+    ) {
+        return res.status(400).json({
+            error: "A valid user ID, character name, and equipment ID are required"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if (!character) {
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const existingEntry = findEquipmentEntryById(
+        character.character_id, 
+        equipmentId
+    )
+
+    if (!existingEntry) {
+        return res.status(404).json({
+            error: "Equipment entry not found"
+        })
+    }
+
+    try {
+        const deleted = deleteEquipmentEntryById(
+            character.character_id, 
+            equipmentId
+        )
+
+        if (deleted.changes === 0) {
+            return res.status(500).json({
+                error: "Entry could not be deleted"
+            })
+        }
+
+        const updatedEquipment = findAllEquipment(character.character_id)
+
+        return res.status(200).json({
+            deleted: true,
+            equipment: updatedEquipment
+        })
+    } catch(error) {
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
 module.exports = router

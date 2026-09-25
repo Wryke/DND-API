@@ -1,4 +1,6 @@
 const {
+    findEquipmentSlotById,
+    findEquipmentEntryBySlot,
     findAllEquipment,
     findEquipmentEntryById,
     createEquipmentEntry,
@@ -83,6 +85,23 @@ describe("Database Equipment Queries", () => {
         deleteUserById(testUser.user_id)
     })
 
+    // --- find equipment by slot ---
+
+    describe("findEquipmentSlotById", () => {
+        test("returns an existing equipment slot", () => {
+            const slot = findEquipmentSlotById(10)
+
+            expect(slot).toBeDefined()
+            expect(slot.equipment_slot_id).toBe(10)
+            expect(slot.equipment_slot_name).toBe("main_hand")
+        })
+
+        test("returns undefined for a missing equipment slot", () => {
+            const slot = findEquipmentSlotById(999999999)
+
+            expect(slot).toBeUndefined()
+        })
+    })
 
     // --- findAllEquipment ---
 
