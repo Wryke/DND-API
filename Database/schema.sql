@@ -45,6 +45,7 @@ CREATE TABLE categories_lookup (
 
 CREATE TABLE equipment_slot_lookup (
     equipment_slot_id INTEGER PRIMARY KEY,
+    equipment_slot_index TEXT NOT NULL UNIQUE,
     equipment_slot_name TEXT NOT NULL UNIQUE
 );
 

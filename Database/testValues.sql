@@ -217,7 +217,7 @@ VALUES
         1,
         1,
         2,
-        10
+        1
     ),
 
     -- Test Character 2: Shortsword -> Main Hand
@@ -225,7 +225,7 @@ VALUES
         2,
         2,
         8,
-        10
+        1
     ),
 
     -- Test Character 2: Shield -> Off Hand
@@ -233,5 +233,5 @@ VALUES
         3,
         2,
         9,
-        11
+        2
     );

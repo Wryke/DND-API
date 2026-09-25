@@ -1,4 +1,5 @@
 const {
+    findAllEquipmentSlots,
     findEquipmentSlotById,
     findEquipmentEntryBySlot,
     findAllEquipment,
@@ -85,15 +86,58 @@ describe("Database Equipment Queries", () => {
         deleteUserById(testUser.user_id)
     })
 
-    // --- find equipment by slot ---
+
+    // --- findAllEquipmentSlots ---
+
+    describe("findAllEquipmentSlots", () => {
+        test("returns all equipment slots", () => {
+            const slots = findAllEquipmentSlots()
+
+            expect(Array.isArray(slots)).toBe(true)
+            expect(slots).toHaveLength(11)
+        })
+
+        test("returns equipment slot IDs, indexes, and names", () => {
+            const slots = findAllEquipmentSlots()
+
+            const mainHand = slots.find(
+                slot => slot.equipment_slot_index === "main_hand"
+            )
+
+            expect(mainHand).toBeDefined()
+            expect(mainHand.equipment_slot_id).toBe(1)
+            expect(mainHand.equipment_slot_index)
+                .toBe("main_hand")
+            expect(mainHand.equipment_slot_name)
+                .toBe("Main Hand")
+        })
+
+        test("returns equipment slots ordered by ID", () => {
+            const slots = findAllEquipmentSlots()
+
+            for (let i = 1; i < slots.length; i++) {
+                expect(
+                    slots[i].equipment_slot_id
+                ).toBeGreaterThan(
+                    slots[i - 1].equipment_slot_id
+                )
+            }
+        })
+    })
+
+
+    // --- findEquipmentSlotById ---
 
     describe("findEquipmentSlotById", () => {
         test("returns an existing equipment slot", () => {
-            const slot = findEquipmentSlotById(10)
+            const slot = findEquipmentSlotById(1)
 
             expect(slot).toBeDefined()
-            expect(slot.equipment_slot_id).toBe(10)
-            expect(slot.equipment_slot_name).toBe("main_hand")
+            expect(slot.equipment_slot_id).toBe(1)
+            expect(slot.equipment_slot_index)
+                .toBe("main_hand")
+            expect(slot.equipment_slot_name)
+                .toBe("Main Hand")
         })
 
         test("returns undefined for a missing equipment slot", () => {
@@ -102,6 +146,76 @@ describe("Database Equipment Queries", () => {
             expect(slot).toBeUndefined()
         })
     })
+
+
+    // --- findEquipmentEntryBySlot ---
+
+    describe("findEquipmentEntryBySlot", () => {
+        test("returns equipment occupying a slot", () => {
+            const created = createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                1
+            )
+
+            const equipment = findEquipmentEntryBySlot(
+                testCharacter.character_id,
+                1
+            )
+
+            expect(equipment).toBeDefined()
+            expect(equipment.equipment_id)
+                .toBe(created.equipment_id)
+            expect(equipment.inventory_id)
+                .toBe(testInventory.longsword.inventory_id)
+            expect(equipment.item_id)
+                .toBe(testItems.longsword.item_id)
+            expect(equipment.item_index)
+                .toBe(testItems.longsword.item_index)
+            expect(equipment.name)
+                .toBe(testItems.longsword.name)
+
+            expect(equipment.equipment_slot_id).toBe(1)
+            expect(equipment.equipment_slot_index)
+                .toBe("main_hand")
+            expect(equipment.equipment_slot_name)
+                .toBe("Main Hand")
+        })
+
+        test("returns undefined when the slot is empty", () => {
+            const equipment = findEquipmentEntryBySlot(
+                testCharacter.character_id,
+                1
+            )
+
+            expect(equipment).toBeUndefined()
+        })
+
+        test("does not return equipment belonging to another character", () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const otherCharacter = createCharacter({
+                user_id: testUser.user_id,
+                name: `OtherEquipmentCharacter_${uniqueSuffix}`,
+                max_weight: 100
+            })
+
+            createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                1
+            )
+
+            const equipment = findEquipmentEntryBySlot(
+                otherCharacter.character_id,
+                1
+            )
+
+            expect(equipment).toBeUndefined()
+        })
+    })
+
 
     // --- findAllEquipment ---
 
@@ -118,13 +232,13 @@ describe("Database Equipment Queries", () => {
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.shield.inventory_id,
-                11
+                2
             )
 
             const equipment =
@@ -133,19 +247,43 @@ describe("Database Equipment Queries", () => {
             expect(Array.isArray(equipment)).toBe(true)
             expect(equipment).toHaveLength(2)
 
-            expect(
-                equipment.some(entry =>
+            const longsword = equipment.find(
+                entry =>
                     entry.inventory_id ===
                     testInventory.longsword.inventory_id
-                )
-            ).toBe(true)
+            )
 
-            expect(
-                equipment.some(entry =>
+            const shield = equipment.find(
+                entry =>
                     entry.inventory_id ===
                     testInventory.shield.inventory_id
-                )
-            ).toBe(true)
+            )
+
+            expect(longsword).toBeDefined()
+            expect(longsword.item_id)
+                .toBe(testItems.longsword.item_id)
+            expect(longsword.item_index)
+                .toBe(testItems.longsword.item_index)
+            expect(longsword.name)
+                .toBe(testItems.longsword.name)
+            expect(longsword.equipment_slot_id).toBe(1)
+            expect(longsword.equipment_slot_index)
+                .toBe("main_hand")
+            expect(longsword.equipment_slot_name)
+                .toBe("Main Hand")
+
+            expect(shield).toBeDefined()
+            expect(shield.item_id)
+                .toBe(testItems.shield.item_id)
+            expect(shield.item_index)
+                .toBe(testItems.shield.item_index)
+            expect(shield.name)
+                .toBe(testItems.shield.name)
+            expect(shield.equipment_slot_id).toBe(2)
+            expect(shield.equipment_slot_index)
+                .toBe("off_hand")
+            expect(shield.equipment_slot_name)
+                .toBe("Off Hand")
         })
     })
 
@@ -157,7 +295,7 @@ describe("Database Equipment Queries", () => {
             const created = createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             const equipment = findEquipmentEntryById(
@@ -176,8 +314,12 @@ describe("Database Equipment Queries", () => {
                 .toBe(testItems.longsword.item_index)
             expect(equipment.name)
                 .toBe(testItems.longsword.name)
-            expect(equipment.equipment_slot_name)
+
+            expect(equipment.equipment_slot_id).toBe(1)
+            expect(equipment.equipment_slot_index)
                 .toBe("main_hand")
+            expect(equipment.equipment_slot_name)
+                .toBe("Main Hand")
         })
 
         test("returns undefined for a missing equipment entry", () => {
@@ -202,7 +344,7 @@ describe("Database Equipment Queries", () => {
             const created = createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             const equipment = findEquipmentEntryById(
@@ -222,7 +364,7 @@ describe("Database Equipment Queries", () => {
             const equipment = createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             expect(equipment).toHaveProperty("equipment_id")
@@ -231,7 +373,7 @@ describe("Database Equipment Queries", () => {
             expect(equipment.inventory_id)
                 .toBe(testInventory.longsword.inventory_id)
             expect(equipment.equipment_slot_id)
-                .toBe(10)
+                .toBe(1)
 
             const storedEquipment = findEquipmentEntryById(
                 testCharacter.character_id,
@@ -241,22 +383,26 @@ describe("Database Equipment Queries", () => {
             expect(storedEquipment).toBeDefined()
             expect(storedEquipment.name)
                 .toBe(testItems.longsword.name)
-            expect(storedEquipment.equipment_slot_name)
+            expect(storedEquipment.equipment_slot_id)
+                .toBe(1)
+            expect(storedEquipment.equipment_slot_index)
                 .toBe("main_hand")
+            expect(storedEquipment.equipment_slot_name)
+                .toBe("Main Hand")
         })
 
         test("throws when the equipment slot is already occupied", () => {
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             expect(() => {
                 createEquipmentEntry(
                     testCharacter.character_id,
                     testInventory.shield.inventory_id,
-                    10
+                    1
                 )
             }).toThrow("UNIQUE constraint failed")
         })
@@ -275,7 +421,7 @@ describe("Database Equipment Queries", () => {
                 createEquipmentEntry(
                     otherCharacter.character_id,
                     testInventory.longsword.inventory_id,
-                    10
+                    1
                 )
             }).toThrow("FOREIGN KEY constraint failed")
         })
@@ -299,7 +445,7 @@ describe("Database Equipment Queries", () => {
             const created = createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             const result = deleteEquipmentEntryById(
@@ -330,7 +476,7 @@ describe("Database Equipment Queries", () => {
             const created = createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                10
+                1
             )
 
             const result = deleteEquipmentEntryById(

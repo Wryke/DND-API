@@ -289,52 +289,64 @@ VALUES
 
 -- Equipment Slots
 INSERT INTO equipment_slot_lookup (
-    equipment_slot_id, 
+    equipment_slot_id,
+    equipment_slot_index,
     equipment_slot_name
-) 
+)
 
 VALUES
     (
         1, 
-        'head'
+        'main_hand', 
+        'Main Hand'
     ),
     (
         2, 
-        'armor'
+        'off_hand', 
+        'Off Hand'
     ),
     (
         3, 
-        'hands'
+        'head', 
+        'Head'
     ),
     (
         4, 
-        'feet'
+        'body', 
+        'Body'
     ),
     (
         5, 
-        'accessory_1'
+        'hands', 
+        'Hands'
     ),
     (
         6, 
-        'accessory_2'
+        'feet', 
+        'Feet'
     ),
     (
         7, 
-        'accessory_3'
+        'belt', 
+        'Belt'
     ),
     (
         8, 
-        'accessory_4'
+        'amulet', 
+        'Amulet'
     ),
     (
         9, 
-        'accessory_5'
+        'ring_1', 
+        'Ring 1'
     ),
     (
         10, 
-        'main_hand'
+        'ring_2', 
+        'Ring 2'
     ),
     (
         11, 
-        'off_hand'
+        'cosmetic', 
+        'Cosmetic'
     );

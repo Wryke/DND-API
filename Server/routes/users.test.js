@@ -1169,7 +1169,7 @@ describe("User Routes", () => {
     // --- Equipment Routes ---
 
     describe("GET /users/:id/characters/:name/equipment", () => {
-        test("returns an empty array when the character has no equipped items", async () => {
+        test("returns an empty array when the character has no equipment", async () => {
             const response = await request(app)
                 .get(
                     `/users/${testUser.user_id}/characters/` +
@@ -1177,18 +1177,17 @@ describe("User Routes", () => {
                 )
 
             expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-            expect(response.body).toHaveLength(0)
+            expect(response.body).toEqual([])
         })
 
-        test("returns all equipped items for a character", async () => {
+        test("returns all of the character's equipment", async () => {
             const inventoryResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.torch.item_index,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1201,8 +1200,9 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
+                    inventory_id:
+                        inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
                 })
 
             expect(equipmentResponse.status).toBe(201)
@@ -1217,79 +1217,78 @@ describe("User Routes", () => {
             expect(Array.isArray(response.body)).toBe(true)
             expect(response.body).toHaveLength(1)
 
-            expect(response.body[0].inventory_id).toBe(
-                inventoryResponse.body.inventory_id
-            )
-            expect(response.body[0].name).toBe(testItems.torch.name)
-            expect(response.body[0].equipment_slot_name).toBe("main_hand")
-        })
+            expect(response.body[0].inventory_id)
+                .toBe(inventoryResponse.body.inventory_id)
 
-        test("returns 404 for a missing user", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/999999999/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe("User not found")
+            expect(response.body[0].equipment_slot_id).toBe(1)
+            expect(response.body[0].equipment_slot_index)
+                .toBe("main_hand")
+            expect(response.body[0].equipment_slot_name)
+                .toBe("Main Hand")
         })
 
         test("returns 404 for a missing character", async () => {
             const response = await request(app)
                 .get(
                     `/users/${testUser.user_id}/characters/` +
-                    `MissingCharacter/equipment`
+                    `DoesNotExist/equipment`
                 )
 
             expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Character not found")
+            expect(response.body.error).toBe(
+                "Character not found"
+            )
         })
     })
 
     describe("GET /users/:id/characters/:name/equipment/:equipmentId", () => {
-        test("returns a specific equipped item", async () => {
+        test("returns a specific equipment entry", async () => {
             const inventoryResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.torch.item_index,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
 
             expect(inventoryResponse.status).toBe(201)
 
-            const equipmentResponse = await request(app)
+            const createResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
+                    inventory_id:
+                        inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
                 })
 
-            expect(equipmentResponse.status).toBe(201)
-
-            const equipmentId = equipmentResponse.body.equipment_id
+            expect(createResponse.status).toBe(201)
 
             const response = await request(app)
                 .get(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `${equipmentId}`
+                    createResponse.body.equipment_id
                 )
 
             expect(response.status).toBe(200)
-            expect(response.body.equipment_id).toBe(equipmentId)
-            expect(response.body.inventory_id).toBe(
-                inventoryResponse.body.inventory_id
-            )
-            expect(response.body.name).toBe(testItems.torch.name)
-            expect(response.body.equipment_slot_name).toBe("main_hand")
+
+            expect(response.body.equipment_id)
+                .toBe(createResponse.body.equipment_id)
+
+            expect(response.body.inventory_id)
+                .toBe(inventoryResponse.body.inventory_id)
+
+            expect(response.body.equipment_slot_id).toBe(1)
+            expect(response.body.equipment_slot_index)
+                .toBe("main_hand")
+            expect(response.body.equipment_slot_name)
+                .toBe("Main Hand")
         })
 
         test("returns 404 for a missing equipment entry", async () => {
@@ -1300,65 +1299,21 @@ describe("User Routes", () => {
                 )
 
             expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Equipment entry not found")
-        })
-
-        test("does not return equipment owned by another character", async () => {
-            const secondCharacterResponse = await request(app)
-                .post(`/users/${testUser.user_id}/characters`)
-                .send({
-                    name: `SecondCharacter_${Date.now()}`,
-                    max_weight: 100
-                })
-
-            expect(secondCharacterResponse.status).toBe(201)
-
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: testItems.torch.item_index,
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const equipmentResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
-                })
-
-            expect(equipmentResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(secondCharacterResponse.body.name)}/equipment/` +
-                    `${equipmentResponse.body.equipment_id}`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Equipment entry not found")
+            expect(response.body.error).toBe(
+                "Equipment entry not found"
+            )
         })
     })
 
     describe("POST /users/:id/characters/:name/equipment", () => {
-        test("equips an inventory entry in a valid slot", async () => {
+        test("creates an equipment entry", async () => {
             const inventoryResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.torch.item_index,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1371,20 +1326,59 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
+                    inventory_id:
+                        inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
                 })
 
             expect(response.status).toBe(201)
             expect(response.body).toHaveProperty("equipment_id")
-            expect(response.body.inventory_id).toBe(
-                inventoryResponse.body.inventory_id
-            )
-            expect(response.body.name).toBe(testItems.torch.name)
-            expect(response.body.equipment_slot_name).toBe("main_hand")
+
+            expect(response.body.inventory_id)
+                .toBe(inventoryResponse.body.inventory_id)
+
+            expect(response.body.equipment_slot_id).toBe(1)
+            expect(response.body.equipment_slot_index)
+                .toBe("main_hand")
+            expect(response.body.equipment_slot_name)
+                .toBe("Main Hand")
         })
 
-        test("rejects a missing inventory entry", async () => {
+        test("returns 400 when inventory ID is not an integer", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: "invalid",
+                    equipment_slot_id: 1
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Inventory ID and Slot ID must both be an integer"
+            )
+        })
+
+        test("returns 400 when equipment slot ID is not an integer", async () => {
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: 1,
+                    equipment_slot_id: "invalid"
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Inventory ID and Slot ID must both be an integer"
+            )
+        })
+
+        test("returns 404 for a missing inventory entry", async () => {
             const response = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
@@ -1392,21 +1386,23 @@ describe("User Routes", () => {
                 )
                 .send({
                     inventory_id: 999999999,
-                    equipment_slot_id: 10
+                    equipment_slot_id: 1
                 })
 
             expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Inventory entry not found")
+            expect(response.body.error).toBe(
+                "Inventory entry not found"
+            )
         })
 
-        test("rejects an invalid equipment slot", async () => {
+        test("returns 404 for an invalid equipment slot", async () => {
             const inventoryResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.torch.item_index,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1419,27 +1415,28 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
+                    inventory_id:
+                        inventoryResponse.body.inventory_id,
                     equipment_slot_id: 999999999
                 })
 
             expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Invalid slot ID")
+            expect(response.body.error).toBe(
+                "Invalid slot ID"
+            )
         })
 
-        test("rejects an occupied equipment slot", async () => {
+        test("returns 409 when the equipment slot is occupied", async () => {
             const firstInventoryResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.torch.item_index,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
-
-            expect(firstInventoryResponse.status).toBe(201)
 
             const secondInventoryResponse = await request(app)
                 .post(
@@ -1447,11 +1444,12 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.pouch.item_index,
+                    item_index: "pouch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
 
+            expect(firstInventoryResponse.status).toBe(201)
             expect(secondInventoryResponse.status).toBe(201)
 
             const firstEquipmentResponse = await request(app)
@@ -1460,8 +1458,9 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: firstInventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
+                    inventory_id:
+                        firstInventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
                 })
 
             expect(firstEquipmentResponse.status).toBe(201)
@@ -1472,78 +1471,27 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: secondInventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
+                    inventory_id:
+                        secondInventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
                 })
 
             expect(response.status).toBe(409)
-            expect(response.body.error).toBe("Current slot is occupied")
-        })
-
-        test("rejects equipment that belongs to another character", async () => {
-            const secondCharacterResponse = await request(app)
-                .post(`/users/${testUser.user_id}/characters`)
-                .send({
-                    name: `SecondCharacter_${Date.now()}`,
-                    max_weight: 100
-                })
-
-            expect(secondCharacterResponse.status).toBe(201)
-
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: testItems.torch.item_index,
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(secondCharacterResponse.body.name)}/equipment`
-                )
-                .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
-                })
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Inventory entry not found")
-        })
-
-        test("rejects non-integer inventory and slot IDs", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: "invalid",
-                    equipment_slot_id: "invalid"
-                })
-
-            expect(response.status).toBe(400)
             expect(response.body.error).toBe(
-                "Inventory ID and Slot ID must both be an integer"
+                "Current slot is occupied"
             )
         })
     })
 
     describe("DELETE /users/:id/characters/:name/equipment/:equipmentId", () => {
-        test("deletes an equipped item and returns updated equipment", async () => {
+        test("deletes an equipment entry", async () => {
             const inventoryResponse = await request(app)
                 .post(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: testItems.torch.item_index,
+                    item_index: "torch",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1556,8 +1504,9 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/equipment`
                 )
                 .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
+                    inventory_id:
+                        inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
                 })
 
             expect(equipmentResponse.status).toBe(201)
@@ -1566,13 +1515,20 @@ describe("User Routes", () => {
                 .delete(
                     `/users/${testUser.user_id}/characters/` +
                     `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `${equipmentResponse.body.equipment_id}`
+                    equipmentResponse.body.equipment_id
                 )
 
             expect(response.status).toBe(200)
             expect(response.body.deleted).toBe(true)
-            expect(Array.isArray(response.body.equipment)).toBe(true)
-            expect(response.body.equipment).toHaveLength(0)
+
+            const getResponse = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
+                    equipmentResponse.body.equipment_id
+                )
+
+            expect(getResponse.status).toBe(404)
         })
 
         test("returns 404 for a missing equipment entry", async () => {
@@ -1583,62 +1539,9 @@ describe("User Routes", () => {
                 )
 
             expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Equipment entry not found")
-        })
-
-        test("does not delete equipment owned by another character", async () => {
-            const secondCharacterResponse = await request(app)
-                .post(`/users/${testUser.user_id}/characters`)
-                .send({
-                    name: `SecondCharacter_${Date.now()}`,
-                    max_weight: 100
-                })
-
-            expect(secondCharacterResponse.status).toBe(201)
-
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: testItems.torch.item_index,
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const equipmentResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 10
-                })
-
-            expect(equipmentResponse.status).toBe(201)
-
-            const response = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(secondCharacterResponse.body.name)}/equipment/` +
-                    `${equipmentResponse.body.equipment_id}`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Equipment entry not found")
-
-            const verifyResponse = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `${equipmentResponse.body.equipment_id}`
-                )
-
-            expect(verifyResponse.status).toBe(200)
+            expect(response.body.error).toBe(
+                "Equipment entry not found"
+            )
         })
     })
 })

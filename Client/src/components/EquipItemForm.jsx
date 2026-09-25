@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { createEquipmentEntry } from "../api/equipment"
 
 function EquipItemForm (props) {
     
