@@ -6,11 +6,37 @@ function EquipmentPage(props) {
 
     // --- Derived Data ---
 
-    const equipmentElements = props.equipment.map((equipmentEntry) => {
+    const equipmentSlots = [
+        "head",
+        "armor",
+        "hands",
+        "feet",
+        "accessory_1",
+        "accessory_2",
+        "accessory_3",
+        "accessory_4",
+        "accessory_5",
+        "main_hand",
+        "off_hand"
+    ]
+
+    const equippedItem = props.equipment.find(
+        entry => entry.equipment_slot_name === "main_hand"
+    )
+    
+    const equippedItems = equipmentSlots.map((slot) => {
+        const equippedItem = props.equipment.find(
+            entry => entry.equipment_slot_name === slot
+        )
+
         return (
-            <p key={equipmentEntry.equipment_id}>
-                {equipmentEntry.equipment_slot_name}: {equipmentEntry.name}
-            </p>
+            <div key={slot}>
+                {equippedItem && (
+                    <p >
+                        {slot} | {equippedItem ? equippedItem.name : "empty"}
+                    </p>
+                )}
+            </div>
         )
     })
 
@@ -29,7 +55,7 @@ function EquipmentPage(props) {
                         inventoryValue={props.inventoryValue}
                     />
 
-                    {equipmentElements}
+                    {equippedItems}
                 </div>
             )}
         </div>

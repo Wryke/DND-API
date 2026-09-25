@@ -1,6 +1,18 @@
 const db = require("./connection")
 
 // --- Equipment Queries ---
+const findAllEquipmentSlotsStmt = db.prepare(`
+    SELECT
+        equipment_slot_id,
+        equipment_slot_name
+    FROM equipment_slot_lookup
+    ORDER BY equipment_slot_id
+`)
+
+function findAllEquipmentSlots(){
+    return findAllEquipmentSlotsStmt.all()
+}
+
 const findEquipmentSlotByIdStmt = db.prepare(`
     SELECT
         equipment_slot_id,
@@ -127,6 +139,7 @@ function deleteEquipmentEntryById(characterId, equipmentId){
 }
 
 module.exports = {
+    findAllEquipmentSlots,
     findEquipmentSlotById,
     findEquipmentEntryBySlot,
     findAllEquipment,

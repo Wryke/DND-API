@@ -27,6 +27,7 @@ const {
 const { findItemByIndex } = require("../db/itemQueries.js")
 
 const {
+    findAllEquipmentSlots,
     findEquipmentSlotById,
     findEquipmentEntryBySlot,
     findAllEquipment,
@@ -58,6 +59,7 @@ const {
 // DELETE /users/:id/characters/:name/inventory/:inventoryId - Delete an inventory entry
 
 // --- Equipment Routes ---
+// GET /equipment/slots - Returns equipment slot lookup
 // GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
 // GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
 // POST /users/:id/characters/:name/equipment - Create an equipment entry
@@ -888,8 +890,6 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
         })
     }
 })
-
-// --- Equipment Routes ---
 
 // GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
 router.get("/:id/characters/:name/equipment", (req, res) => {
