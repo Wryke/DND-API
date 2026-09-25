@@ -9,7 +9,9 @@ import EquipmentPage from './pages/EquipmentPage'
 import Sidebar from './components/Sidebar'
 import CharacterInfo from './components/CharacterInfo'
 
-import { convertToGold } from './utils/currency'
+import { 
+    convertToGold 
+} from './utils/currency'
 
 import { 
     getCharacters, 
@@ -23,15 +25,23 @@ import {
     updateInventoryEntry,
     deleteInventoryEntry 
 } from './api/inventory'
-import { getCharacterEquipment } from './api/equipment'
+
+import { 
+    getCharacterEquipment,
+    getEquipmentSlots
+} from "./api/equipment"
 
 function App() {
     
     // --- State ---
     const [characters, setCharacters] = useState([])
     const [selectedCharacter, setSelectedCharacter] = useState(null)
+
     const [inventory, setInventory] = useState([])
+
     const [equipment, setEquipment] = useState([])
+    const [equipmentSlots, setEquipmentSlots] = useState([])
+
     const [currentPage, setCurrentPage] = useState("home")
 
     // --- Derived Data ---
@@ -58,7 +68,19 @@ function App() {
             }
         }
 
+        async function loadEquipmentSlots() {
+            try {
+                const data = await getEquipmentSlots()
+
+                setEquipmentSlots(data)
+            }
+            catch (error) {
+                console.error(error)
+            }
+        }
+
         loadCharacters()
+        loadEquipmentSlots()
     }, [])
 
     useEffect(() => {
@@ -285,7 +307,9 @@ function App() {
                             selectedCharacter={selectedCharacter}
                             currentWeight={currentWeight}
                             inventoryValue={inventoryValue}
+                            equipmentSlots={equipmentSlots}
                             equipment={equipment}
+                            inventory={inventory}
                         />
                     )}
                 </main>

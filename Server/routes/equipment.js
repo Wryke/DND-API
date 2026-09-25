@@ -2,13 +2,7 @@ const express = require("express")
 const router = express.Router()
 
 const {
-    findAllEquipmentSlots,
-    findEquipmentSlotById,
-    findEquipmentEntryBySlot,
-    findAllEquipment,
-    findEquipmentEntryById,
-    createEquipmentEntry,
-    deleteEquipmentEntryById
+    findAllEquipmentSlots
 } = require("../db/equipmentQueries.js")
 
 // --- Equipment Routes ---

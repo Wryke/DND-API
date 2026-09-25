@@ -1,42 +1,25 @@
+import { useEffect, useState } from 'react'
 import CharacterHeader from '../components/CharacterHeader'
+import EquipmentInfo from '../components/equipmentInfo'
 
 function EquipmentPage(props) {
     
     // --- State ---
+    const [selectedSlot, setSelectedSlot] = useState(null)
 
     // --- Derived Data ---
-
-    const equipmentSlots = [
-        "head",
-        "armor",
-        "hands",
-        "feet",
-        "accessory_1",
-        "accessory_2",
-        "accessory_3",
-        "accessory_4",
-        "accessory_5",
-        "main_hand",
-        "off_hand"
-    ]
-
-    const equippedItem = props.equipment.find(
-        entry => entry.equipment_slot_name === "main_hand"
-    )
-    
-    const equippedItems = equipmentSlots.map((slot) => {
+    const equippedItems = props.equipmentSlots.map((slot) => {
         const equippedItem = props.equipment.find(
-            entry => entry.equipment_slot_name === slot
+            entry => entry.equipment_slot_id === slot.equipment_slot_id
         )
 
         return (
-            <div key={slot}>
-                {equippedItem && (
-                    <p >
-                        {slot} | {equippedItem ? equippedItem.name : "empty"}
-                    </p>
-                )}
-            </div>
+            <EquipmentInfo
+                key={slot.equipment_slot_id}
+                slot={slot}
+                equippedItem={equippedItem}
+                selectSlot={setSelectedSlot}
+            />
         )
     })
 
@@ -54,6 +37,10 @@ function EquipmentPage(props) {
                         currentWeight={props.currentWeight}
                         inventoryValue={props.inventoryValue}
                     />
+                    
+                    {selectedSlot && (
+                        <p>Selected: {selectedSlot.equipment_slot_name}</p>
+                    )}
 
                     {equippedItems}
                 </div>
