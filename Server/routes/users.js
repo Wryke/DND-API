@@ -891,6 +891,8 @@ router.delete("/:id/characters/:name/inventory/:inventoryId", (req, res) => {
     }
 })
 
+// --- Equipment Routes ---
+
 // GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
 router.get("/:id/characters/:name/equipment", (req, res) => {
     const userId = Number(req.params.id)

@@ -251,8 +251,23 @@ function App() {
     }
 
     // --- Event Handlers ---
-    function selectCharacter(character){
+    function handleSelectCharacter(character){
         setSelectedCharacter(character)
+    }
+
+    function handleEquipmentAdded (newEquipmentEntry){
+        setEquipment([
+            ...equipment,
+            newEquipmentEntry
+        ])
+    }
+
+    function handleEquipmentRemoved(equipmentId) {
+        setEquipment((equipment) => {
+            return equipment.filter((equipmentEntry) => {
+                return equipmentEntry.equipment_id !== equipmentId
+            })
+        })
     }
 
     // --- Render ---
@@ -261,7 +276,7 @@ function App() {
             <CharacterInfo 
                 key={character.character_id}
                 character={character}
-                selectCharacter={selectCharacter}
+                selectCharacter={handleSelectCharacter}
                 removeCharacter={removeCharacter}
             />
         )
@@ -310,6 +325,8 @@ function App() {
                             equipmentSlots={equipmentSlots}
                             equipment={equipment}
                             inventory={inventory}
+                            onEquipmentAdded={handleEquipmentAdded}
+                            onEquipmentRemoved={handleEquipmentRemoved}
                         />
                     )}
                 </main>

@@ -32,8 +32,20 @@ async function createEquipmentEntry(userId, characterName, inventoryId, equipmen
     return apiRequest(url, options)
 }
 
+async function deleteEquipmentEntry(userId, characterName, equipmentId) {
+    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment/${equipmentId}`
+
+    const options = 
+    {
+        method: "DELETE"
+    }
+
+    return apiRequest(url, options)
+}
+
 export {
     getCharacterEquipment,
     createEquipmentEntry,
-    getEquipmentSlots
+    getEquipmentSlots,
+    deleteEquipmentEntry
 }

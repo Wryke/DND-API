@@ -34,7 +34,8 @@ const findEquipmentEntryBySlotStmt = db.prepare(`
         items.item_index,
         items.name,
 
-        equipment_slot_lookup.equipment_slot_name
+        equipment_slot_lookup.equipment_slot_name,
+        equipment.equipment_slot_id
     FROM equipment
     JOIN inventory
         ON equipment.inventory_id = inventory.inventory_id
@@ -59,7 +60,8 @@ const findAllEquipmentStmt = db.prepare(`
         items.item_index,
         items.name,
 
-        equipment_slot_lookup.equipment_slot_name
+        equipment_slot_lookup.equipment_slot_name,
+        equipment.equipment_slot_id
     FROM equipment
     JOIN inventory
         ON equipment.inventory_id = inventory.inventory_id
@@ -83,7 +85,8 @@ const findEquipmentEntryByIdStmt = db.prepare(`
         items.item_index,
         items.name,
 
-        equipment_slot_lookup.equipment_slot_name
+        equipment_slot_lookup.equipment_slot_name,
+        equipment.equipment_slot_id
     FROM equipment
     JOIN inventory
         ON equipment.inventory_id = inventory.inventory_id
