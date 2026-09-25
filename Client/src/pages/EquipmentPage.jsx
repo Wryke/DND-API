@@ -1,6 +1,22 @@
 import CharacterHeader from '../components/CharacterHeader'
 
 function EquipmentPage(props) {
+    
+    // --- State ---
+
+    // --- Derived Data ---
+
+    const equipmentElements = props.equipment.map((equipmentEntry) => {
+        return (
+            <p key={equipmentEntry.equipment_id}>
+                {equipmentEntry.equipment_slot_name}: {equipmentEntry.name}
+            </p>
+        )
+    })
+
+    // --- Event Handlers ---
+
+    // --- Render ---
     return (
         <div>
             <h1>Equipment</h1>
@@ -12,6 +28,8 @@ function EquipmentPage(props) {
                         currentWeight={props.currentWeight}
                         inventoryValue={props.inventoryValue}
                     />
+
+                    {equipmentElements}
                 </div>
             )}
         </div>

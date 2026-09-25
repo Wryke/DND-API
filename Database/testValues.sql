@@ -201,3 +201,37 @@ VALUES
         12,
         10
     );
+
+-- Test Character Equipment --
+
+INSERT INTO equipment (
+    equipment_id,
+    character_id,
+    inventory_id,
+    equipment_slot_id
+)
+
+VALUES
+    -- Test Character 1: Longsword -> Main Hand
+    (
+        1,
+        1,
+        2,
+        10
+    ),
+
+    -- Test Character 2: Shortsword -> Main Hand
+    (
+        2,
+        2,
+        8,
+        10
+    ),
+
+    -- Test Character 2: Shield -> Off Hand
+    (
+        3,
+        2,
+        9,
+        11
+    );

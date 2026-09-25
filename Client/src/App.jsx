@@ -23,6 +23,7 @@ import {
     updateInventoryEntry,
     deleteInventoryEntry 
 } from './api/inventory'
+import { getCharacterEquipment } from './api/equipment'
 
 function App() {
     
@@ -30,6 +31,7 @@ function App() {
     const [characters, setCharacters] = useState([])
     const [selectedCharacter, setSelectedCharacter] = useState(null)
     const [inventory, setInventory] = useState([])
+    const [equipment, setEquipment] = useState([])
     const [currentPage, setCurrentPage] = useState("home")
 
     // --- Derived Data ---
@@ -62,6 +64,7 @@ function App() {
     useEffect(() => {
         if (selectedCharacter === null) {
             setInventory([])
+            setEquipment([])
             return
         }
 
@@ -78,7 +81,21 @@ function App() {
             }
         }
 
+        async function loadEquipment(){
+            setEquipment([])
+
+            try {
+                const data = await getCharacterEquipment(1, selectedCharacter.name)
+
+                setEquipment(data)
+            }
+            catch (error) {
+                console.error(error)
+            }
+        }
+
         loadInventory()
+        loadEquipment()
     }, [selectedCharacter])
 
     // Inventory Functions
@@ -268,6 +285,7 @@ function App() {
                             selectedCharacter={selectedCharacter}
                             currentWeight={currentWeight}
                             inventoryValue={inventoryValue}
+                            equipment={equipment}
                         />
                     )}
                 </main>
