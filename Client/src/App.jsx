@@ -288,7 +288,8 @@ function App() {
 
                 <Sidebar 
                     currentPage={currentPage}
-                    setCurrentPage={setCurrentPage} 
+                    setCurrentPage={setCurrentPage}
+                    selectedCharacter={selectedCharacter}
                 />
 
                 <main className="main-content">

@@ -25,27 +25,31 @@ function Sidebar(props) {
                     Characters
                 </button>
 
-                <button
-                    className={
-                        props.currentPage === "inventory"
-                            ? "sidebar-button active"
-                            : "sidebar-button"
-                    }
-                    onClick={() => props.setCurrentPage("inventory")}
-                >
-                    Inventory
-                </button>
+                {props.selectedCharacter && (
+                    <>
+                        <button
+                            className={
+                                props.currentPage === "inventory"
+                                    ? "sidebar-button active"
+                                    : "sidebar-button"
+                            }
+                            onClick={() => props.setCurrentPage("inventory")}
+                        >
+                            Inventory
+                        </button>
 
-                <button
-                    className={
-                        props.currentPage === "equipment"
-                            ? "sidebar-button active"
-                            : "sidebar-button"
-                    }
-                    onClick={() => props.setCurrentPage("equipment")}
-                >
-                    Equipment
-                </button>
+                        <button
+                            className={
+                                props.currentPage === "equipment"
+                                    ? "sidebar-button active"
+                                    : "sidebar-button"
+                            }
+                            onClick={() => props.setCurrentPage("equipment")}
+                        >
+                            Equipment
+                        </button>
+                    </>
+                )}
             </div>
 
             <button
