@@ -52,12 +52,26 @@ describe("User Routes", () => {
                 SELECT *
                 FROM items
                 WHERE item_index = ?
-            `).get("torch")
+            `).get("torch"),
+
+            longsword: db.prepare(`
+                SELECT *
+                FROM items
+                WHERE item_index = ?
+            `).get("longsword"),
+
+            shield: db.prepare(`
+                SELECT *
+                FROM items
+                WHERE item_index = ?
+            `).get("shield")
         }
 
         expect(testItems.backpack).toBeDefined()
         expect(testItems.pouch).toBeDefined()
         expect(testItems.torch).toBeDefined()
+        expect(testItems.longsword).toBeDefined()
+        expect(testItems.shield).toBeDefined()
     })
 
     afterEach(() => {
@@ -1187,7 +1201,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: "torch",
+                    item_index: "longsword",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1241,6 +1255,124 @@ describe("User Routes", () => {
         })
     })
 
+    describe("GET /users/:id/characters/:name/equipment/compatible/:slotId", () => {
+        test("returns inventory entries compatible with the equipment slot", async () => {
+            const longswordResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "longsword",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "torch",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(longswordResponse.status).toBe(201)
+            expect(torchResponse.status).toBe(201)
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
+                    `compatible/1`
+                )
+
+            expect(response.status).toBe(200)
+            expect(Array.isArray(response.body)).toBe(true)
+            expect(response.body).toHaveLength(1)
+
+            expect(response.body[0].inventory_id)
+                .toBe(longswordResponse.body.inventory_id)
+
+            expect(response.body[0].item_id)
+                .toBe(testItems.longsword.item_id)
+
+            expect(response.body[0].item_index)
+                .toBe("longsword")
+
+            expect(response.body[0].name)
+                .toBe("Longsword")
+        })
+
+        test("returns an empty array when the character has no compatible inventory", async () => {
+            const torchResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "torch",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(torchResponse.status).toBe(201)
+
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
+                    `compatible/1`
+                )
+
+            expect(response.status).toBe(200)
+            expect(response.body).toEqual([])
+        })
+
+        test("returns 404 for an invalid equipment slot", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
+                    `compatible/999999999`
+                )
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Invalid slot ID"
+            )
+        })
+
+        test("returns 404 for a missing character", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `DoesNotExist/equipment/compatible/1`
+                )
+
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe(
+                "Character not found"
+            )
+        })
+
+        test("returns 400 when the equipment slot ID is not an integer", async () => {
+            const response = await request(app)
+                .get(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
+                    `compatible/invalid`
+                )
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Invalid user ID, character name, or equipment slot ID"
+            )
+        })
+    })
+
     describe("GET /users/:id/characters/:name/equipment/:equipmentId", () => {
         test("returns a specific equipment entry", async () => {
             const inventoryResponse = await request(app)
@@ -1249,7 +1381,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: "torch",
+                    item_index: "longsword",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1313,7 +1445,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: "torch",
+                    item_index: "longsword",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1433,7 +1565,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: "torch",
+                    item_index: "longsword",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1444,7 +1576,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: "pouch",
+                    item_index: "shield",
                     parent_inventory_id: null,
                     quantity: 1
                 })
@@ -1481,6 +1613,36 @@ describe("User Routes", () => {
                 "Current slot is occupied"
             )
         })
+
+        test("returns 400 when the item is not compatible with the equipment slot", async () => {
+            const inventoryResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "torch",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(inventoryResponse.status).toBe(201)
+
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Item is not compatible with this equipment slot"
+            )
+        })
     })
 
     describe("DELETE /users/:id/characters/:name/equipment/:equipmentId", () => {
@@ -1491,7 +1653,7 @@ describe("User Routes", () => {
                     `${encodeURIComponent(testCharacter.name)}/inventory`
                 )
                 .send({
-                    item_index: "torch",
+                    item_index: "longsword",
                     parent_inventory_id: null,
                     quantity: 1
                 })

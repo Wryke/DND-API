@@ -33,7 +33,9 @@ const {
     findAllEquipment,
     findEquipmentEntryById,
     createEquipmentEntry,
-    deleteEquipmentEntryById
+    deleteEquipmentEntryById,
+    isInventoryItemCompatibleWithSlot,
+    findCompatibleInventory
 } = require("../db/equipmentQueries.js")
 
 // --- User Routes ---
@@ -60,6 +62,7 @@ const {
 
 // --- Equipment Routes ---
 // GET /equipment/slots - Returns equipment slot lookup
+// GET /users/:id/characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
 // GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
 // GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
 // POST /users/:id/characters/:name/equipment - Create an equipment entry
@@ -929,6 +932,52 @@ router.get("/:id/characters/:name/equipment", (req, res) => {
     return res.status(200).json(equipment)
 })
 
+// GET /users/:id/characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
+router.get("/:id/characters/:name/equipment/compatible/:slotId", (req, res) => {
+    const userId = Number(req.params.id)
+    const name = req.params.name
+    const slotId = Number(req.params.slotId)
+
+    if (
+        !Number.isInteger(userId) ||
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        !Number.isInteger(slotId)
+    ) {
+        return res.status(400).json({
+            error: "Invalid user ID, character name, or equipment slot ID"
+        })
+    }
+
+    const user = findUserById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
+    const character = findCharacterByUserIdAndName(userId, name.trim())
+
+    if(!character){
+        return res.status(404).json({
+            error: "Character not found"
+        })
+    }
+
+    const validSlot = findEquipmentSlotById(slotId)
+
+    if(!validSlot){
+        return res.status(404).json({
+            error: "Invalid slot ID"
+        })
+    }
+
+    const compatibleInventory = findCompatibleInventory(character.character_id, slotId)
+
+    return res.status(200).json(compatibleInventory)
+})
+
 // GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
 router.get("/:id/characters/:name/equipment/:equipmentId", (req, res) => {
     const userId = Number(req.params.id)
@@ -1029,6 +1078,7 @@ router.post("/:id/characters/:name/equipment", (req, res) => {
         })
     }
 
+    // Ensure equipment slot exists
     const validSlot = findEquipmentSlotById(equipment_slot_id)
 
     if(!validSlot){
@@ -1037,6 +1087,14 @@ router.post("/:id/characters/:name/equipment", (req, res) => {
         })
     }
 
+    // Ensure item is compatible with said slot
+    if(!isInventoryItemCompatibleWithSlot(inventory_id, equipment_slot_id)){
+        return res.status(400).json({
+            "error": "Item is not compatible with this equipment slot"
+        })
+    }
+
+    // Ensure the current slot isnt already being used
     const currentSlot = findEquipmentEntryBySlot(
         character.character_id, 
         equipment_slot_id
