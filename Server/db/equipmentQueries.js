@@ -167,6 +167,30 @@ function deleteEquipmentEntryById(characterId, equipmentId) {
     )
 }
 
+const isInventoryItemCompatibleWithSlotStmt = db.prepare(`
+    SELECT EXISTS (
+        SELECT 1
+        FROM inventory
+        JOIN item_to_equipment_slot
+            ON inventory.item_id = item_to_equipment_slot.item_id
+        WHERE inventory.inventory_id = ?
+        AND item_to_equipment_slot.equipment_slot_id = ?
+    ) AS is_compatible;
+`)
+
+function isInventoryItemCompatibleWithSlot(inventoryId, equipmentSlotId) {
+    const object = isInventoryItemCompatibleWithSlotStmt.get(
+        inventoryId,
+        equipmentSlotId
+    )
+
+    if (object.is_compatible) {
+        return true
+    }
+
+    return false
+}
+
 module.exports = {
     findAllEquipmentSlots,
     findEquipmentSlotById,
@@ -175,5 +199,6 @@ module.exports = {
     findEquipmentEntryById,
     createEquipmentEntry,
     // TODO : updateEquipmentEntryById,
-    deleteEquipmentEntryById
+    deleteEquipmentEntryById,
+    isInventoryItemCompatibleWithSlot
 }
