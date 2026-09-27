@@ -258,6 +258,20 @@ CREATE TABLE item_to_category (
         REFERENCES categories_lookup(category_id)
 );
 
+CREATE TABLE item_to_equipment_slot (
+    item_id INTEGER NOT NULL,
+    equipment_slot_id INTEGER NOT NULL,
+
+    PRIMARY KEY (item_id, equipment_slot_id),
+
+    FOREIGN KEY (item_id)
+        REFERENCES items(item_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (equipment_slot_id)
+        REFERENCES equipment_slot_lookup(equipment_slot_id)
+);
+
 CREATE TABLE weapon_to_property (
     item_id INTEGER NOT NULL,
     property_id INTEGER NOT NULL,

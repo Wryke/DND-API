@@ -171,6 +171,59 @@ function findItemByNameAndCategory(name, categoryIndex) {
     return findItemByNameAndCategoryStmt.all(name, categoryIndex)
 }
 
+// --- Item Equipment Details
+
+const findItemEquipmentDataStmt = db.prepare(`
+    SELECT
+        items.item_id,
+        items.item_index,
+        items.name,
+        weapons.item_id AS weapon_item_id,
+        armor.armor_category,
+        containers.item_id AS container_item_id
+    FROM items
+    LEFT JOIN weapons
+        ON items.item_id = weapons.item_id
+    LEFT JOIN armor
+        ON items.item_id = armor.item_id
+    LEFT JOIN containers
+        ON items.item_id = containers.item_id
+    WHERE items.item_id = ?
+`)
+
+const findItemEquipmentCategoriesStmt = db.prepare(`
+    SELECT
+        categories_lookup.category_index
+    FROM item_to_category
+    JOIN categories_lookup
+        ON item_to_category.category_id =
+            categories_lookup.category_id
+    WHERE item_to_category.item_id = ?
+`)
+
+function findItemEquipmentData(itemId) {
+    const item = findItemEquipmentDataStmt.get(itemId)
+
+    if (!item) {
+        return undefined
+    }
+
+    const categories =
+        findItemEquipmentCategoriesStmt.all(itemId).map((category) => {
+            return category.category_index
+        })
+
+    return {
+        item_id: item.item_id,
+        item_index: item.item_index,
+        name: item.name,
+        is_weapon: item.weapon_item_id !== null,
+        armor_category: item.armor_category,
+        is_container: item.container_item_id !== null,
+        categories
+    }
+}
+
 // --- Item Detail Queries ---
 
 const findWeaponDetailsStmt = db.prepare(`
@@ -406,6 +459,8 @@ module.exports = {
     findAllItemCategories,
     findItemByIndexAndCategory,
     findItemByNameAndCategory,
+
+    findItemEquipmentData,
 
     findWeaponDetails,
     findArmorDetails,

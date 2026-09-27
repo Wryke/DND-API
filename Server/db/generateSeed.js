@@ -119,6 +119,14 @@ const tables = [
         orderBy: "item_id"
     },
     {
+        name: "item_to_equipment_slot",
+        columns: [
+            "item_id",
+            "equipment_slot_id"
+        ],
+        orderBy: "item_id, equipment_slot_id"
+    },
+    {
         name: "item_to_category",
         columns: [
             "item_id",

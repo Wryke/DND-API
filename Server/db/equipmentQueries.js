@@ -128,11 +128,7 @@ const createEquipmentEntryStmt = db.prepare(`
     VALUES (?, ?, ?)
 `)
 
-function createEquipmentEntry(
-    characterId,
-    inventoryId,
-    equipmentSlotId
-) {
+function createEquipmentEntry(characterId, inventoryId, equipmentSlotId) {
     const result = createEquipmentEntryStmt.run(
         characterId,
         inventoryId,
@@ -170,7 +166,6 @@ function deleteEquipmentEntryById(characterId, equipmentId) {
         equipmentId
     )
 }
-
 
 module.exports = {
     findAllEquipmentSlots,
