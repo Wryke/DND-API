@@ -5,7 +5,9 @@ const {
     findAllEquipment,
     findEquipmentEntryById,
     createEquipmentEntry,
-    deleteEquipmentEntryById
+    deleteEquipmentEntryById,
+    isInventoryItemCompatibleWithSlot,
+    findCompatibleInventory
 } = require("./equipmentQueries")
 
 const {
@@ -501,6 +503,107 @@ describe("Database Equipment Queries", () => {
             )
 
             expect(result.changes).toBe(0)
+        })
+    })
+
+    // --- isInventoryItemCompatibleWithSlot ---
+
+    describe("isInventoryItemCompatibleWithSlot", () => {
+        test("returns true when the inventory item is compatible with the equipment slot", () => {
+            const result = isInventoryItemCompatibleWithSlot(
+                testInventory.longsword.inventory_id,
+                1
+            )
+
+            expect(result).toBe(true)
+        })
+
+        test("returns false when the inventory item is not compatible with the equipment slot", () => {
+            const result = isInventoryItemCompatibleWithSlot(
+                testInventory.longsword.inventory_id,
+                4
+            )
+
+            expect(result).toBe(false)
+        })
+
+        test("returns false when the inventory entry does not exist", () => {
+            const result = isInventoryItemCompatibleWithSlot(
+                999999999,
+                1
+            )
+
+            expect(result).toBe(false)
+        })
+    })
+
+    // --- findCompatibleInventory ---
+
+    describe("findCompatibleInventory", () => {
+        test("returns compatible inventory entries for an equipment slot", () => {
+            const compatibleInventory = findCompatibleInventory(
+                testCharacter.character_id,
+                1
+            )
+
+            expect(Array.isArray(compatibleInventory)).toBe(true)
+            expect(compatibleInventory).toHaveLength(2)
+
+            const longsword = compatibleInventory.find(
+                entry =>
+                    entry.inventory_id ===
+                    testInventory.longsword.inventory_id
+            )
+
+            const shield = compatibleInventory.find(
+                entry =>
+                    entry.inventory_id ===
+                    testInventory.shield.inventory_id
+            )
+
+            expect(longsword).toBeDefined()
+            expect(longsword.item_id)
+                .toBe(testItems.longsword.item_id)
+            expect(longsword.item_index)
+                .toBe(testItems.longsword.item_index)
+            expect(longsword.name)
+                .toBe(testItems.longsword.name)
+
+            expect(shield).toBeDefined()
+            expect(shield.item_id)
+                .toBe(testItems.shield.item_id)
+            expect(shield.item_index)
+                .toBe(testItems.shield.item_index)
+            expect(shield.name)
+                .toBe(testItems.shield.name)
+        })
+
+        test("returns an empty array when no inventory entries are compatible", () => {
+            const compatibleInventory = findCompatibleInventory(
+                testCharacter.character_id,
+                4
+            )
+
+            expect(Array.isArray(compatibleInventory)).toBe(true)
+            expect(compatibleInventory).toHaveLength(0)
+        })
+
+        test("only returns inventory belonging to the specified character", () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const otherCharacter = createCharacter({
+                user_id: testUser.user_id,
+                name: `OtherCompatibleCharacter_${uniqueSuffix}`,
+                max_weight: 100
+            })
+
+            const compatibleInventory = findCompatibleInventory(
+                otherCharacter.character_id,
+                1
+            )
+
+            expect(compatibleInventory).toHaveLength(0)
         })
     })
 })

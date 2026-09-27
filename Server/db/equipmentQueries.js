@@ -191,6 +191,26 @@ function isInventoryItemCompatibleWithSlot(inventoryId, equipmentSlotId) {
     return false
 }
 
+const findCompatibleInventoryStmt = db.prepare(`
+    SELECT
+        inventory.inventory_id,
+
+        items.item_id,
+        items.item_index,
+        items.name
+    FROM inventory
+    JOIN items
+        ON inventory.item_id = items.item_id
+    JOIN item_to_equipment_slot
+        ON inventory.item_id = item_to_equipment_slot.item_id
+    WHERE inventory.character_id = ?
+        AND item_to_equipment_slot.equipment_slot_id = ?
+`)
+
+function findCompatibleInventory(characterId, equipmentSlotId) {
+    return findCompatibleInventoryStmt.all(characterId, equipmentSlotId)
+}
+
 module.exports = {
     findAllEquipmentSlots,
     findEquipmentSlotById,
@@ -200,5 +220,6 @@ module.exports = {
     createEquipmentEntry,
     // TODO : updateEquipmentEntryById,
     deleteEquipmentEntryById,
-    isInventoryItemCompatibleWithSlot
+    isInventoryItemCompatibleWithSlot,
+    findCompatibleInventory
 }
