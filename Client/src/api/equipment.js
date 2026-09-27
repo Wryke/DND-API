@@ -6,6 +6,12 @@ async function getEquipmentSlots() {
     return apiRequest(url)
 }
 
+async function getCompatibleInventory(userId, characterName, slotId) {
+    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment/compatible/${slotId}`
+
+    return apiRequest(url)
+}
+
 async function getCharacterEquipment(userId, characterName){
     const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment`
 
@@ -45,6 +51,7 @@ async function deleteEquipmentEntry(userId, characterName, equipmentId) {
 
 export {
     getCharacterEquipment,
+    getCompatibleInventory,
     createEquipmentEntry,
     getEquipmentSlots,
     deleteEquipmentEntry

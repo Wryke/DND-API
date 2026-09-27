@@ -1,4 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+import { 
+    getCompatibleInventory
+} from "../api/equipment"
 
 function EquipItemForm (props) {
     
@@ -7,17 +11,39 @@ function EquipItemForm (props) {
 
     const [selectedInventoryId, setSelectedInventoryId] = useState("")
 
+    const [compatibleInventory, setCompatibleInventory] = useState([])
+
     // --- Derived Data ---
-    const inventoryOptions = props.inventory.map((item) => {
+    const inventoryOptions = compatibleInventory.map((item) => {
         return (
-            <option 
+            <option
                 key={item.inventory_id}
                 value={item.inventory_id}
-            > 
-                {item.name} 
+            >
+                {item.name}
             </option>
         )
     })
+
+    // --- Use Effects ---
+    useEffect(() => {
+        async function loadCompatibleInventory() {
+            try {
+                const data = await getCompatibleInventory(
+                    1,
+                    props.selectedCharacter.name,
+                    props.slot.equipment_slot_id
+                )
+
+                setCompatibleInventory(data)
+            }
+            catch (error) {
+                console.error(error)
+            }
+        }
+
+        loadCompatibleInventory()
+    }, [props.slot.equipment_slot_id])
 
     // --- Event Handlers ---
     async function handleSubmit(event) {

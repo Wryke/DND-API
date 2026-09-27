@@ -96,9 +96,9 @@ function EquipmentPage(props) {
                         <Modal>
                             <EquipItemForm
                                 slot={selectedSlot}
-                                inventory={props.inventory}
                                 onCancel={handleCloseEquipForm}
                                 onEquip={handleEquipItem}
+                                selectedCharacter={props.selectedCharacter}
                             />
                         </Modal>
                     )}
