@@ -9,6 +9,8 @@ function EquipItemForm (props) {
     // --- State ---
     const [error, setError] = useState("")
 
+    const [isLoading, setIsLoading] = useState(true)
+
     const [selectedInventoryId, setSelectedInventoryId] = useState("")
 
     const [compatibleInventory, setCompatibleInventory] = useState([])
@@ -29,6 +31,8 @@ function EquipItemForm (props) {
     useEffect(() => {
         async function loadCompatibleInventory() {
             try {
+                setIsLoading(true)
+
                 const data = await getCompatibleInventory(
                     1,
                     props.selectedCharacter.name,
@@ -39,6 +43,10 @@ function EquipItemForm (props) {
             }
             catch (error) {
                 console.error(error)
+                setError(error.message)
+            }
+            finally {
+                setIsLoading(false)
             }
         }
 
@@ -79,12 +87,18 @@ function EquipItemForm (props) {
 
             <select
                 value={selectedInventoryId}
+                disabled={isLoading || compatibleInventory.length === 0}
                 onChange={(event) => {
                     setSelectedInventoryId(event.target.value)
                 }}
             >
                 <option value="">
-                    No Selection
+                    {isLoading
+                        ? "Loading Items..."
+                        : compatibleInventory.length === 0
+                            ? "No Compatible Items"
+                            : "No Selection"
+                    }
                 </option>
 
                 {inventoryOptions}
@@ -96,7 +110,10 @@ function EquipItemForm (props) {
                 </p>
             )}
 
-            <button type="submit">
+            <button 
+                type="submit"
+                disabled={isLoading || compatibleInventory.length === 0}
+            >
                 Equip
             </button>
 
