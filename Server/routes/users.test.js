@@ -1643,6 +1643,101 @@ describe("User Routes", () => {
                 "Item is not compatible with this equipment slot"
             )
         })
+
+        test("returns 409 when the inventory item is already equipped in another slot", async () => {
+            const inventoryResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "longsword",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(inventoryResponse.status).toBe(201)
+
+            // Equip the Longsword in Main Hand
+            const firstEquipmentResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 1
+                })
+
+            expect(firstEquipmentResponse.status).toBe(201)
+
+            // Attempt to equip the exact same inventory entry in Off Hand
+            const response = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: inventoryResponse.body.inventory_id,
+                    equipment_slot_id: 2
+                })
+
+            expect(response.status).toBe(409)
+            expect(response.body.error).toBe(
+                "Item is already equipped somewhere else"
+            )
+        })
+        
+        test("allows different inventory items to be equipped in different slots", async () => {
+            const longswordResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "longsword",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            const shieldResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/inventory`
+                )
+                .send({
+                    item_index: "shield",
+                    parent_inventory_id: null,
+                    quantity: 1
+                })
+
+            expect(longswordResponse.status).toBe(201)
+            expect(shieldResponse.status).toBe(201)
+
+            const mainHandResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: longswordResponse.body.inventory_id,
+                    equipment_slot_id: 1
+                })
+
+            const offHandResponse = await request(app)
+                .post(
+                    `/users/${testUser.user_id}/characters/` +
+                    `${encodeURIComponent(testCharacter.name)}/equipment`
+                )
+                .send({
+                    inventory_id: shieldResponse.body.inventory_id,
+                    equipment_slot_id: 2
+                })
+
+            expect(mainHandResponse.status).toBe(201)
+            expect(offHandResponse.status).toBe(201)
+        })
+
     })
 
     describe("DELETE /users/:id/characters/:name/equipment/:equipmentId", () => {

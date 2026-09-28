@@ -205,10 +205,38 @@ const findCompatibleInventoryStmt = db.prepare(`
         ON inventory.item_id = item_to_equipment_slot.item_id
     WHERE inventory.character_id = ?
         AND item_to_equipment_slot.equipment_slot_id = ?
+        AND NOT EXISTS (
+            SELECT 1
+            FROM equipment
+            WHERE equipment.character_id = inventory.character_id
+                AND equipment.inventory_id = inventory.inventory_id
+        )
 `)
 
 function findCompatibleInventory(characterId, equipmentSlotId) {
     return findCompatibleInventoryStmt.all(characterId, equipmentSlotId)
+}
+
+const isInventoryItemEquippedStmt = db.prepare(`
+    SELECT EXISTS (
+        SELECT 1
+        FROM equipment
+        WHERE equipment.character_id = ?
+            AND equipment.inventory_id = ?
+    ) AS is_equipped;
+`)
+
+function isInventoryItemEquipped(characterId, inventoryId){
+    const object = isInventoryItemEquippedStmt.get(
+        characterId, 
+        inventoryId
+    )
+    
+    if (object.is_equipped) {
+        return true
+    }
+
+    return false
 }
 
 module.exports = {
@@ -221,5 +249,6 @@ module.exports = {
     // TODO : updateEquipmentEntryById,
     deleteEquipmentEntryById,
     isInventoryItemCompatibleWithSlot,
-    findCompatibleInventory
+    findCompatibleInventory,
+    isInventoryItemEquipped
 }

@@ -7,7 +7,8 @@ const {
     createEquipmentEntry,
     deleteEquipmentEntryById,
     isInventoryItemCompatibleWithSlot,
-    findCompatibleInventory
+    findCompatibleInventory,
+    isInventoryItemEquipped
 } = require("./equipmentQueries")
 
 const {
@@ -604,6 +605,84 @@ describe("Database Equipment Queries", () => {
             )
 
             expect(compatibleInventory).toHaveLength(0)
+        })
+
+        test("does not return inventory items that are already equipped", () => {
+            // Equip the Longsword in Main Hand
+            createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                1
+            )
+
+            // Both Longsword and Shield are compatible with Off Hand
+            const compatibleInventory = findCompatibleInventory(
+                testCharacter.character_id,
+                2
+            )
+
+            // Longsword should be excluded because it is already equipped
+            const longsword = compatibleInventory.find(
+                entry =>
+                    entry.inventory_id ===
+                    testInventory.longsword.inventory_id
+            )
+
+            // Shield should remain because it is not equipped
+            const shield = compatibleInventory.find(
+                entry =>
+                    entry.inventory_id ===
+                    testInventory.shield.inventory_id
+            )
+
+            expect(longsword).toBeUndefined()
+            expect(shield).toBeDefined()
+
+            expect(shield.inventory_id)
+                .toBe(testInventory.shield.inventory_id)
+        })
+    })
+
+    // --- isInventoryItemEquipped ---
+
+    describe("isInventoryItemEquipped", () => {
+        test("returns true when the inventory item is equipped", () => {
+            createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                1
+            )
+
+            const result = isInventoryItemEquipped(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id
+            )
+
+            expect(result).toBe(true)
+        })
+
+        test("returns false when the inventory item is not equipped", () => {
+            const result = isInventoryItemEquipped(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id
+            )
+
+            expect(result).toBe(false)
+        })
+
+        test("returns false when a different inventory item is equipped", () => {
+            createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                1
+            )
+
+            const result = isInventoryItemEquipped(
+                testCharacter.character_id,
+                testInventory.shield.inventory_id
+            )
+
+            expect(result).toBe(false)
         })
     })
 })

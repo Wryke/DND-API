@@ -35,7 +35,8 @@ const {
     createEquipmentEntry,
     deleteEquipmentEntryById,
     isInventoryItemCompatibleWithSlot,
-    findCompatibleInventory
+    findCompatibleInventory,
+    isInventoryItemEquipped
 } = require("../db/equipmentQueries.js")
 
 // --- User Routes ---
@@ -1091,6 +1092,13 @@ router.post("/:id/characters/:name/equipment", (req, res) => {
     if(!isInventoryItemCompatibleWithSlot(inventory_id, equipment_slot_id)){
         return res.status(400).json({
             "error": "Item is not compatible with this equipment slot"
+        })
+    }
+
+    // Ensure the item isn't already equipped somewhere else
+    if(isInventoryItemEquipped(character.character_id, inventory_id)){
+        return res.status(409).json({
+            "error": "Item is already equipped somewhere else"
         })
     }
 
