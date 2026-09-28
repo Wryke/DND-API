@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import CharacterHeader from '../components/CharacterHeader'
 import EquipmentInfo from '../components/EquipmentInfo'
@@ -13,6 +13,8 @@ import {
 function EquipmentPage(props) {
     
     // --- State ---
+    const [error, setError] = useState("")
+
     const [selectedSlot, setSelectedSlot] = useState(null)
 
     // --- Derived Data ---
@@ -47,17 +49,20 @@ function EquipmentPage(props) {
             )
 
             props.onEquipmentAdded(data)
+
             setSelectedSlot(null)
 
             return null
         }
         catch (error) {
             console.error(error)
-            return error.message
+            setError(error.message)
         }
     }
 
     async function handleUnequipItem(equipmentId) {
+        setError("")
+
         try {
             await deleteEquipmentEntry(
                 1,
@@ -66,10 +71,10 @@ function EquipmentPage(props) {
             )
 
             props.onEquipmentRemoved(equipmentId)
-            setSelectedSlot(null)
         }
         catch (error) {
             console.error(error)
+            setError(error.message)
         }
     }
 
@@ -86,12 +91,14 @@ function EquipmentPage(props) {
                         inventoryValue={props.inventoryValue}
                     />
 
-                    {selectedSlot && (
-                        <p>Selected: {selectedSlot.equipment_slot_name}</p>
+                    {error && (
+                        <p className="form-error">
+                            {error}
+                        </p>
                     )}
-
+                    
                     {equippedItems}
-
+                    
                     {selectedSlot && (
                         <Modal>
                             <EquipItemForm
