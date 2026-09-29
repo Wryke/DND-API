@@ -56,7 +56,7 @@ function EquipmentPage(props) {
         }
         catch (error) {
             console.error(error)
-            setError(error.message)
+            return error.message
         }
     }
 
@@ -97,7 +97,9 @@ function EquipmentPage(props) {
                         </p>
                     )}
                     
-                    {equippedItems}
+                    <div className="equipment-grid">
+                        {equippedItems}
+                    </div>
                     
                     {selectedSlot && (
                         <Modal>

@@ -2,10 +2,13 @@
 function EquipmentInfo(props) {
     
     return (
-        <div>
+        <div className="equipment-slot">
             <h2>
-                {props.slot.equipment_slot_name} | {props.equippedItem ? props.equippedItem.name : "empty"}
+                {props.slot.equipment_slot_name}
             </h2>
+            <h3 className={props.equippedItem ? "equipped-item" : "empty-slot"}>
+                {props.equippedItem ? props.equippedItem.name : "Empty"}
+            </h3>
 
             {props.equippedItem ? (
                 <button
