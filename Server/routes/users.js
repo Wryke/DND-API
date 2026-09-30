@@ -1,4 +1,7 @@
 const express = require("express")
+
+const argon2 = require("argon2")
+
 const router = express.Router()
 
 const { 
@@ -96,7 +99,7 @@ router.get("/:id", (req, res) => {
 })
 
 // POST /users - Create a user
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
 
     const username = req.body.username
     const password = req.body.password
@@ -108,7 +111,20 @@ router.post("/", (req, res) => {
     }
 
     try {
-        const user = createUser(req.body)
+
+        if(password.length < 8 || password.length > 16){
+            return res.status(400).json({
+                error: "Password length must be 8-16 characters"
+            })
+        }
+
+        const passwordHash = await argon2.hash(password)
+
+        const user = createUser({
+            username,
+            passwordHash
+        })
+        
         return res.status(201).json(user)
     } catch (error) {
         if(error.message.includes("UNIQUE constraint failed")) {

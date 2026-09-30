@@ -23,17 +23,32 @@ function findUserByUsername (username) {
     return findUserByUsernameStmt.get(username)
 }
 
-const createUserStmt = db.prepare(`
-    INSERT INTO users (username, password)
-    VALUES (?, ?)
+const findUserByEmailStmt = db.prepare(`
+    SELECT
+        user_id,
+        username,
+        email,
+        password_hash
+    FROM users
+    WHERE email = ?
 `)
 
-function createUser ({ username, password }) {
-    const result = createUserStmt.run(username, password)
+function findUserByEmail (email) {
+    return findUserByEmailStmt.get(email)
+}
+
+const createUserStmt = db.prepare(`
+    INSERT INTO users (username, email, password_hash)
+    VALUES (?, ?, ?)
+`)
+
+function createUser ({ username, email, passwordHash }) {
+    const result = createUserStmt.run(username, email, passwordHash)
 
     return {
         user_id: result.lastInsertRowid,
-        username
+        username,
+        email
     }
 }
 
@@ -383,6 +398,7 @@ function deleteInventoryEntry (inventoryId) {
 module.exports = {
     findUserById,
     findUserByUsername,
+    findUserByEmail,
     createUser,
     updateUserById,
     deleteUserById,

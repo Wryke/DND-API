@@ -53,8 +53,9 @@ CREATE TABLE equipment_slot_lookup (
 
 CREATE TABLE users (
     user_id INTEGER PRIMARY KEY,
-    username TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
+    username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    password_hash TEXT NOT NULL
 );
 
 CREATE TABLE characters (
