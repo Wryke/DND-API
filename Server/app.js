@@ -29,6 +29,6 @@ app.use("/users", userRoutes)
 app.use("/characters", characterRoutes)
 app.use("/characters", inventoryRoutes)
 app.use("/items", itemRoutes)
-app.use("/users", equipmentRoutes)
+app.use("/characters", equipmentRoutes)
 
 module.exports = app

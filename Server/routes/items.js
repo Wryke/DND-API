@@ -17,6 +17,10 @@ const {
     findEquipmentPackDetails
 } = require("../db/itemQueries.js")
 
+const {
+    findAllEquipmentSlots,
+} = require("../db/equipmentQueries.js")
+
 // --- Item Routes ---
 // GET /items - Return all items, optionally filtered by category
 // GET /items/categories - Return all unique item categories
@@ -24,6 +28,10 @@ const {
 // GET /items/index/:index - Return an item by index, optionally filtered by category
 // GET /items/index/:index/details - Return an item's details by index
 // --- ----------- ---
+
+// --- Equipment Routes ---
+// GET /items/equipment-slots - Returns equipment slot lookup
+// --- ---------------- ---
 
 // GET /items - Return all items, optionally filtered by category
 router.get("/", (req, res) => {
@@ -176,6 +184,15 @@ router.get("/index/:index/details", (req, res) => {
     }
 
     return res.status(200).json(details)
+})
+
+// --- Equipment Routes ---
+
+// GET /items/equipment-slots - Returns equipment slot lookup
+router.get("/equipment-slots", (req, res) => {
+    const data = findAllEquipmentSlots()
+
+    return res.status(200).json(data)
 })
 
 module.exports = router

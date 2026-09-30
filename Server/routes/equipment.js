@@ -1,6 +1,8 @@
 const express = require("express")
 const router = express.Router()
 
+const requireAuth = require("../middleware/requireAuth")
+
 const { 
     findUserById,
     findCharacterByUserIdAndName,
@@ -8,7 +10,6 @@ const {
  } = require("../db/userQueries.js")
 
 const {
-    findAllEquipmentSlots,
     findEquipmentSlotById,
     findEquipmentEntryBySlot,
     findAllEquipment,
@@ -21,50 +22,36 @@ const {
 } = require("../db/equipmentQueries.js")
 
 // --- Equipment Routes ---
-// GET /equipment/slots - Returns equipment slot lookup
-// --- ---------------- ---
-
-// --- Character Equipment Routes ---
-// GET /equipment/slots - Returns equipment slot lookup
-// GET /users/:id/characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
-// GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
-// GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
-// POST /users/:id/characters/:name/equipment - Create an equipment entry
+// GET characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
+// GET characters/:name/equipment - Returns all of a characters equipped items
+// GET characters/:name/equipment/:equipmentId - Returns a specific equipped item
+// POST characters/:name/equipment - Create an equipment entry
 // PATCH ??
-// DELETE /users/:id/characters/:name/equipment/:equipmentId - Delete an equipment entry
+// DELETE characters/:name/equipment/:equipmentId - Delete an equipment entry
 // --- -------------------------- ---
 
 // --- Equipment Routes ---
 
-// GET /equipment/slots - Returns equipment slot lookup
-router.get("/slots", (req, res) => {
-    const data = findAllEquipmentSlots()
+// GET characters/:name/equipment - Returns all of a characters equipped items
+router.get("/:name/equipment", requireAuth, (req, res) => {
+    const userId = req.session.userId
 
-    return res.status(200).json(data)
-})
+    const user = findUserById(userId)
 
-// --- Character Equipment Routes ---
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
 
-// GET /users/:id/characters/:name/equipment - Returns all of a characters equipped items
-router.get("/:id/characters/:name/equipment", (req, res) => {
-    const userId = Number(req.params.id)
     const name = req.params.name
 
     if (
-        !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0
     ) {
         return res.status(400).json({
-            error: "Invalid user ID or character name"
-        })
-    }
-
-    const user = findUserById(userId)
-
-    if(!user){
-        return res.status(404).json({
-            error: "User not found"
+            error: "Invalid character name"
         })
     }
 
@@ -81,28 +68,28 @@ router.get("/:id/characters/:name/equipment", (req, res) => {
     return res.status(200).json(equipment)
 })
 
-// GET /users/:id/characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
-router.get("/:id/characters/:name/equipment/compatible/:slotId", (req, res) => {
-    const userId = Number(req.params.id)
+// GET characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
+router.get("/:name/equipment/compatible/:slotId", requireAuth, (req, res) => {
+    const userId = req.session.userId
+
+    const user = findUserById(userId)
+
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const name = req.params.name
     const slotId = Number(req.params.slotId)
 
     if (
-        !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0 ||
         !Number.isInteger(slotId)
     ) {
         return res.status(400).json({
-            error: "Invalid user ID, character name, or equipment slot ID"
-        })
-    }
-
-    const user = findUserById(userId)
-
-    if(!user){
-        return res.status(404).json({
-            error: "User not found"
+            error: "Invalid character name or equipment slot ID"
         })
     }
 
@@ -127,30 +114,29 @@ router.get("/:id/characters/:name/equipment/compatible/:slotId", (req, res) => {
     return res.status(200).json(compatibleInventory)
 })
 
-// GET /users/:id/characters/:name/equipment/:equipmentId - Returns a specific equipped item
-router.get("/:id/characters/:name/equipment/:equipmentId", (req, res) => {
-    const userId = Number(req.params.id)
+// GET characters/:name/equipment/:equipmentId - Returns a specific equipped item
+router.get("/:name/equipment/:equipmentId", requireAuth, (req, res) => {
+    const userId = req.session.userId
+
+    const user = findUserById(userId)
+
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
     const name = req.params.name
     const equipmentId = Number(req.params.equipmentId)
 
     if (
-        !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0 ||
         !Number.isInteger(equipmentId)
     ) {
         return res.status(400).json({
-            error: "Invalid user ID, character name, or equipment ID"
+            error: "Invalid character name or equipment ID"
         })
-    }
-
-    const user = findUserById(userId)
-
-    if(!user){
-        return res.status(404).json({
-            error: "User not found"
-        })
-    }
+    }  
 
     const character = findCharacterByUserIdAndName(userId, name.trim())
 
@@ -171,27 +157,26 @@ router.get("/:id/characters/:name/equipment/:equipmentId", (req, res) => {
     return res.status(200).json(equipmentEntry)
 })
 
-// POST /users/:id/characters/:name/equipment - Create an equipment entry
-router.post("/:id/characters/:name/equipment", (req, res) => {
-    const userId = Number(req.params.id)
+// POST characters/:name/equipment - Create an equipment entry
+router.post("/:name/equipment", requireAuth, (req, res) => {
+    const userId = req.session.userId
+
+    const user = findUserById(userId)
+
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
     const name = req.params.name
     const { inventory_id, equipment_slot_id } = req.body
 
     if (
-        !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0
     ) {
         return res.status(400).json({
-            error: "A valid user ID and character name are required"
-        })
-    }
-
-    const user = findUserById(userId)
-
-    if(!user){
-        return res.status(404).json({
-            error: "User not found"
+            error: "A valid character name is required"
         })
     }
 
@@ -286,29 +271,29 @@ router.post("/:id/characters/:name/equipment", (req, res) => {
 
 // PATCH ??
 
-// DELETE /users/:id/characters/:name/equipment/:equipmentId - Delete an equipment entry
-router.delete("/:id/characters/:name/equipment/:equipmentId", (req, res) => {
+// DELETE characters/:name/equipment/:equipmentId - Delete an equipment entry
+router.delete("/:name/equipment/:equipmentId", requireAuth, (req, res) => {
 
-    const userId = Number(req.params.id)
+    const userId = req.session.userId
+
+    const user = findUserById(userId)
+
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
+        })
+    }
+
     const name = req.params.name
     const equipmentId = Number(req.params.equipmentId)
 
     if (
-        !Number.isInteger(userId) ||
         typeof name !== "string" ||
         name.trim().length === 0 ||
         !Number.isInteger(equipmentId)
     ) {
         return res.status(400).json({
-            error: "A valid user ID, character name, and equipment ID are required"
-        })
-    }
-
-    const user = findUserById(userId)
-
-    if(!user){
-        return res.status(404).json({
-            error: "User not found"
+            error: "A valid character name and equipment ID are required"
         })
     }
 
