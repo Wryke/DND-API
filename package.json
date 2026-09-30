@@ -27,6 +27,7 @@
     "globalSetup": "./Server/jest.setup.js"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "better-sqlite3": "^12.11.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
