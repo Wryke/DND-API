@@ -1,12 +1,20 @@
 const express = require("express")
+const router = express.Router()
+
 const argon2 = require("argon2")
+
+const requireAuth = require("../middleware/requireAuth")
 
 const {
     findUserByEmail,
     findUserById
 } = require("../db/userQueries")
 
-const router = express.Router()
+// --- Authentication Routes ---
+// POST /auth/login - Logs a user in
+// GET /auth/me - Verifies a user has a session
+// POST /auth/logout - Logs a user out
+// --- --------------------- ---
 
 router.post("/login", async (req, res) => {
 
@@ -56,15 +64,9 @@ router.post("/login", async (req, res) => {
     }
 })
 
-router.get("/me", (req, res) => {
+router.get("/me", requireAuth, (req, res) => {
 
     const userId = req.session.userId
-
-    if(!userId){
-        return res.status(401).json({
-            error: "Not authenticated"
-        })
-    }
 
     const user = findUserById(userId)
 
@@ -88,7 +90,7 @@ router.post("/logout", (req, res) => {
         }
 
         res.clearCookie("connect.sid")
-        
+
         return res.status(200).json({
             "message": "Logged out successfully"
         })
