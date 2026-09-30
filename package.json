@@ -21,7 +21,7 @@
     "generate-seed": "node Server/db/generateSeed.js",
     "check-db": "set NODE_ENV=development&& node Server/db/checkDb.js",
     "check-test-db": "set NODE_ENV=test&& node Server/db/checkDb.js",
-    "test": "jest --runInBand"
+    "test": "set NODE_ENV=test&& node --env-file=.env ./node_modules/jest/bin/jest.js --runInBand"
   },
   "jest": {
     "globalSetup": "./Server/jest.setup.js"

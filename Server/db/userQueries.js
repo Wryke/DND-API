@@ -4,7 +4,7 @@ const db = require("./connection")
 // --- User Queries ---
 
 const findUserByIdStmt = db.prepare(`
-    SELECT user_id, username
+    SELECT user_id, username, email
     FROM users
     WHERE user_id = ?
 `)
@@ -21,6 +21,22 @@ const findUserByUsernameStmt = db.prepare(`
 
 function findUserByUsername (username) {
     return findUserByUsernameStmt.get(username)
+}
+
+const findPasswordHashByUserIdStmt = db.prepare(`
+    SELECT password_hash
+    FROM users
+    WHERE user_id = ?
+`)
+
+function findPasswordHashByUserId(userId) {
+    const result = findPasswordHashByUserIdStmt.get(userId)
+
+    if (!result) {
+        return undefined
+    }
+
+    return result.password_hash
 }
 
 const findUserByEmailStmt = db.prepare(`
@@ -54,12 +70,19 @@ function createUser ({ username, email, passwordHash }) {
 
 const updateUserByIdStmt = db.prepare(`
     UPDATE users
-    SET username = ?
+    SET username = ?,
+        email = ?,
+        password_hash = ?
     WHERE user_id = ?
 `)
 
-function updateUserById(userId, {username}) {
-    const result = updateUserByIdStmt.run(username, userId)
+function updateUserById(userId, { username, email, passwordHash }) {
+    const result = updateUserByIdStmt.run(
+        username,
+        email,
+        passwordHash,
+        userId
+    )
 
     if (result.changes === 0) {
         return undefined
@@ -67,7 +90,8 @@ function updateUserById(userId, {username}) {
 
     return {
         user_id: userId,
-        username
+        username,
+        email
     }
 }
 
@@ -399,6 +423,7 @@ module.exports = {
     findUserById,
     findUserByUsername,
     findUserByEmail,
+    findPasswordHashByUserId,
     createUser,
     updateUserById,
     deleteUserById,

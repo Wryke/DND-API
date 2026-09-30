@@ -1,56 +1,36 @@
 const express = require("express")
+const router = express.Router()
 
 const argon2 = require("argon2")
 
-const router = express.Router()
+const requireAuth = require("../middleware/requireAuth")
 
 const { 
     findUserById,
+    findPasswordHashByUserId,
     createUser,
     updateUserById,
     deleteUserById,
- } = require("../db/userQueries.js")
+} = require("../db/userQueries.js")
 
 // --- User Routes ---
-// GET /users/:id - Return a user by ID
 // POST /users - Create a user
-// PATCH /users/:id - Update a user's information
-// DELETE /users/:id - Delete a user
+// PATCH /users/me - Update a user's information
+// DELETE /users/me - Delete a user
 // --- ----------- ---
 
 // --- User Routes ---
-
-// GET /users/:id - Return a user by ID
-router.get("/:id", (req, res) => {
-
-    const userId = Number(req.params.id)
-
-    if(!Number.isInteger(userId)){
-        return res.status(400).json({
-            error: "Invalid user ID"
-        })
-    }
-
-    const user = findUserById(userId)
-
-    if(!user){
-        return res.status(404).json({
-            error: "User not found"
-        })
-    }
-
-    return res.status(200).json(user)
-})
 
 // POST /users - Create a user
 router.post("/", async (req, res) => {
 
     const username = req.body.username
+    const email = req.body.email
     const password = req.body.password
 
-    if (!username || !password) {
+    if (!username || !password || !email) {
         return res.status(400).json({
-            error: "Username and password are required"
+            error: "Username, password, and email are required"
         })
     }
 
@@ -66,6 +46,7 @@ router.post("/", async (req, res) => {
 
         const user = createUser({
             username,
+            email,
             passwordHash
         })
         
@@ -73,7 +54,7 @@ router.post("/", async (req, res) => {
     } catch (error) {
         if(error.message.includes("UNIQUE constraint failed")) {
             return res.status(409).json({
-                error: "Username already exists"
+                error: "Username or email already exists"
             })
         }
 
@@ -83,30 +64,120 @@ router.post("/", async (req, res) => {
     }
 })
 
-// PATCH /users/:id - Update a user's information
-router.patch("/:id", (req, res) => {
+// PATCH /users/me - Update the authenticated user's information
+router.patch("/me", requireAuth, async (req, res) => {
 
-    const userId = Number(req.params.id)
-    const { username } = req.body
+    const userId = req.session.userId
+    const user = findUserById(userId)
 
-    if(!Number.isInteger(userId)){
-        return res.status(400).json({
-            error: "Invalid user ID"
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
         })
     }
 
+    const {
+        username,
+        email,
+        password,
+        currentPassword
+    } = req.body
+
+    const hasUsername = username !== undefined
+    const hasEmail = email !== undefined
+    const hasPassword = password !== undefined
+
+    if (!hasUsername && !hasEmail && !hasPassword) {
+        return res.status(400).json({
+            error: "At least one field must be provided"
+        })
+    }
+
+    // Validate username if supplied
     if (
-        typeof username !== "string" ||
-        username.trim().length === 0
+        hasUsername &&
+        (
+            typeof username !== "string" ||
+            username.trim().length === 0
+        )
     ) {
         return res.status(400).json({
-            error: "A valid username is required"
+            error: "Username must be a non-empty string"
+        })
+    }
+
+    // Validate email if supplied
+    if (
+        hasEmail &&
+        (
+            typeof email !== "string" ||
+            email.trim().length === 0
+        )
+    ) {
+        return res.status(400).json({
+            error: "Email must be a non-empty string"
+        })
+    }
+
+    // Validate new password if supplied
+    if (
+        hasPassword &&
+        (
+            typeof password !== "string" ||
+            password.length < 8 ||
+            password.length > 16
+        )
+    ) {
+        return res.status(400).json({
+            error: "Password length must be 8-16 characters"
         })
     }
 
     try {
+
+        // Email and password changes require password confirmation
+        if (hasEmail || hasPassword) {
+
+            if (
+                typeof currentPassword !== "string" ||
+                currentPassword.length === 0
+            ) {
+                return res.status(400).json({
+                    error: "Current password is required"
+                })
+            }
+
+            const currentPasswordHash = findPasswordHashByUserId(userId)
+
+            if (!currentPasswordHash) {
+                return res.status(404).json({
+                    error: "User not found"
+                })
+            }
+
+            const passwordMatches = await argon2.verify(
+                currentPasswordHash,
+                currentPassword
+            )
+
+            if (!passwordMatches) {
+                return res.status(401).json({
+                    error: "Current password is incorrect"
+                })
+            }
+        }
+
+        // Preserve the existing hash unless password is being changed
+        let passwordHash = findPasswordHashByUserId(userId)
+
+        if (hasPassword) {
+            passwordHash = await argon2.hash(password)
+        }
+
         const updated = updateUserById(userId, {
-            username: username.trim()
+            username: hasUsername ? username.trim() : user.username,
+            email: hasEmail ? email.trim() : user.email,
+            passwordHash
         })
 
         if (!updated) {
@@ -118,11 +189,14 @@ router.patch("/:id", (req, res) => {
         return res.status(200).json(updated)
     }
     catch (error) {
+
         if (error.message.includes("UNIQUE constraint failed")) {
             return res.status(409).json({
-                error: "Username already exists"
+                error: "Username or email already exists"
             })
         }
+
+        console.error(error)
 
         return res.status(500).json({
             error: "Internal server error"
@@ -130,20 +204,75 @@ router.patch("/:id", (req, res) => {
     }
 })
 
-// DELETE /users/:id - Delete a user
-router.delete("/:id", (req, res) => {
+// DELETE /users/me - Delete the authenticated user
+router.delete("/me", requireAuth, async (req, res) => {
 
-    const deleted = deleteUserById(req.params.id)
+    const userId = req.session.userId
+    const { currentPassword } = req.body
 
-    if (!deleted) {
-        return res.status(404).json({
-            error: "User not found"
+    if (
+        typeof currentPassword !== "string" ||
+        currentPassword.length === 0
+    ) {
+        return res.status(400).json({
+            error: "Current password is required"
         })
     }
 
-    return res.status(200).json({
-        deleted: true
-    })
+    try {
+
+        const passwordHash = findPasswordHashByUserId(userId)
+
+        if (!passwordHash) {
+            return res.status(404).json({
+                error: "User not found"
+            })
+        }
+
+        const passwordMatches = await argon2.verify(
+            passwordHash,
+            currentPassword
+        )
+
+        if (!passwordMatches) {
+            return res.status(401).json({
+                error: "Current password is incorrect"
+            })
+        }
+
+        const deleted = deleteUserById(userId)
+
+        if (!deleted) {
+            return res.status(404).json({
+                error: "User not found"
+            })
+        }
+
+        req.session.destroy((error) => {
+
+            if (error) {
+                console.error(error)
+
+                return res.status(500).json({
+                    error: "User deleted, but session could not be destroyed"
+                })
+            }
+
+            res.clearCookie("connect.sid")
+
+            return res.status(200).json({
+                deleted: true
+            })
+        })
+    }
+    catch (error) {
+
+        console.error(error)
+
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
 })
 
 module.exports = router

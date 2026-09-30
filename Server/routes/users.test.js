@@ -1,84 +1,48 @@
 const request = require("supertest")
+const argon2 = require("argon2")
+
 const app = require("../app")
 const db = require("../db/connection.js")
 
+
 describe("User Routes", () => {
     let testUser
-    let testCharacter
+    let agent
     let additionalUserIds
-    let testItems
+
+    const TEST_PASSWORD = "testpass"
 
     beforeEach(async () => {
         const uniqueSuffix =
             `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-        const userResponse = await request(app)
+        agent = request.agent(app)
+        additionalUserIds = []
+
+        const userResponse = await agent
             .post("/users")
             .send({
                 username: `TestUser_${uniqueSuffix}`,
-                password: "testpass"
+                email: `test_${uniqueSuffix}@example.com`,
+                password: TEST_PASSWORD
             })
 
         expect(userResponse.status).toBe(201)
 
         testUser = userResponse.body
 
-        const characterResponse = await request(app)
-            .post(`/users/${testUser.user_id}/characters`)
+        const loginResponse = await agent
+            .post("/auth/login")
             .send({
-                name: `TestCharacter_${uniqueSuffix}`,
-                max_weight: 100
+                email: testUser.email,
+                password: TEST_PASSWORD
             })
 
-        expect(characterResponse.status).toBe(201)
-
-        testCharacter = characterResponse.body
-        additionalUserIds = []
-
-        testItems = {
-            backpack: db.prepare(`
-                SELECT *
-                FROM items
-                WHERE item_index = ?
-            `).get("backpack"),
-
-            pouch: db.prepare(`
-                SELECT *
-                FROM items
-                WHERE item_index = ?
-            `).get("pouch"),
-
-            torch: db.prepare(`
-                SELECT *
-                FROM items
-                WHERE item_index = ?
-            `).get("torch"),
-
-            longsword: db.prepare(`
-                SELECT *
-                FROM items
-                WHERE item_index = ?
-            `).get("longsword"),
-
-            shield: db.prepare(`
-                SELECT *
-                FROM items
-                WHERE item_index = ?
-            `).get("shield")
-        }
-
-        expect(testItems.backpack).toBeDefined()
-        expect(testItems.pouch).toBeDefined()
-        expect(testItems.torch).toBeDefined()
-        expect(testItems.longsword).toBeDefined()
-        expect(testItems.shield).toBeDefined()
+        expect(loginResponse.status).toBe(200)
     })
 
+
     afterEach(() => {
-        /*
-         * Delete additional users first.
-         * Cascading deletes remove their characters and inventory.
-         */
         for (const userId of additionalUserIds) {
             db.prepare(`
                 DELETE FROM users
@@ -96,337 +60,329 @@ describe("User Routes", () => {
         `).run(testUser.user_id)
     })
 
-    // --- User Routes ---
 
-    describe("GET /users/:id", () => {
-        test("returns the requested user", async () => {
-            const response = await request(app)
-                .get(`/users/${testUser.user_id}`)
-
-            expect(response.status).toBe(200)
-            expect(response.body.user_id).toBe(testUser.user_id)
-            expect(response.body.username).toBe(testUser.username)
-        })
-
-        test("returns 404 for a missing user", async () => {
-            const response = await request(app)
-                .get("/users/999999999")
-
-            expect(response.status).toBe(404)
-            expect(response.body.username).toBeUndefined()
-        })
-    })
+    // --- POST /users ---
 
     describe("POST /users", () => {
+
         test("creates a valid user", async () => {
-            const username = `TestUser_Additional_${Date.now()}`
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const username =
+                `TestUser_Additional_${uniqueSuffix}`
+
+            const email =
+                `additional_${uniqueSuffix}@example.com`
 
             const response = await request(app)
                 .post("/users")
                 .send({
                     username,
-                    password: "testpass"
+                    email,
+                    password: TEST_PASSWORD
                 })
 
             expect(response.status).toBe(201)
             expect(response.body.username).toBe(username)
+            expect(response.body.email).toBe(email)
             expect(response.body).toHaveProperty("user_id")
 
             additionalUserIds.push(response.body.user_id)
         })
 
-        test("rejects a duplicate username", async () => {
+
+        test("does not return the password or password hash", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
             const response = await request(app)
                 .post("/users")
                 .send({
-                    username: testUser.username,
-                    password: "different-password"
+                    username: `TestUser_Secure_${uniqueSuffix}`,
+                    email: `secure_${uniqueSuffix}@example.com`,
+                    password: TEST_PASSWORD
                 })
 
-            expect(response.status).toBe(409)
+            expect(response.status).toBe(201)
+
+            expect(response.body.password).toBeUndefined()
+            expect(response.body.password_hash).toBeUndefined()
+
+            additionalUserIds.push(response.body.user_id)
+        })
+
+
+        test("stores a hashed password instead of plaintext", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: `TestUser_Hash_${uniqueSuffix}`,
+                    email: `hash_${uniqueSuffix}@example.com`,
+                    password: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(201)
+
+            additionalUserIds.push(response.body.user_id)
+
+            const storedUser = db.prepare(`
+                SELECT password_hash
+                FROM users
+                WHERE user_id = ?
+            `).get(response.body.user_id)
+
+            expect(storedUser).toBeDefined()
+            expect(storedUser.password_hash)
+                .not.toBe(TEST_PASSWORD)
+
+            const passwordMatches = await argon2.verify(
+                storedUser.password_hash,
+                TEST_PASSWORD
+            )
+
+            expect(passwordMatches).toBe(true)
+        })
+
+
+        test("rejects a missing username", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    email: "missingusername@example.com",
+                    password: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(400)
             expect(response.body.error).toBe(
-                "Username already exists"
+                "Username, password, and email are required"
             )
         })
+
 
         test("rejects an empty username", async () => {
             const response = await request(app)
                 .post("/users")
                 .send({
                     username: "",
-                    password: "testpass"
+                    email: "emptyusername@example.com",
+                    password: TEST_PASSWORD
                 })
 
             expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Username, password, and email are required"
+            )
         })
+
+
+        test("rejects a missing email", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: "MissingEmailUser",
+                    password: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Username, password, and email are required"
+            )
+        })
+
+
+        test("rejects an empty email", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: "EmptyEmailUser",
+                    email: "",
+                    password: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Username, password, and email are required"
+            )
+        })
+
 
         test("rejects a missing password", async () => {
             const response = await request(app)
                 .post("/users")
                 .send({
-                    username: `TestUser_MissingPassword_${Date.now()}`
+                    username: "MissingPasswordUser",
+                    email: "missingpassword@example.com"
                 })
 
             expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Username, password, and email are required"
+            )
         })
+
+
+        test("rejects a password shorter than 8 characters", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: "ShortPasswordUser",
+                    email: "shortpassword@example.com",
+                    password: "short"
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Password length must be 8-16 characters"
+            )
+        })
+
+
+        test("rejects a password longer than 16 characters", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: "LongPasswordUser",
+                    email: "longpassword@example.com",
+                    password: "12345678901234567"
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Password length must be 8-16 characters"
+            )
+        })
+
+
+        test("rejects a duplicate username", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: testUser.username,
+                    email: "different@example.com",
+                    password: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(409)
+            expect(response.body.error).toBe(
+                "Username or email already exists"
+            )
+        })
+
+
+        test("rejects a duplicate email", async () => {
+            const response = await request(app)
+                .post("/users")
+                .send({
+                    username: "DifferentUsername",
+                    email: testUser.email,
+                    password: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(409)
+            expect(response.body.error).toBe(
+                "Username or email already exists"
+            )
+        })
+
     })
 
-    describe("PATCH /users/:id", () => {
-        test("updates an existing username", async () => {
-            const newUsername = `${testUser.username}_Updated`
 
-            const patchResponse = await request(app)
-                .patch(`/users/${testUser.user_id}`)
+    // --- PATCH /users/me ---
+
+    describe("PATCH /users/me", () => {
+
+        test("rejects an unauthenticated request", async () => {
+            const response = await request(app)
+                .patch("/users/me")
+                .send({
+                    username: "UpdatedUsername"
+                })
+
+            expect(response.status).toBe(401)
+            expect(response.body.error).toBe(
+                "Not authenticated"
+            )
+        })
+
+
+        test("updates the username without requiring the current password", async () => {
+            const newUsername =
+                `${testUser.username}_Updated`
+
+            const response = await agent
+                .patch("/users/me")
                 .send({
                     username: newUsername
                 })
 
-            expect(patchResponse.status).toBe(200)
-            expect(patchResponse.body.user_id)
+            expect(response.status).toBe(200)
+            expect(response.body.user_id)
                 .toBe(testUser.user_id)
-            expect(patchResponse.body.username)
+            expect(response.body.username)
                 .toBe(newUsername)
+            expect(response.body.email)
+                .toBe(testUser.email)
 
-            const getResponse = await request(app)
-                .get(`/users/${testUser.user_id}`)
+            const storedUser = db.prepare(`
+                SELECT username
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
 
-            expect(getResponse.status).toBe(200)
-            expect(getResponse.body.username)
-                .toBe(newUsername)
+            expect(storedUser.username).toBe(newUsername)
         })
 
-        test("returns 404 for a missing user", async () => {
-            const response = await request(app)
-                .patch("/users/999999999")
+
+        test("trims the username before updating it", async () => {
+            const newUsername =
+                `${testUser.username}_Trimmed`
+
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    username: `TestUser_Missing_${Date.now()}`
+                    username: `   ${newUsername}   `
                 })
 
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe("User not found")
+            expect(response.status).toBe(200)
+            expect(response.body.username).toBe(newUsername)
         })
 
-        test("returns 400 for an empty username", async () => {
-            const response = await request(app)
-                .patch(`/users/${testUser.user_id}`)
+
+        test("rejects an empty username", async () => {
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    username: ""
+                    username: "   "
                 })
 
             expect(response.status).toBe(400)
-        })
-
-        test("returns 409 when the username already exists", async () => {
-            const secondUserResponse = await request(app)
-                .post("/users")
-                .send({
-                    username: `TestUser_Second_${Date.now()}`,
-                    password: "testpass"
-                })
-
-            expect(secondUserResponse.status).toBe(201)
-
-            additionalUserIds.push(
-                secondUserResponse.body.user_id
-            )
-
-            const patchResponse = await request(app)
-                .patch(`/users/${secondUserResponse.body.user_id}`)
-                .send({
-                    username: testUser.username
-                })
-
-            expect(patchResponse.status).toBe(409)
-            expect(patchResponse.body.error).toBe(
-                "Username already exists"
+            expect(response.body.error).toBe(
+                "Username must be a non-empty string"
             )
         })
-    })
 
-    describe("DELETE /users/:id", () => {
-        test("deletes an existing user", async () => {
-            const response = await request(app)
-                .delete(`/users/${testUser.user_id}`)
 
-            expect(response.status).toBe(200)
-            expect(response.body.deleted).toBe(true)
-
-            const getResponse = await request(app)
-                .get(`/users/${testUser.user_id}`)
-
-            expect(getResponse.status).toBe(404)
-        })
-
-        test("returns 404 for a missing user", async () => {
-            const response = await request(app)
-                .delete("/users/999999999")
-
-            expect(response.status).toBe(404)
-        })
-    })
-
-    // --- Character Routes ---
-
-    describe("GET /users/:id/characters", () => {
-        test("returns the user's characters", async () => {
-            const response = await request(app)
-                .get(`/users/${testUser.user_id}/characters`)
-
-            expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-
-            expect(
-                response.body.some(character =>
-                    character.character_id ===
-                    testCharacter.character_id
-                )
-            ).toBe(true)
-        })
-
-        test("returns 404 for a missing user", async () => {
-            const response = await request(app)
-                .get("/users/999999999/characters")
-
-            expect(response.status).toBe(404)
-        })
-    })
-
-    describe("GET /users/:id/characters/:name", () => {
-        test("returns the requested character", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
-
-            expect(response.status).toBe(200)
-            expect(response.body.character_id)
-                .toBe(testCharacter.character_id)
-            expect(response.body.name)
-                .toBe(testCharacter.name)
-        })
-
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/DoesNotExist`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.name).toBeUndefined()
-        })
-    })
-
-    describe("POST /users/:id/characters", () => {
-        test("creates another character for the user", async () => {
-            const characterName =
-                `TestCharacter_Additional_${Date.now()}`
-
-            const response = await request(app)
-                .post(`/users/${testUser.user_id}/characters`)
+        test("rejects a non-string username", async () => {
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    name: characterName,
-                    max_weight: 120
+                    username: 123
                 })
 
-            expect(response.status).toBe(201)
-            expect(response.body.name).toBe(characterName)
-            expect(response.body.user_id)
-                .toBe(testUser.user_id)
-            expect(response.body.max_weight).toBe(120)
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Username must be a non-empty string"
+            )
         })
 
-        test("returns 404 for a missing user", async () => {
-            const response = await request(app)
-                .post("/users/999999999/characters")
-                .send({
-                    name: `TestCharacter_Missing_${Date.now()}`,
-                    max_weight: 100
-                })
 
-            expect(response.status).toBe(404)
-        })
-
-        test("returns 409 for a duplicate character name", async () => {
-            const response = await request(app)
-                .post(`/users/${testUser.user_id}/characters`)
-                .send({
-                    name: testCharacter.name,
-                    max_weight: 100
-                })
-
-            expect(response.status).toBe(409)
-        })
-    })
-
-    describe("PATCH /users/:id/characters/:name", () => {
-        test("updates only the character name", async () => {
-            const newName = `${testCharacter.name}_Updated`
-
-            const patchResponse = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
-                .send({
-                    name: newName
-                })
-
-            expect(patchResponse.status).toBe(200)
-            expect(patchResponse.body.name).toBe(newName)
-            expect(patchResponse.body.max_weight).toBe(100)
-
-            const getResponse = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(newName)
-                )
-
-            expect(getResponse.status).toBe(200)
-            expect(getResponse.body.name).toBe(newName)
-            expect(getResponse.body.max_weight).toBe(100)
-        })
-
-        test("updates only max_weight", async () => {
-            const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
-                .send({
-                    max_weight: 150
-                })
-
-            expect(response.status).toBe(200)
-            expect(response.body.name)
-                .toBe(testCharacter.name)
-            expect(response.body.max_weight).toBe(150)
-        })
-
-        test("updates both name and max_weight", async () => {
-            const newName = `${testCharacter.name}_Updated`
-
-            const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
-                .send({
-                    name: newName,
-                    max_weight: 175
-                })
-
-            expect(response.status).toBe(200)
-            expect(response.body.name).toBe(newName)
-            expect(response.body.max_weight).toBe(175)
-        })
-
-        test("returns 400 when no fields are supplied", async () => {
-            const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
+        test("rejects a request with no update fields", async () => {
+            const response = await agent
+                .patch("/users/me")
                 .send({})
 
             expect(response.status).toBe(400)
@@ -435,1370 +391,458 @@ describe("User Routes", () => {
             )
         })
 
-        test("returns 400 for an invalid max_weight", async () => {
-            const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
+
+        test("requires the current password to change email", async () => {
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    max_weight: 0
-                })
-
-            expect(response.status).toBe(400)
-        })
-
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/DoesNotExist`
-                )
-                .send({
-                    max_weight: 150
-                })
-
-            expect(response.status).toBe(404)
-        })
-    })
-
-    describe("DELETE /users/:id/characters/:name", () => {
-        test("deletes an existing character", async () => {
-            const deleteResponse = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
-
-            expect(deleteResponse.status).toBe(200)
-            expect(deleteResponse.body.deleted).toBe(true)
-
-            const getResponse = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    encodeURIComponent(testCharacter.name)
-                )
-
-            expect(getResponse.status).toBe(404)
-        })
-
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/DoesNotExist`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Character not found"
-            )
-        })
-    })
-
-    // --- Inventory Routes ---
-
-        describe("GET /users/:id/characters/:name/inventory/root", () => {
-        test("returns an empty array when the character has no inventory", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/root`
-                )
-
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
-        })
-
-        test("returns only the character's root inventory entries", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(backpackResponse.status).toBe(201)
-
-            const backpackId =
-                backpackResponse.body.inventory_id
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: backpackId,
-                    quantity: 2
-                })
-
-            expect(torchResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/root`
-                )
-
-            expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].item_index).toBe("backpack")
-            expect(response.body[0].name).toBe("Backpack")
-            expect(response.body[0]).toHaveProperty("description")
-            expect(response.body[0]).toHaveProperty("weight")
-            expect(response.body[0]).toHaveProperty("cost_quantity")
-            expect(response.body[0]).toHaveProperty("currency_code")
-            expect(response.body[0]).toHaveProperty("currency_name")
-            expect(response.body[0]).toHaveProperty("item_type_name")
-            expect(response.body[0].parent_inventory_id)
-                .toBeNull()
-        })
-
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `DoesNotExist/inventory/root`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Character not found"
-            )
-        })
-    })
-
-    describe("GET /users/:id/characters/:name/inventory/all", () => {
-        test("returns an empty array when the character has no inventory", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/all`
-                )
-
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
-        })
-
-        test("returns all of the character's inventory entries", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(backpackResponse.status).toBe(201)
-
-            const backpackId =
-                backpackResponse.body.inventory_id
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: backpackId,
-                    quantity: 2
-                })
-
-            expect(torchResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/all`
-                )
-
-            expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-            expect(response.body).toHaveLength(2)
-
-            const backpack = response.body.find(
-                item => item.item_index === "backpack"
-            )
-
-            const torch = response.body.find(
-                item => item.item_index === "torch"
-            )
-
-            expect(backpack).toBeDefined()
-            expect(backpack.parent_inventory_id).toBeNull()
-            expect(backpack).toHaveProperty("description")
-            expect(backpack).toHaveProperty("weight")
-            expect(backpack).toHaveProperty("cost_quantity")
-            expect(backpack).toHaveProperty("currency_code")
-            expect(backpack).toHaveProperty("currency_name")
-            expect(backpack).toHaveProperty("item_type_name")
-
-            expect(torch).toBeDefined()
-            expect(torch.parent_inventory_id).toBe(backpackId)
-            expect(torch.quantity).toBe(2)
-        })
-
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `DoesNotExist/inventory/all`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Character not found"
-            )
-        })
-    })
-
-    describe("POST /users/:id/characters/:name/inventory", () => {
-        test("creates a root inventory entry", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(response.status).toBe(201)
-            expect(response.body).toHaveProperty("inventory_id")
-            expect(response.body.character_id)
-                .toBe(testCharacter.character_id)
-            expect(response.body.item_id)
-                .toBe(testItems.backpack.item_id)
-            expect(response.body.parent_inventory_id)
-                .toBeNull()
-            expect(response.body.quantity).toBe(1)
-        })
-
-        test("returns 400 for an empty item index", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "   ",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    email: "updated@example.com"
                 })
 
             expect(response.status).toBe(400)
             expect(response.body.error).toBe(
-                "A valid item index and positive quantity are required"
+                "Current password is required"
             )
         })
 
-        test("returns 404 for a missing item index", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
+
+        test("rejects an incorrect current password when changing email", async () => {
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    item_index: "does-not-exist",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    email: "updated@example.com",
+                    currentPassword: "wrongpass"
                 })
 
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe("Item not found")
-        })
-
-        test("trims the item index before looking up the item", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "  backpack  ",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(response.status).toBe(201)
-            expect(response.body.item_id)
-                .toBe(testItems.backpack.item_id)
-        })
-
-        test("returns 404 for a missing parent inventory entry", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: 999999999,
-                    quantity: 1
-                })
-
-            expect(response.status).toBe(404)
+            expect(response.status).toBe(401)
             expect(response.body.error).toBe(
-                "Parent inventory entry not found"
+                "Current password is incorrect"
             )
         })
 
-        test("creates an inventory entry inside another entry", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
+
+        test("updates the email when the current password is correct", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const newEmail =
+                `updated_${uniqueSuffix}@example.com`
+
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    email: newEmail,
+                    currentPassword: TEST_PASSWORD
                 })
-
-            expect(backpackResponse.status).toBe(201)
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id:
-                        backpackResponse.body.inventory_id,
-                    quantity: 2
-                })
-
-            expect(torchResponse.status).toBe(201)
-            expect(torchResponse.body.parent_inventory_id)
-                .toBe(backpackResponse.body.inventory_id)
-            expect(torchResponse.body.quantity).toBe(2)
-        })
-    })
-
-    describe("GET /users/:id/characters/:name/inventory/:inventoryId", () => {
-        test("returns a specific inventory entry", async () => {
-            const createResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(createResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    createResponse.body.inventory_id
-                )
 
             expect(response.status).toBe(200)
-            expect(response.body.inventory_id)
-                .toBe(createResponse.body.inventory_id)
-            expect(response.body.item_index).toBe("backpack")
-            expect(response.body.name).toBe("Backpack")
-            expect(response.body).toHaveProperty("description")
-            expect(response.body).toHaveProperty("weight")
-            expect(response.body).toHaveProperty("cost_quantity")
-            expect(response.body).toHaveProperty("currency_code")
-            expect(response.body).toHaveProperty("currency_name")
-            expect(response.body).toHaveProperty("item_type_name")
-            expect(response.body.quantity).toBe(1)
+            expect(response.body.user_id)
+                .toBe(testUser.user_id)
+            expect(response.body.username)
+                .toBe(testUser.username)
+            expect(response.body.email)
+                .toBe(newEmail)
+
+            const storedUser = db.prepare(`
+                SELECT email
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
+
+            expect(storedUser.email).toBe(newEmail)
         })
 
-        test("returns 404 for a missing inventory entry", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/999999999`
-                )
 
-            expect(response.status).toBe(404)
-        })
-    })
+        test("trims the email before updating it", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-    describe("GET /users/:id/characters/:name/inventory/:inventoryId/children", () => {
-        test("returns the direct children of an inventory entry", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
+            const newEmail =
+                `trimmed_${uniqueSuffix}@example.com`
+
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    email: `   ${newEmail}   `,
+                    currentPassword: TEST_PASSWORD
                 })
-
-            const backpackId =
-                backpackResponse.body.inventory_id
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: backpackId,
-                    quantity: 2
-                })
-
-            expect(torchResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    `${backpackId}/children`
-                )
 
             expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].item_index).toBe("torch")
-            expect(response.body[0].name).toBe("Torch")
-            expect(response.body[0]).toHaveProperty("description")
-            expect(response.body[0]).toHaveProperty("weight")
-            expect(response.body[0]).toHaveProperty("cost_quantity")
-            expect(response.body[0]).toHaveProperty("currency_code")
-            expect(response.body[0]).toHaveProperty("currency_name")
-            expect(response.body[0]).toHaveProperty("item_type_name")
-            expect(response.body[0].parent_inventory_id)
-                .toBe(backpackId)
+            expect(response.body.email).toBe(newEmail)
         })
 
-        test("returns an empty array when the entry has no children", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
+
+        test("rejects an empty email", async () => {
+            const response = await agent
+                .patch("/users/me")
                 .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    email: "   ",
+                    currentPassword: TEST_PASSWORD
                 })
 
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    `${backpackResponse.body.inventory_id}/children`
-                )
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Email must be a non-empty string"
+            )
+        })
+
+
+        test("rejects a non-string email", async () => {
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    email: 123,
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Email must be a non-empty string"
+            )
+        })
+
+
+        test("requires the current password to change password", async () => {
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    password: "newpass123"
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Current password is required"
+            )
+        })
+
+
+        test("rejects an incorrect current password when changing password", async () => {
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    password: "newpass123",
+                    currentPassword: "wrongpass"
+                })
+
+            expect(response.status).toBe(401)
+            expect(response.body.error).toBe(
+                "Current password is incorrect"
+            )
+        })
+
+
+        test("rejects a new password shorter than 8 characters", async () => {
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    password: "short",
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Password length must be 8-16 characters"
+            )
+        })
+
+
+        test("rejects a new password longer than 16 characters", async () => {
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    password: "12345678901234567",
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(400)
+            expect(response.body.error).toBe(
+                "Password length must be 8-16 characters"
+            )
+        })
+
+
+        test("updates the password when the current password is correct", async () => {
+            const newPassword = "newpass123"
+
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    password: newPassword,
+                    currentPassword: TEST_PASSWORD
+                })
 
             expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
+            expect(response.body.password).toBeUndefined()
+            expect(response.body.password_hash).toBeUndefined()
+
+            const storedUser = db.prepare(`
+                SELECT password_hash
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
+
+            expect(storedUser.password_hash)
+                .not.toBe(TEST_PASSWORD)
+
+            const oldPasswordMatches = await argon2.verify(
+                storedUser.password_hash,
+                TEST_PASSWORD
+            )
+
+            const newPasswordMatches = await argon2.verify(
+                storedUser.password_hash,
+                newPassword
+            )
+
+            expect(oldPasswordMatches).toBe(false)
+            expect(newPasswordMatches).toBe(true)
         })
+
+
+        test("preserves the password when only the username changes", async () => {
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    username: `${testUser.username}_Updated`
+                })
+
+            expect(response.status).toBe(200)
+
+            const storedUser = db.prepare(`
+                SELECT password_hash
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
+
+            const passwordMatches = await argon2.verify(
+                storedUser.password_hash,
+                TEST_PASSWORD
+            )
+
+            expect(passwordMatches).toBe(true)
+        })
+
+
+        test("preserves the password when only the email changes", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    email: `preserve_${uniqueSuffix}@example.com`,
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(200)
+
+            const storedUser = db.prepare(`
+                SELECT password_hash
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
+
+            const passwordMatches = await argon2.verify(
+                storedUser.password_hash,
+                TEST_PASSWORD
+            )
+
+            expect(passwordMatches).toBe(true)
+        })
+
+
+        test("updates username, email, and password together", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const newUsername =
+                `UpdatedUser_${uniqueSuffix}`
+
+            const newEmail =
+                `updatedall_${uniqueSuffix}@example.com`
+
+            const newPassword = "newpass123"
+
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    username: newUsername,
+                    email: newEmail,
+                    password: newPassword,
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(200)
+            expect(response.body.username).toBe(newUsername)
+            expect(response.body.email).toBe(newEmail)
+            expect(response.body.password).toBeUndefined()
+            expect(response.body.password_hash).toBeUndefined()
+
+            const storedUser = db.prepare(`
+                SELECT username, email, password_hash
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
+
+            expect(storedUser.username).toBe(newUsername)
+            expect(storedUser.email).toBe(newEmail)
+
+            const passwordMatches = await argon2.verify(
+                storedUser.password_hash,
+                newPassword
+            )
+
+            expect(passwordMatches).toBe(true)
+        })
+
+
+        test("rejects a duplicate username", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const secondUserResponse = await request(app)
+                .post("/users")
+                .send({
+                    username: `SecondUser_${uniqueSuffix}`,
+                    email: `second_${uniqueSuffix}@example.com`,
+                    password: TEST_PASSWORD
+                })
+
+            expect(secondUserResponse.status).toBe(201)
+
+            additionalUserIds.push(
+                secondUserResponse.body.user_id
+            )
+
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    username: secondUserResponse.body.username
+                })
+
+            expect(response.status).toBe(409)
+            expect(response.body.error).toBe(
+                "Username or email already exists"
+            )
+        })
+
+
+        test("rejects a duplicate email", async () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const secondUserResponse = await request(app)
+                .post("/users")
+                .send({
+                    username: `SecondUser_${uniqueSuffix}`,
+                    email: `second_${uniqueSuffix}@example.com`,
+                    password: TEST_PASSWORD
+                })
+
+            expect(secondUserResponse.status).toBe(201)
+
+            additionalUserIds.push(
+                secondUserResponse.body.user_id
+            )
+
+            const response = await agent
+                .patch("/users/me")
+                .send({
+                    email: secondUserResponse.body.email,
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(409)
+            expect(response.body.error).toBe(
+                "Username or email already exists"
+            )
+        })
+
     })
 
-    describe("PATCH /users/:id/characters/:name/inventory/:inventoryId", () => {
-        test("updates only the inventory quantity", async () => {
-            const createResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 2
-                })
 
-            const inventoryId =
-                createResponse.body.inventory_id
+    // --- DELETE /users/me ---
 
-            const patchResponse = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    inventoryId
-                )
-                .send({
-                    quantity: 5
-                })
+    describe("DELETE /users/me", () => {
 
-            expect(patchResponse.status).toBe(200)
-            expect(patchResponse.body.inventory_id)
-                .toBe(inventoryId)
-            expect(patchResponse.body.quantity).toBe(5)
-            expect(patchResponse.body.parent_inventory_id)
-                .toBeNull()
-            expect(patchResponse.body.item_index).toBe("torch")
-            expect(patchResponse.body.name).toBe("Torch")
-            expect(patchResponse.body)
-                .toHaveProperty("item_type_name")
-        })
-
-        test("moves an inventory entry into another entry", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 2
-                })
-
-            const patchResponse = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    torchResponse.body.inventory_id
-                )
-                .send({
-                    parent_inventory_id:
-                        backpackResponse.body.inventory_id
-                })
-
-            expect(patchResponse.status).toBe(200)
-            expect(patchResponse.body.parent_inventory_id)
-                .toBe(backpackResponse.body.inventory_id)
-            expect(patchResponse.body.quantity).toBe(2)
-        })
-
-        test("moves an inventory entry back to the root", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id:
-                        backpackResponse.body.inventory_id,
-                    quantity: 2
-                })
-
-            const patchResponse = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    torchResponse.body.inventory_id
-                )
-                .send({
-                    parent_inventory_id: null
-                })
-
-            expect(patchResponse.status).toBe(200)
-            expect(patchResponse.body.parent_inventory_id)
-                .toBeNull()
-        })
-
-        test("returns 400 when no update fields are supplied", async () => {
-            const createResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 2
-                })
-
+        test("rejects an unauthenticated request", async () => {
             const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    createResponse.body.inventory_id
-                )
+                .delete("/users/me")
+                .send({
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(response.status).toBe(401)
+            expect(response.body.error).toBe(
+                "Not authenticated"
+            )
+        })
+
+
+        test("requires the current password", async () => {
+            const response = await agent
+                .delete("/users/me")
                 .send({})
 
             expect(response.status).toBe(400)
             expect(response.body.error).toBe(
-                "At least one update field is required"
+                "Current password is required"
             )
         })
 
-        test("returns 400 when an entry is moved into itself", async () => {
-            const createResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
+
+        test("rejects an incorrect current password", async () => {
+            const response = await agent
+                .delete("/users/me")
                 .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    currentPassword: "wrongpass"
                 })
 
-            const inventoryId =
-                createResponse.body.inventory_id
-
-            const response = await request(app)
-                .patch(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    inventoryId
-                )
-                .send({
-                    parent_inventory_id: inventoryId
-                })
-
-            expect(response.status).toBe(400)
+            expect(response.status).toBe(401)
             expect(response.body.error).toBe(
-                "An inventory entry cannot contain itself"
-            )
-        })
-    })
-
-    describe("DELETE /users/:id/characters/:name/inventory/:inventoryId", () => {
-        test("deletes an existing inventory entry", async () => {
-            const createResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 2
-                })
-
-            const inventoryId =
-                createResponse.body.inventory_id
-
-            const deleteResponse = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    inventoryId
-                )
-
-            expect(deleteResponse.status).toBe(200)
-            expect(deleteResponse.body.deleted).toBe(true)
-
-            const getResponse = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    inventoryId
-                )
-
-            expect(getResponse.status).toBe(404)
-        })
-
-        test("promotes direct children to the root when deleting a container", async () => {
-            const backpackResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "backpack",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            const pouchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "pouch",
-                    parent_inventory_id:
-                        backpackResponse.body.inventory_id,
-                    quantity: 1
-                })
-
-            const deleteResponse = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    backpackResponse.body.inventory_id
-                )
-
-            expect(deleteResponse.status).toBe(200)
-
-            const pouchResponseAfterDelete = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/` +
-                    pouchResponse.body.inventory_id
-                )
-
-            expect(pouchResponseAfterDelete.status).toBe(200)
-            expect(
-                pouchResponseAfterDelete.body.parent_inventory_id
-            ).toBeNull()
-        })
-
-        test("returns 404 for a missing inventory entry", async () => {
-            const response = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory/999999999`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Inventory entry not found"
-            )
-        })
-    })
-
-    // --- Equipment Routes ---
-
-    describe("GET /users/:id/characters/:name/equipment", () => {
-        test("returns an empty array when the character has no equipment", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
-        })
-
-        test("returns all of the character's equipment", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const equipmentResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(equipmentResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-
-            expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-            expect(response.body).toHaveLength(1)
-
-            expect(response.body[0].inventory_id)
-                .toBe(inventoryResponse.body.inventory_id)
-
-            expect(response.body[0].equipment_slot_id).toBe(1)
-            expect(response.body[0].equipment_slot_index)
-                .toBe("main_hand")
-            expect(response.body[0].equipment_slot_name)
-                .toBe("Main Hand")
-        })
-
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `DoesNotExist/equipment`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Character not found"
-            )
-        })
-    })
-
-    describe("GET /users/:id/characters/:name/equipment/compatible/:slotId", () => {
-        test("returns inventory entries compatible with the equipment slot", async () => {
-            const longswordResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(longswordResponse.status).toBe(201)
-            expect(torchResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `compatible/1`
-                )
-
-            expect(response.status).toBe(200)
-            expect(Array.isArray(response.body)).toBe(true)
-            expect(response.body).toHaveLength(1)
-
-            expect(response.body[0].inventory_id)
-                .toBe(longswordResponse.body.inventory_id)
-
-            expect(response.body[0].item_id)
-                .toBe(testItems.longsword.item_id)
-
-            expect(response.body[0].item_index)
-                .toBe("longsword")
-
-            expect(response.body[0].name)
-                .toBe("Longsword")
-        })
-
-        test("returns an empty array when the character has no compatible inventory", async () => {
-            const torchResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(torchResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `compatible/1`
-                )
-
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
-        })
-
-        test("returns 404 for an invalid equipment slot", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `compatible/999999999`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Invalid slot ID"
+                "Current password is incorrect"
             )
         })
 
-        test("returns 404 for a missing character", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `DoesNotExist/equipment/compatible/1`
-                )
 
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Character not found"
-            )
-        })
-
-        test("returns 400 when the equipment slot ID is not an integer", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    `compatible/invalid`
-                )
-
-            expect(response.status).toBe(400)
-            expect(response.body.error).toBe(
-                "Invalid user ID, character name, or equipment slot ID"
-            )
-        })
-    })
-
-    describe("GET /users/:id/characters/:name/equipment/:equipmentId", () => {
-        test("returns a specific equipment entry", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
+        test("deletes the authenticated user with the correct password", async () => {
+            const response = await agent
+                .delete("/users/me")
                 .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
+                    currentPassword: TEST_PASSWORD
                 })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const createResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(createResponse.status).toBe(201)
-
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    createResponse.body.equipment_id
-                )
-
-            expect(response.status).toBe(200)
-
-            expect(response.body.equipment_id)
-                .toBe(createResponse.body.equipment_id)
-
-            expect(response.body.inventory_id)
-                .toBe(inventoryResponse.body.inventory_id)
-
-            expect(response.body.equipment_slot_id).toBe(1)
-            expect(response.body.equipment_slot_index)
-                .toBe("main_hand")
-            expect(response.body.equipment_slot_name)
-                .toBe("Main Hand")
-        })
-
-        test("returns 404 for a missing equipment entry", async () => {
-            const response = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/999999999`
-                )
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Equipment entry not found"
-            )
-        })
-    })
-
-    describe("POST /users/:id/characters/:name/equipment", () => {
-        test("creates an equipment entry", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(response.status).toBe(201)
-            expect(response.body).toHaveProperty("equipment_id")
-
-            expect(response.body.inventory_id)
-                .toBe(inventoryResponse.body.inventory_id)
-
-            expect(response.body.equipment_slot_id).toBe(1)
-            expect(response.body.equipment_slot_index)
-                .toBe("main_hand")
-            expect(response.body.equipment_slot_name)
-                .toBe("Main Hand")
-        })
-
-        test("returns 400 when inventory ID is not an integer", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: "invalid",
-                    equipment_slot_id: 1
-                })
-
-            expect(response.status).toBe(400)
-            expect(response.body.error).toBe(
-                "Inventory ID and Slot ID must both be an integer"
-            )
-        })
-
-        test("returns 400 when equipment slot ID is not an integer", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: 1,
-                    equipment_slot_id: "invalid"
-                })
-
-            expect(response.status).toBe(400)
-            expect(response.body.error).toBe(
-                "Inventory ID and Slot ID must both be an integer"
-            )
-        })
-
-        test("returns 404 for a missing inventory entry", async () => {
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: 999999999,
-                    equipment_slot_id: 1
-                })
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Inventory entry not found"
-            )
-        })
-
-        test("returns 404 for an invalid equipment slot", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 999999999
-                })
-
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Invalid slot ID"
-            )
-        })
-
-        test("returns 409 when the equipment slot is occupied", async () => {
-            const firstInventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            const secondInventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "shield",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(firstInventoryResponse.status).toBe(201)
-            expect(secondInventoryResponse.status).toBe(201)
-
-            const firstEquipmentResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        firstInventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(firstEquipmentResponse.status).toBe(201)
-
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        secondInventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(response.status).toBe(409)
-            expect(response.body.error).toBe(
-                "Current slot is occupied"
-            )
-        })
-
-        test("returns 400 when the item is not compatible with the equipment slot", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "torch",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(response.status).toBe(400)
-            expect(response.body.error).toBe(
-                "Item is not compatible with this equipment slot"
-            )
-        })
-
-        test("returns 409 when the inventory item is already equipped in another slot", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            // Equip the Longsword in Main Hand
-            const firstEquipmentResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(firstEquipmentResponse.status).toBe(201)
-
-            // Attempt to equip the exact same inventory entry in Off Hand
-            const response = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 2
-                })
-
-            expect(response.status).toBe(409)
-            expect(response.body.error).toBe(
-                "Item is already equipped somewhere else"
-            )
-        })
-        
-        test("allows different inventory items to be equipped in different slots", async () => {
-            const longswordResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            const shieldResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "shield",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(longswordResponse.status).toBe(201)
-            expect(shieldResponse.status).toBe(201)
-
-            const mainHandResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: longswordResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            const offHandResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id: shieldResponse.body.inventory_id,
-                    equipment_slot_id: 2
-                })
-
-            expect(mainHandResponse.status).toBe(201)
-            expect(offHandResponse.status).toBe(201)
-        })
-
-    })
-
-    describe("DELETE /users/:id/characters/:name/equipment/:equipmentId", () => {
-        test("deletes an equipment entry", async () => {
-            const inventoryResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/inventory`
-                )
-                .send({
-                    item_index: "longsword",
-                    parent_inventory_id: null,
-                    quantity: 1
-                })
-
-            expect(inventoryResponse.status).toBe(201)
-
-            const equipmentResponse = await request(app)
-                .post(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment`
-                )
-                .send({
-                    inventory_id:
-                        inventoryResponse.body.inventory_id,
-                    equipment_slot_id: 1
-                })
-
-            expect(equipmentResponse.status).toBe(201)
-
-            const response = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    equipmentResponse.body.equipment_id
-                )
 
             expect(response.status).toBe(200)
             expect(response.body.deleted).toBe(true)
 
-            const getResponse = await request(app)
-                .get(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/` +
-                    equipmentResponse.body.equipment_id
-                )
+            const storedUser = db.prepare(`
+                SELECT *
+                FROM users
+                WHERE user_id = ?
+            `).get(testUser.user_id)
 
-            expect(getResponse.status).toBe(404)
+            expect(storedUser).toBeUndefined()
         })
 
-        test("returns 404 for a missing equipment entry", async () => {
-            const response = await request(app)
-                .delete(
-                    `/users/${testUser.user_id}/characters/` +
-                    `${encodeURIComponent(testCharacter.name)}/equipment/999999999`
-                )
 
-            expect(response.status).toBe(404)
-            expect(response.body.error).toBe(
-                "Equipment entry not found"
+        test("destroys the session after deleting the user", async () => {
+            const deleteResponse = await agent
+                .delete("/users/me")
+                .send({
+                    currentPassword: TEST_PASSWORD
+                })
+
+            expect(deleteResponse.status).toBe(200)
+
+            const meResponse = await agent
+                .get("/auth/me")
+
+            expect(meResponse.status).toBe(401)
+            expect(meResponse.body.error).toBe(
+                "Not authenticated"
             )
         })
+
     })
+
 })

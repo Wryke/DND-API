@@ -142,7 +142,7 @@ router.get("/:name/inventory/:inventoryId", requireAuth, (req, res) => {
 
     if (!inventory) {
         return res.status(404).json({
-            error: "Inventory not found"
+            error: "Inventory entry not found"
         })
     }
 

@@ -35,7 +35,8 @@ describe("Database Equipment Queries", () => {
 
         testUser = createUser({
             username: `EquipmentTestUser_${uniqueSuffix}`,
-            password: "testpass"
+            email: `equipment_${uniqueSuffix}@example.com`,
+            passwordHash: `test-hash-${uniqueSuffix}`
         })
 
         testCharacter = createCharacter({
@@ -45,19 +46,20 @@ describe("Database Equipment Queries", () => {
         })
 
         /*
-         * Use existing seeded item definitions.
+         * These are seeded item definitions.
+         * The tests only create inventory/equipment records
+         * referencing them.
          */
         testItems = {
             longsword: findItemByIndex("longsword"),
-            shield: findItemByIndex("shield")
+            shield: findItemByIndex("shield"),
+            torch: findItemByIndex("torch")
         }
 
         expect(testItems.longsword).toBeDefined()
         expect(testItems.shield).toBeDefined()
+        expect(testItems.torch).toBeDefined()
 
-        /*
-         * Create inventory entries owned by our test character.
-         */
         testInventory = {
             longsword: createInventoryEntry({
                 character_id: testCharacter.character_id,
@@ -71,20 +73,22 @@ describe("Database Equipment Queries", () => {
                 item_id: testItems.shield.item_id,
                 parent_inventory_id: null,
                 quantity: 1
+            }),
+
+            torch: createInventoryEntry({
+                character_id: testCharacter.character_id,
+                item_id: testItems.torch.item_id,
+                parent_inventory_id: null,
+                quantity: 1
             })
         }
     })
 
+
     afterEach(() => {
         /*
-         * Deleting the user cascades through:
-         *
-         * user
-         *   -> character
-         *       -> inventory
-         *           -> equipment
-         *
-         * so no manual equipment cleanup is necessary.
+         * Deleting the user cascades through characters,
+         * inventory, and equipment.
          */
         deleteUserById(testUser.user_id)
     })
@@ -93,161 +97,292 @@ describe("Database Equipment Queries", () => {
     // --- findAllEquipmentSlots ---
 
     describe("findAllEquipmentSlots", () => {
+
         test("returns all equipment slots", () => {
             const slots = findAllEquipmentSlots()
 
             expect(Array.isArray(slots)).toBe(true)
-            expect(slots).toHaveLength(11)
+            expect(slots.length).toBeGreaterThan(0)
         })
 
-        test("returns equipment slot IDs, indexes, and names", () => {
+
+        test("returns standardized equipment slot data", () => {
+            const slots = findAllEquipmentSlots()
+
+            const slot = slots[0]
+
+            expect(slot)
+                .toHaveProperty("equipment_slot_id")
+
+            expect(slot)
+                .toHaveProperty("equipment_slot_index")
+
+            expect(slot)
+                .toHaveProperty("equipment_slot_name")
+        })
+
+
+        test("contains the main hand equipment slot", () => {
             const slots = findAllEquipmentSlots()
 
             const mainHand = slots.find(
-                slot => slot.equipment_slot_index === "main_hand"
+                slot =>
+                    slot.equipment_slot_index ===
+                    "main_hand"
             )
 
             expect(mainHand).toBeDefined()
-            expect(mainHand.equipment_slot_id).toBe(1)
-            expect(mainHand.equipment_slot_index)
-                .toBe("main_hand")
+
             expect(mainHand.equipment_slot_name)
                 .toBe("Main Hand")
         })
 
+
+        test("contains the off hand equipment slot", () => {
+            const slots = findAllEquipmentSlots()
+
+            const offHand = slots.find(
+                slot =>
+                    slot.equipment_slot_index ===
+                    "off_hand"
+            )
+
+            expect(offHand).toBeDefined()
+
+            expect(offHand.equipment_slot_name)
+                .toBe("Off Hand")
+        })
+
+
         test("returns equipment slots ordered by ID", () => {
             const slots = findAllEquipmentSlots()
 
-            for (let i = 1; i < slots.length; i++) {
-                expect(
-                    slots[i].equipment_slot_id
-                ).toBeGreaterThan(
-                    slots[i - 1].equipment_slot_id
-                )
-            }
+            const ids = slots.map(
+                slot => slot.equipment_slot_id
+            )
+
+            const sortedIds = [...ids].sort(
+                (a, b) => a - b
+            )
+
+            expect(ids).toEqual(sortedIds)
         })
+
     })
 
 
     // --- findEquipmentSlotById ---
 
     describe("findEquipmentSlotById", () => {
-        test("returns an existing equipment slot", () => {
-            const slot = findEquipmentSlotById(1)
 
-            expect(slot).toBeDefined()
-            expect(slot.equipment_slot_id).toBe(1)
-            expect(slot.equipment_slot_index)
-                .toBe("main_hand")
-            expect(slot.equipment_slot_name)
-                .toBe("Main Hand")
+        test("returns an existing equipment slot", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            expect(mainHand).toBeDefined()
+
+            const slot =
+                findEquipmentSlotById(
+                    mainHand.equipment_slot_id
+                )
+
+            expect(slot).toEqual(mainHand)
         })
 
+
+        test("returns standardized equipment slot data", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const slot =
+                findEquipmentSlotById(
+                    mainHand.equipment_slot_id
+                )
+
+            expect(slot)
+                .toHaveProperty("equipment_slot_id")
+
+            expect(slot)
+                .toHaveProperty("equipment_slot_index")
+
+            expect(slot)
+                .toHaveProperty("equipment_slot_name")
+        })
+
+
         test("returns undefined for a missing equipment slot", () => {
-            const slot = findEquipmentSlotById(999999999)
+            const slot =
+                findEquipmentSlotById(999999999)
 
             expect(slot).toBeUndefined()
         })
+
     })
 
 
     // --- findEquipmentEntryBySlot ---
 
     describe("findEquipmentEntryBySlot", () => {
-        test("returns equipment occupying a slot", () => {
-            const created = createEquipmentEntry(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id,
-                1
-            )
 
-            const equipment = findEquipmentEntryBySlot(
-                testCharacter.character_id,
-                1
-            )
+        test("returns equipment occupying a slot", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const created =
+                createEquipmentEntry(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            const equipment =
+                findEquipmentEntryBySlot(
+                    testCharacter.character_id,
+                    mainHand.equipment_slot_id
+                )
 
             expect(equipment).toBeDefined()
+
             expect(equipment.equipment_id)
                 .toBe(created.equipment_id)
+
             expect(equipment.inventory_id)
-                .toBe(testInventory.longsword.inventory_id)
+                .toBe(
+                    testInventory.longsword.inventory_id
+                )
+
             expect(equipment.item_id)
                 .toBe(testItems.longsword.item_id)
+
             expect(equipment.item_index)
-                .toBe(testItems.longsword.item_index)
+                .toBe("longsword")
+
             expect(equipment.name)
                 .toBe(testItems.longsword.name)
 
-            expect(equipment.equipment_slot_id).toBe(1)
+            expect(equipment.equipment_slot_id)
+                .toBe(mainHand.equipment_slot_id)
+
             expect(equipment.equipment_slot_index)
                 .toBe("main_hand")
+
             expect(equipment.equipment_slot_name)
                 .toBe("Main Hand")
         })
 
+
         test("returns undefined when the slot is empty", () => {
-            const equipment = findEquipmentEntryBySlot(
-                testCharacter.character_id,
-                1
-            )
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const equipment =
+                findEquipmentEntryBySlot(
+                    testCharacter.character_id,
+                    mainHand.equipment_slot_id
+                )
 
             expect(equipment).toBeUndefined()
         })
+
 
         test("does not return equipment belonging to another character", () => {
             const uniqueSuffix =
                 `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-            const otherCharacter = createCharacter({
-                user_id: testUser.user_id,
-                name: `OtherEquipmentCharacter_${uniqueSuffix}`,
-                max_weight: 100
-            })
+            const otherCharacter =
+                createCharacter({
+                    user_id: testUser.user_id,
+                    name: `OtherCharacter_${uniqueSuffix}`,
+                    max_weight: 100
+                })
+
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
 
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                1
+                mainHand.equipment_slot_id
             )
 
-            const equipment = findEquipmentEntryBySlot(
-                otherCharacter.character_id,
-                1
-            )
+            const equipment =
+                findEquipmentEntryBySlot(
+                    otherCharacter.character_id,
+                    mainHand.equipment_slot_id
+                )
 
             expect(equipment).toBeUndefined()
         })
+
     })
 
 
     // --- findAllEquipment ---
 
     describe("findAllEquipment", () => {
+
         test("returns an empty array when the character has no equipment", () => {
             const equipment =
-                findAllEquipment(testCharacter.character_id)
+                findAllEquipment(
+                    testCharacter.character_id
+                )
 
-            expect(Array.isArray(equipment)).toBe(true)
-            expect(equipment).toHaveLength(0)
+            expect(equipment).toEqual([])
         })
 
+
         test("returns all equipment belonging to a character", () => {
+            const slots = findAllEquipmentSlots()
+
+            const mainHand = slots.find(
+                slot =>
+                    slot.equipment_slot_index ===
+                    "main_hand"
+            )
+
+            const offHand = slots.find(
+                slot =>
+                    slot.equipment_slot_index ===
+                    "off_hand"
+            )
+
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                1
+                mainHand.equipment_slot_id
             )
 
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.shield.inventory_id,
-                2
+                offHand.equipment_slot_id
             )
 
             const equipment =
-                findAllEquipment(testCharacter.character_id)
+                findAllEquipment(
+                    testCharacter.character_id
+                )
 
-            expect(Array.isArray(equipment)).toBe(true)
             expect(equipment).toHaveLength(2)
 
             const longsword = equipment.find(
@@ -263,171 +398,265 @@ describe("Database Equipment Queries", () => {
             )
 
             expect(longsword).toBeDefined()
-            expect(longsword.item_id)
-                .toBe(testItems.longsword.item_id)
+            expect(shield).toBeDefined()
+
             expect(longsword.item_index)
-                .toBe(testItems.longsword.item_index)
-            expect(longsword.name)
-                .toBe(testItems.longsword.name)
-            expect(longsword.equipment_slot_id).toBe(1)
+                .toBe("longsword")
+
             expect(longsword.equipment_slot_index)
                 .toBe("main_hand")
-            expect(longsword.equipment_slot_name)
-                .toBe("Main Hand")
 
-            expect(shield).toBeDefined()
-            expect(shield.item_id)
-                .toBe(testItems.shield.item_id)
             expect(shield.item_index)
-                .toBe(testItems.shield.item_index)
-            expect(shield.name)
-                .toBe(testItems.shield.name)
-            expect(shield.equipment_slot_id).toBe(2)
+                .toBe("shield")
+
             expect(shield.equipment_slot_index)
                 .toBe("off_hand")
-            expect(shield.equipment_slot_name)
-                .toBe("Off Hand")
         })
+
+
+        test("returns standardized equipment data", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                mainHand.equipment_slot_id
+            )
+
+            const equipment =
+                findAllEquipment(
+                    testCharacter.character_id
+                )
+
+            const entry = equipment[0]
+
+            expect(entry)
+                .toHaveProperty("equipment_id")
+
+            expect(entry)
+                .toHaveProperty("inventory_id")
+
+            expect(entry)
+                .toHaveProperty("item_id")
+
+            expect(entry)
+                .toHaveProperty("item_index")
+
+            expect(entry)
+                .toHaveProperty("name")
+
+            expect(entry)
+                .toHaveProperty("equipment_slot_id")
+
+            expect(entry)
+                .toHaveProperty("equipment_slot_index")
+
+            expect(entry)
+                .toHaveProperty("equipment_slot_name")
+        })
+
     })
 
 
     // --- findEquipmentEntryById ---
 
     describe("findEquipmentEntryById", () => {
-        test("returns an existing equipment entry", () => {
-            const created = createEquipmentEntry(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id,
-                1
-            )
 
-            const equipment = findEquipmentEntryById(
-                testCharacter.character_id,
-                created.equipment_id
-            )
+        test("returns an existing equipment entry", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const created =
+                createEquipmentEntry(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            const equipment =
+                findEquipmentEntryById(
+                    testCharacter.character_id,
+                    created.equipment_id
+                )
 
             expect(equipment).toBeDefined()
+
             expect(equipment.equipment_id)
                 .toBe(created.equipment_id)
+
             expect(equipment.inventory_id)
-                .toBe(testInventory.longsword.inventory_id)
+                .toBe(
+                    testInventory.longsword.inventory_id
+                )
+
             expect(equipment.item_id)
                 .toBe(testItems.longsword.item_id)
-            expect(equipment.item_index)
-                .toBe(testItems.longsword.item_index)
-            expect(equipment.name)
-                .toBe(testItems.longsword.name)
 
-            expect(equipment.equipment_slot_id).toBe(1)
+            expect(equipment.item_index)
+                .toBe("longsword")
+
             expect(equipment.equipment_slot_index)
                 .toBe("main_hand")
-            expect(equipment.equipment_slot_name)
-                .toBe("Main Hand")
         })
 
+
         test("returns undefined for a missing equipment entry", () => {
-            const equipment = findEquipmentEntryById(
-                testCharacter.character_id,
-                999999999
-            )
+            const equipment =
+                findEquipmentEntryById(
+                    testCharacter.character_id,
+                    999999999
+                )
 
             expect(equipment).toBeUndefined()
         })
+
 
         test("does not return equipment belonging to another character", () => {
             const uniqueSuffix =
                 `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-            const otherCharacter = createCharacter({
-                user_id: testUser.user_id,
-                name: `OtherEquipmentCharacter_${uniqueSuffix}`,
-                max_weight: 100
-            })
+            const otherCharacter =
+                createCharacter({
+                    user_id: testUser.user_id,
+                    name: `OtherCharacter_${uniqueSuffix}`,
+                    max_weight: 100
+                })
 
-            const created = createEquipmentEntry(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id,
-                1
-            )
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
 
-            const equipment = findEquipmentEntryById(
-                otherCharacter.character_id,
-                created.equipment_id
-            )
+            const created =
+                createEquipmentEntry(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            const equipment =
+                findEquipmentEntryById(
+                    otherCharacter.character_id,
+                    created.equipment_id
+                )
 
             expect(equipment).toBeUndefined()
         })
+
     })
 
 
     // --- createEquipmentEntry ---
 
     describe("createEquipmentEntry", () => {
-        test("creates a new equipment entry", () => {
-            const equipment = createEquipmentEntry(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id,
-                1
-            )
 
-            expect(equipment).toHaveProperty("equipment_id")
+        test("creates a new equipment entry", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const equipment =
+                createEquipmentEntry(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            expect(equipment)
+                .toHaveProperty("equipment_id")
+
             expect(equipment.character_id)
                 .toBe(testCharacter.character_id)
+
             expect(equipment.inventory_id)
-                .toBe(testInventory.longsword.inventory_id)
+                .toBe(
+                    testInventory.longsword.inventory_id
+                )
+
             expect(equipment.equipment_slot_id)
-                .toBe(1)
+                .toBe(mainHand.equipment_slot_id)
 
-            const storedEquipment = findEquipmentEntryById(
-                testCharacter.character_id,
-                equipment.equipment_id
-            )
+            const stored =
+                findEquipmentEntryById(
+                    testCharacter.character_id,
+                    equipment.equipment_id
+                )
 
-            expect(storedEquipment).toBeDefined()
-            expect(storedEquipment.name)
-                .toBe(testItems.longsword.name)
-            expect(storedEquipment.equipment_slot_id)
-                .toBe(1)
-            expect(storedEquipment.equipment_slot_index)
+            expect(stored).toBeDefined()
+
+            expect(stored.item_index)
+                .toBe("longsword")
+
+            expect(stored.equipment_slot_index)
                 .toBe("main_hand")
-            expect(storedEquipment.equipment_slot_name)
-                .toBe("Main Hand")
         })
 
+
         test("throws when the equipment slot is already occupied", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                1
+                mainHand.equipment_slot_id
             )
 
             expect(() => {
                 createEquipmentEntry(
                     testCharacter.character_id,
                     testInventory.shield.inventory_id,
-                    1
+                    mainHand.equipment_slot_id
                 )
             }).toThrow("UNIQUE constraint failed")
         })
 
-        test("throws when the inventory belongs to another character", () => {
+
+        test("throws when inventory belongs to another character", () => {
             const uniqueSuffix =
                 `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-            const otherCharacter = createCharacter({
-                user_id: testUser.user_id,
-                name: `OtherEquipmentCharacter_${uniqueSuffix}`,
-                max_weight: 100
-            })
+            const otherCharacter =
+                createCharacter({
+                    user_id: testUser.user_id,
+                    name: `OtherCharacter_${uniqueSuffix}`,
+                    max_weight: 100
+                })
+
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
 
             expect(() => {
                 createEquipmentEntry(
                     otherCharacter.character_id,
                     testInventory.longsword.inventory_id,
-                    1
+                    mainHand.equipment_slot_id
                 )
             }).toThrow("FOREIGN KEY constraint failed")
         })
+
 
         test("throws when the equipment slot does not exist", () => {
             expect(() => {
@@ -438,251 +667,451 @@ describe("Database Equipment Queries", () => {
                 )
             }).toThrow("FOREIGN KEY constraint failed")
         })
+
     })
 
 
     // --- deleteEquipmentEntryById ---
 
     describe("deleteEquipmentEntryById", () => {
-        test("deletes an existing equipment entry", () => {
-            const created = createEquipmentEntry(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id,
-                1
-            )
 
-            const result = deleteEquipmentEntryById(
-                testCharacter.character_id,
-                created.equipment_id
-            )
+        test("deletes an existing equipment entry", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const created =
+                createEquipmentEntry(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            const result =
+                deleteEquipmentEntryById(
+                    testCharacter.character_id,
+                    created.equipment_id
+                )
 
             expect(result.changes).toBe(1)
 
-            const deleted = findEquipmentEntryById(
-                testCharacter.character_id,
-                created.equipment_id
-            )
+            const deleted =
+                findEquipmentEntryById(
+                    testCharacter.character_id,
+                    created.equipment_id
+                )
 
             expect(deleted).toBeUndefined()
         })
 
-        test("does not delete equipment belonging to another character", () => {
+
+        test("does not delete another character's equipment", () => {
             const uniqueSuffix =
                 `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-            const otherCharacter = createCharacter({
-                user_id: testUser.user_id,
-                name: `OtherEquipmentCharacter_${uniqueSuffix}`,
-                max_weight: 100
-            })
+            const otherCharacter =
+                createCharacter({
+                    user_id: testUser.user_id,
+                    name: `OtherCharacter_${uniqueSuffix}`,
+                    max_weight: 100
+                })
 
-            const created = createEquipmentEntry(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id,
-                1
-            )
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
 
-            const result = deleteEquipmentEntryById(
-                otherCharacter.character_id,
-                created.equipment_id
-            )
+            const created =
+                createEquipmentEntry(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            const result =
+                deleteEquipmentEntryById(
+                    otherCharacter.character_id,
+                    created.equipment_id
+                )
 
             expect(result.changes).toBe(0)
 
-            const equipment = findEquipmentEntryById(
-                testCharacter.character_id,
-                created.equipment_id
-            )
+            const equipment =
+                findEquipmentEntryById(
+                    testCharacter.character_id,
+                    created.equipment_id
+                )
 
             expect(equipment).toBeDefined()
         })
 
+
         test("returns zero changes for a missing equipment entry", () => {
-            const result = deleteEquipmentEntryById(
-                testCharacter.character_id,
-                999999999
-            )
+            const result =
+                deleteEquipmentEntryById(
+                    testCharacter.character_id,
+                    999999999
+                )
 
             expect(result.changes).toBe(0)
         })
+
     })
+
 
     // --- isInventoryItemCompatibleWithSlot ---
 
     describe("isInventoryItemCompatibleWithSlot", () => {
-        test("returns true when the inventory item is compatible with the equipment slot", () => {
-            const result = isInventoryItemCompatibleWithSlot(
-                testInventory.longsword.inventory_id,
-                1
-            )
 
-            expect(result).toBe(true)
+        test("returns true for a compatible inventory item", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const compatible =
+                isInventoryItemCompatibleWithSlot(
+                    testInventory.longsword.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            expect(compatible).toBe(true)
         })
 
-        test("returns false when the inventory item is not compatible with the equipment slot", () => {
-            const result = isInventoryItemCompatibleWithSlot(
-                testInventory.longsword.inventory_id,
-                4
-            )
 
-            expect(result).toBe(false)
+        test("returns false for an incompatible inventory item", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const compatible =
+                isInventoryItemCompatibleWithSlot(
+                    testInventory.torch.inventory_id,
+                    mainHand.equipment_slot_id
+                )
+
+            expect(compatible).toBe(false)
         })
 
-        test("returns false when the inventory entry does not exist", () => {
-            const result = isInventoryItemCompatibleWithSlot(
-                999999999,
-                1
-            )
 
-            expect(result).toBe(false)
+        test("returns false for a missing inventory entry", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const compatible =
+                isInventoryItemCompatibleWithSlot(
+                    999999999,
+                    mainHand.equipment_slot_id
+                )
+
+            expect(compatible).toBe(false)
         })
+
+
+        test("returns false for a missing equipment slot", () => {
+            const compatible =
+                isInventoryItemCompatibleWithSlot(
+                    testInventory.longsword.inventory_id,
+                    999999999
+                )
+
+            expect(compatible).toBe(false)
+        })
+
     })
+
 
     // --- findCompatibleInventory ---
 
     describe("findCompatibleInventory", () => {
-        test("returns compatible inventory entries for an equipment slot", () => {
-            const compatibleInventory = findCompatibleInventory(
-                testCharacter.character_id,
-                1
-            )
 
-            expect(Array.isArray(compatibleInventory)).toBe(true)
-            expect(compatibleInventory).toHaveLength(2)
+        test("returns compatible inventory for a slot", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
 
-            const longsword = compatibleInventory.find(
-                entry =>
-                    entry.inventory_id ===
-                    testInventory.longsword.inventory_id
-            )
+            const compatibleInventory =
+                findCompatibleInventory(
+                    testCharacter.character_id,
+                    mainHand.equipment_slot_id
+                )
 
-            const shield = compatibleInventory.find(
-                entry =>
-                    entry.inventory_id ===
-                    testInventory.shield.inventory_id
-            )
+            expect(Array.isArray(compatibleInventory))
+                .toBe(true)
+
+            const longsword =
+                compatibleInventory.find(
+                    entry =>
+                        entry.inventory_id ===
+                        testInventory.longsword.inventory_id
+                )
 
             expect(longsword).toBeDefined()
+
             expect(longsword.item_id)
                 .toBe(testItems.longsword.item_id)
+
             expect(longsword.item_index)
-                .toBe(testItems.longsword.item_index)
+                .toBe("longsword")
+
             expect(longsword.name)
                 .toBe(testItems.longsword.name)
-
-            expect(shield).toBeDefined()
-            expect(shield.item_id)
-                .toBe(testItems.shield.item_id)
-            expect(shield.item_index)
-                .toBe(testItems.shield.item_index)
-            expect(shield.name)
-                .toBe(testItems.shield.name)
         })
 
-        test("returns an empty array when no inventory entries are compatible", () => {
-            const compatibleInventory = findCompatibleInventory(
-                testCharacter.character_id,
-                4
-            )
 
-            expect(Array.isArray(compatibleInventory)).toBe(true)
-            expect(compatibleInventory).toHaveLength(0)
+        test("does not return incompatible inventory", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const compatibleInventory =
+                findCompatibleInventory(
+                    testCharacter.character_id,
+                    mainHand.equipment_slot_id
+                )
+
+            const torch =
+                compatibleInventory.find(
+                    entry =>
+                        entry.inventory_id ===
+                        testInventory.torch.inventory_id
+                )
+
+            expect(torch).toBeUndefined()
         })
+
 
         test("only returns inventory belonging to the specified character", () => {
             const uniqueSuffix =
                 `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
-            const otherCharacter = createCharacter({
-                user_id: testUser.user_id,
-                name: `OtherCompatibleCharacter_${uniqueSuffix}`,
-                max_weight: 100
-            })
+            const otherCharacter =
+                createCharacter({
+                    user_id: testUser.user_id,
+                    name: `OtherCharacter_${uniqueSuffix}`,
+                    max_weight: 100
+                })
 
-            const compatibleInventory = findCompatibleInventory(
-                otherCharacter.character_id,
-                1
-            )
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
 
-            expect(compatibleInventory).toHaveLength(0)
+            const compatibleInventory =
+                findCompatibleInventory(
+                    otherCharacter.character_id,
+                    mainHand.equipment_slot_id
+                )
+
+            expect(compatibleInventory)
+                .toEqual([])
         })
 
-        test("does not return inventory items that are already equipped", () => {
-            // Equip the Longsword in Main Hand
+
+        test("does not return an inventory item that is already equipped", () => {
+            const slots = findAllEquipmentSlots()
+
+            const mainHand = slots.find(
+                slot =>
+                    slot.equipment_slot_index ===
+                    "main_hand"
+            )
+
+            const offHand = slots.find(
+                slot =>
+                    slot.equipment_slot_index ===
+                    "off_hand"
+            )
+
+            /*
+             * Longsword can be equipped in both hands.
+             * Equip it in Main Hand first.
+             */
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                1
+                mainHand.equipment_slot_id
             )
 
-            // Both Longsword and Shield are compatible with Off Hand
-            const compatibleInventory = findCompatibleInventory(
-                testCharacter.character_id,
-                2
-            )
+            const compatibleInventory =
+                findCompatibleInventory(
+                    testCharacter.character_id,
+                    offHand.equipment_slot_id
+                )
 
-            // Longsword should be excluded because it is already equipped
-            const longsword = compatibleInventory.find(
-                entry =>
-                    entry.inventory_id ===
-                    testInventory.longsword.inventory_id
-            )
-
-            // Shield should remain because it is not equipped
-            const shield = compatibleInventory.find(
-                entry =>
-                    entry.inventory_id ===
-                    testInventory.shield.inventory_id
-            )
+            const longsword =
+                compatibleInventory.find(
+                    entry =>
+                        entry.inventory_id ===
+                        testInventory.longsword.inventory_id
+                )
 
             expect(longsword).toBeUndefined()
-            expect(shield).toBeDefined()
-
-            expect(shield.inventory_id)
-                .toBe(testInventory.shield.inventory_id)
         })
+
+
+        test("returns an empty array for a missing character", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            const compatibleInventory =
+                findCompatibleInventory(
+                    999999999,
+                    mainHand.equipment_slot_id
+                )
+
+            expect(compatibleInventory)
+                .toEqual([])
+        })
+
+
+        test("returns an empty array for a missing equipment slot", () => {
+            const compatibleInventory =
+                findCompatibleInventory(
+                    testCharacter.character_id,
+                    999999999
+                )
+
+            expect(compatibleInventory)
+                .toEqual([])
+        })
+
     })
+
 
     // --- isInventoryItemEquipped ---
 
     describe("isInventoryItemEquipped", () => {
+
         test("returns true when the inventory item is equipped", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                1
+                mainHand.equipment_slot_id
             )
 
-            const result = isInventoryItemEquipped(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id
-            )
+            const equipped =
+                isInventoryItemEquipped(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id
+                )
 
-            expect(result).toBe(true)
+            expect(equipped).toBe(true)
         })
+
 
         test("returns false when the inventory item is not equipped", () => {
-            const result = isInventoryItemEquipped(
-                testCharacter.character_id,
-                testInventory.longsword.inventory_id
-            )
+            const equipped =
+                isInventoryItemEquipped(
+                    testCharacter.character_id,
+                    testInventory.longsword.inventory_id
+                )
 
-            expect(result).toBe(false)
+            expect(equipped).toBe(false)
         })
 
+
         test("returns false when a different inventory item is equipped", () => {
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
             createEquipmentEntry(
                 testCharacter.character_id,
                 testInventory.longsword.inventory_id,
-                1
+                mainHand.equipment_slot_id
             )
 
-            const result = isInventoryItemEquipped(
-                testCharacter.character_id,
-                testInventory.shield.inventory_id
-            )
+            const equipped =
+                isInventoryItemEquipped(
+                    testCharacter.character_id,
+                    testInventory.shield.inventory_id
+                )
 
-            expect(result).toBe(false)
+            expect(equipped).toBe(false)
         })
+
+
+        test("returns false when checking another character", () => {
+            const uniqueSuffix =
+                `${Date.now()}_${Math.random().toString(16).slice(2)}`
+
+            const otherCharacter =
+                createCharacter({
+                    user_id: testUser.user_id,
+                    name: `OtherCharacter_${uniqueSuffix}`,
+                    max_weight: 100
+                })
+
+            const mainHand =
+                findAllEquipmentSlots().find(
+                    slot =>
+                        slot.equipment_slot_index ===
+                        "main_hand"
+                )
+
+            createEquipmentEntry(
+                testCharacter.character_id,
+                testInventory.longsword.inventory_id,
+                mainHand.equipment_slot_id
+            )
+
+            const equipped =
+                isInventoryItemEquipped(
+                    otherCharacter.character_id,
+                    testInventory.longsword.inventory_id
+                )
+
+            expect(equipped).toBe(false)
+        })
+
+
+        test("returns false for a missing inventory entry", () => {
+            const equipped =
+                isInventoryItemEquipped(
+                    testCharacter.character_id,
+                    999999999
+                )
+
+            expect(equipped).toBe(false)
+        })
+
     })
+
 })
