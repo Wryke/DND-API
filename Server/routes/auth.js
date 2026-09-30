@@ -1,6 +1,10 @@
 const express = require("express")
 const argon2 = require("argon2")
-const { findUserByEmail } = require("../db/userQueries")
+
+const {
+    findUserByEmail,
+    findUserById
+} = require("../db/userQueries")
 
 const router = express.Router()
 
@@ -15,23 +19,80 @@ router.post("/login", async (req, res) => {
         })
     }
 
-    const user = findUserByEmail(email)
+    try {
+        const user = findUserByEmail(email)
 
-    if(!user){
+        if (!user) {
+            return res.status(401).json({
+                error: "Invalid email or password"
+            })
+        }
+
+        const passwordMatches = await argon2.verify(
+            user.password_hash,
+            password
+        )
+
+        if (!passwordMatches) {
+            return res.status(401).json({
+                error: "Invalid email or password"
+            })
+        }
+
+        req.session.userId = user.user_id
+
+        return res.status(200).json({
+            user_id: user.user_id,
+            username: user.username,
+            email: user.email
+        })
+
+    } catch (error) {
+        console.error("Login error:", error)
+
+        return res.status(500).json({
+            error: "Internal server error"
+        })
+    }
+})
+
+router.get("/me", (req, res) => {
+
+    const userId = req.session.userId
+
+    if(!userId){
         return res.status(401).json({
-            error: "Invalid email or password"
+            error: "Not authenticated"
         })
     }
 
-    const passwordMatches = await argon2.verify(user.password_hash, password)
+    const user = findUserById(userId)
 
-    if(!passwordMatches){
-        return res.status(401).json({
-            error: "Invalid email or password"
+    if (!user) {
+        return res.status(404).json({
+            error: "User not found"
         })
     }
 
-    return //TODO
+    return res.status(200).json(user)
+})
+
+router.post("/logout", (req, res) => {
+
+    req.session.destroy((error) => {
+
+        if (error) {
+            return res.status(500).json({
+                error: "Internal server error"
+            })
+        }
+
+        res.clearCookie("connect.sid")
+        
+        return res.status(200).json({
+            "message": "Logged out successfully"
+        })
+    })
 })
 
 module.exports = router
