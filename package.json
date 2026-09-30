@@ -15,7 +15,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "set NODE_ENV=development&& node Server/server.js",
+    "start": "set NODE_ENV=development&& node --env-file=.env Server/server.js",
     "init-db": "node Server/db/initDb.js",
     "init-test-db": "node Server/db/initTestDb.js",
     "generate-seed": "node Server/db/generateSeed.js",
