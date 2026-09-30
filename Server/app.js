@@ -1,5 +1,6 @@
 const express = require("express")
 const cors = require("cors")
+const session = require("express-session")
 
 const itemRoutes = require("./routes/items.js")
 const userRoutes = require("./routes/users.js")
