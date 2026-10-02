@@ -42,7 +42,6 @@ function EquipmentPage(props) {
     async function handleEquipItem(inventoryId, equipmentSlotId) {
         try {
             const data = await createEquipmentEntry(
-                1,
                 props.selectedCharacter.name,
                 inventoryId,
                 equipmentSlotId
@@ -65,7 +64,6 @@ function EquipmentPage(props) {
 
         try {
             await deleteEquipmentEntry(
-                1,
                 props.selectedCharacter.name,
                 equipmentId
             )

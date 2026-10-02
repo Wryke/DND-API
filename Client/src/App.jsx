@@ -107,7 +107,7 @@ function App() {
             setEquipment([])
 
             try {
-                const data = await getCharacterEquipment(1, selectedCharacter.name)
+                const data = await getCharacterEquipment(selectedCharacter.name)
 
                 setEquipment(data)
             }
@@ -198,7 +198,6 @@ function App() {
     async function addCharacter(name, maxWeight) {
 
         const newCharacter = {
-            user_id: Number(1),
             name: name,
             max_weight: Number(maxWeight)
         }

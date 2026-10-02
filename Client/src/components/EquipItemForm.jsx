@@ -34,7 +34,6 @@ function EquipItemForm (props) {
                 setIsLoading(true)
 
                 const data = await getCompatibleInventory(
-                    1,
                     props.selectedCharacter.name,
                     props.slot.equipment_slot_id
                 )

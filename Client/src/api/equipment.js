@@ -1,25 +1,25 @@
 import { apiRequest } from "./apiHelpers"
 
 async function getEquipmentSlots() {
-    const url = `http://localhost:3000/equipment/slots`
+    const url = `/items/equipment-slots`
 
     return apiRequest(url)
 }
 
-async function getCompatibleInventory(userId, characterName, slotId) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment/compatible/${slotId}`
+async function getCompatibleInventory(characterName, slotId) {
+    const url = `/characters/${encodeURIComponent(characterName)}/equipment/compatible/${slotId}`
 
     return apiRequest(url)
 }
 
-async function getCharacterEquipment(userId, characterName){
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment`
+async function getCharacterEquipment(characterName){
+    const url = `/characters/${encodeURIComponent(characterName)}/equipment`
 
     return apiRequest(url)
 }
 
-async function createEquipmentEntry(userId, characterName, inventoryId, equipmentSlotId) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment`
+async function createEquipmentEntry(characterName, inventoryId, equipmentSlotId) {
+    const url = `/characters/${encodeURIComponent(characterName)}/equipment`
     
     const newEquipmentEntry = {
         inventory_id: inventoryId,
@@ -38,8 +38,8 @@ async function createEquipmentEntry(userId, characterName, inventoryId, equipmen
     return apiRequest(url, options)
 }
 
-async function deleteEquipmentEntry(userId, characterName, equipmentId) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/equipment/${equipmentId}`
+async function deleteEquipmentEntry(characterName, equipmentId) {
+    const url = `/characters/${encodeURIComponent(characterName)}/equipment/${equipmentId}`
 
     const options = 
     {
