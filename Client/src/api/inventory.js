@@ -1,13 +1,13 @@
 import { apiRequest } from "./apiHelpers"
 
-async function getCharacterInventory(userId, characterName) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/inventory/all`
+async function getCharacterInventory(characterName) {
+    const url = `/characters/${encodeURIComponent(characterName)}/inventory/all`
 
     return apiRequest(url)
 }
 
-async function addInventoryEntry(userId, characterName, newEntry) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/inventory`
+async function addInventoryEntry(characterName, newEntry) {
+    const url = `/characters/${encodeURIComponent(characterName)}/inventory`
     const options = 
         {
             method: "POST",
@@ -20,8 +20,8 @@ async function addInventoryEntry(userId, characterName, newEntry) {
     return apiRequest(url, options)
 }
 
-async function updateInventoryEntry(userId, characterName, inventoryId, updatedEntry) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/inventory/${inventoryId}`
+async function updateInventoryEntry(characterName, inventoryId, updatedEntry) {
+    const url = `/characters/${encodeURIComponent(characterName)}/inventory/${inventoryId}`
 
     const options =
         {
@@ -35,8 +35,8 @@ async function updateInventoryEntry(userId, characterName, inventoryId, updatedE
     return apiRequest(url, options)
 }
 
-async function deleteInventoryEntry(userId, characterName, inventoryId) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}/inventory/${inventoryId}`
+async function deleteInventoryEntry(characterName, inventoryId) {
+    const url = `/characters/${encodeURIComponent(characterName)}/inventory/${inventoryId}`
 
     const options =
         {

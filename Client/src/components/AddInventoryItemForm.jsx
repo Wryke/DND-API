@@ -14,19 +14,13 @@ function AddInventoryItemForm(props) {
     useEffect(() => {
         async function loadItems() {
             try {
-                const response = await fetch("http://localhost:3000/items")
-                const data = await response.json()
-
-                if (!response.ok) {
-                    setError(data.error)
-                    return
-                }
+                const data = await getItems()
 
                 setItems(data)
             }
             catch (error) {
                 console.error(error)
-                setError("Failed to pull item data. Please refresh the page or check your network connection.")
+                setError(error.message)
             }
         }
 

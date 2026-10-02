@@ -1,4 +1,3 @@
-
 function CharacterInfo(props) {
     return (
         <div>

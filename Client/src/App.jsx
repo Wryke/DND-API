@@ -94,7 +94,7 @@ function App() {
             setInventory([])
 
             try {
-                const data = await getCharacterInventory(1, selectedCharacter.name)
+                const data = await getCharacterInventory(selectedCharacter.name)
 
                 setInventory(data)
             }
@@ -139,7 +139,7 @@ function App() {
         }
 
         try {
-            const data = await addInventoryEntry(1, selectedCharacter.name, newEntry)
+            const data = await addInventoryEntry(selectedCharacter.name, newEntry)
 
             setInventory((currentInventory) => {
                 return [...currentInventory, data]
@@ -160,7 +160,7 @@ function App() {
         }
 
         try {
-            const data = await updateInventoryEntry(1, selectedCharacter.name, inventoryId, updatedEntry)
+            const data = await updateInventoryEntry(selectedCharacter.name, inventoryId, updatedEntry)
 
             setInventory((currentInventory) => {
                 return currentInventory.map((item) => {
@@ -182,7 +182,7 @@ function App() {
 
     async function removeInventoryItem(inventoryId) {
         try {
-            const data = await deleteInventoryEntry(1, selectedCharacter.name, inventoryId)
+            const data = await deleteInventoryEntry(selectedCharacter.name, inventoryId)
 
             setInventory(data.inventory)
 
