@@ -59,7 +59,7 @@ function App() {
     useEffect(() => {
         async function loadCharacters() {
             try {
-                const data = await getCharacters(1)
+                const data = await getCharacters()
 
                 setCharacters(data)
             }
@@ -204,7 +204,7 @@ function App() {
         }
 
         try {
-            const data = await createCharacter(1, newCharacter)
+            const data = await createCharacter(newCharacter)
 
             setCharacters((currentCharacters) => {
                 return [
@@ -230,7 +230,7 @@ function App() {
         }
 
         try {
-            await deleteCharacter(1, character.name)
+            await deleteCharacter(character.name)
 
             setCharacters((currentCharacters) => {
                 return currentCharacters.filter((character) => {
@@ -239,7 +239,7 @@ function App() {
             })
 
             if (selectedCharacter?.character_id === characterId) {
-                selectCharacter(null)
+                handleSelectCharacter(null)
             }
         }
         catch (error) {

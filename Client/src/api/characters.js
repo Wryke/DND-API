@@ -1,13 +1,13 @@
 import { apiRequest } from "./apiHelpers"
 
-async function getCharacters(userId) {
-    const url = `http://localhost:3000/users/${userId}/characters`
+async function getCharacters() {
+    const url = `/characters`
 
     return apiRequest(url)
 }
 
-async function createCharacter(userId, newCharacter) {
-    const url = `http://localhost:3000/users/${userId}/characters`
+async function createCharacter(newCharacter) {
+    const url = `/characters`
 
     const options = 
         {
@@ -21,8 +21,8 @@ async function createCharacter(userId, newCharacter) {
     return apiRequest(url, options)
 }
 
-async function deleteCharacter(userId, characterName) {
-    const url = `http://localhost:3000/users/${userId}/characters/${encodeURIComponent(characterName)}`
+async function deleteCharacter(characterName) {
+    const url = `/characters/${encodeURIComponent(characterName)}`
 
     const options =
         {
