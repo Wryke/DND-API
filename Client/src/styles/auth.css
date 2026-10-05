@@ -1,0 +1,176 @@
+/* ========================================
+   Authentication Page
+   ======================================== */
+
+.auth-page {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    background: #ffffff;
+    color: #000000;
+
+    padding: 2rem;
+}
+
+
+/* ========================================
+   Header
+   ======================================== */
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+    margin: 0;
+
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.auth-header p {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+
+    color: #666666;
+}
+
+
+/* ========================================
+   Authentication Card
+   ======================================== */
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+
+    padding: 2rem;
+
+    background: #ffffff;
+
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+}
+
+.auth-card h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+
+    text-align: center;
+}
+
+
+/* ========================================
+   Forms
+   ======================================== */
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 1rem;
+}
+
+
+/* ========================================
+   Inputs
+   ======================================== */
+
+.auth-form input {
+    width: 100%;
+
+    padding: 0.75rem;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+    color: #000000;
+
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+
+    font-size: 1rem;
+}
+
+.auth-form input::placeholder {
+    color: #888888;
+}
+
+.auth-form input:focus {
+    outline: none;
+
+    border-color: #000000;
+}
+
+
+/* ========================================
+   Submit Button
+   ======================================== */
+
+.auth-submit-button {
+    padding: 0.75rem;
+
+    background: #000000;
+    color: #ffffff;
+
+    border: 1px solid #000000;
+    border-radius: 5px;
+
+    font-size: 1rem;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.auth-submit-button:hover {
+    background: #333333;
+}
+
+.auth-submit-button:disabled {
+    background: #cccccc;
+    color: #666666;
+
+    border-color: #cccccc;
+
+    cursor: not-allowed;
+}
+
+
+/* ========================================
+   Login / Register Switch
+   ======================================== */
+
+.auth-switch-text {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+
+    text-align: center;
+
+    color: #666666;
+}
+
+.auth-switch-button {
+    display: block;
+
+    margin: 0 auto;
+    padding: 0;
+
+    background: none;
+    color: #000000;
+
+    border: none;
+
+    font-size: 0.95rem;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.auth-switch-button:hover {
+    text-decoration: underline;
+}

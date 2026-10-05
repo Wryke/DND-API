@@ -38,6 +38,8 @@ import {
     logout
 } from "./api/auth"
 
+import { register } from "./api/users"
+
 function App() {
     
     // --- State ---
@@ -322,6 +324,18 @@ function App() {
         }
     }
 
+    async function handleRegister(username, email, password) {
+        try {
+            await register(username, email, password)
+            await login(email, password)
+            const user = await getCurrentUser()
+            setCurrentUser(user)
+            return null
+        } catch(error){
+            return error.message
+        }
+    }
+
     // --- Render ---
     const characterElements = characters.map((character) => {
         return (
@@ -341,6 +355,7 @@ function App() {
     if (!currentUser) {
         return <LoginPage 
             handleLogin={handleLogin}
+            handleRegister={handleRegister}
         />
     }
 

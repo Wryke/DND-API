@@ -42,7 +42,10 @@ function LoginForm(props) {
 
     // --- Render ---
     return (
-        <form onSubmit={handleSubmit}>
+        <form
+            className="auth-form"
+            onSubmit={handleSubmit}
+        >
 
             <input
                 placeholder="Email"
@@ -64,6 +67,7 @@ function LoginForm(props) {
             {error && <p>{error}</p>}
             
             <button 
+                className="auth-submit-button"
                 type="submit" 
                 disabled={loading}
             >
