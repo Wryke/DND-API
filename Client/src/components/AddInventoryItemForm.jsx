@@ -1,19 +1,28 @@
 import { useEffect, useState } from 'react'
 import { getContainerPath } from '../utils/inventory'
+import { getItems } from "../api/items"
 
 function AddInventoryItemForm(props) {
 
     // --- State ---
     const [error, setError] = useState("")
-    const [itemIndex, setItemIndex] = useState("")
-    const [quantity, setQuantity] = useState("")
+
+    const [isLoading, setIsLoading] = useState(true)
+
     const [items, setItems] = useState([])
+
+    const [itemIndex, setItemIndex] = useState("")
+
+    const [quantity, setQuantity] = useState("")
+
     const [parentInventoryId, setParentInventoryId] = useState("")
 
     // --- Effects ---
     useEffect(() => {
         async function loadItems() {
             try {
+                setIsLoading(true)
+
                 const data = await getItems()
 
                 setItems(data)
@@ -21,6 +30,9 @@ function AddInventoryItemForm(props) {
             catch (error) {
                 console.error(error)
                 setError(error.message)
+            }
+            finally {
+                setIsLoading(false)
             }
         }
 
@@ -91,13 +103,19 @@ function AddInventoryItemForm(props) {
                 <select
                     id="item"
                     value={itemIndex}
+                    disabled={isLoading || items.length === 0}
                     onChange={(event) => {
                         setItemIndex(event.target.value)
                     }}
                 >
                     <option value="">
-                        Select an item
-                    </option>
+                    {isLoading
+                        ? "Loading Items..."
+                        : items.length === 0
+                            ? "Items Failed to Load"
+                            : "No Selection"
+                    }
+                </option>
                     {itemOptions}
                 </select>
             </div>
@@ -139,7 +157,10 @@ function AddInventoryItemForm(props) {
             
             {error && <p>{error}</p>}
 
-            <button type="submit">
+            <button 
+                type="submit"
+                disabled={isLoading || items.length === 0}
+            >
                 Add Item
             </button>
         </form>
