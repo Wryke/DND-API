@@ -1,8 +1,8 @@
 import { apiRequest } from "./apiHelpers"
 
-async function login(username, password) {
+async function login(email, password) {
     const credentials = {
-        username: username,
+        email: email,
         password: password
     }
 

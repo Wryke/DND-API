@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import CharactersPage from './pages/CharactersPage'
 import InventoryPage from './pages/InventoryPage'
 import EquipmentPage from './pages/EquipmentPage'
+import LoginPage from './pages/LoginPage'
 
 import Sidebar from './components/Sidebar'
 import CharacterInfo from './components/CharacterInfo'
@@ -31,15 +32,24 @@ import {
     getEquipmentSlots
 } from "./api/equipment"
 
+import {
+    login,
+    getCurrentUser,
+    logout
+} from "./api/auth"
+
 function App() {
     
     // --- State ---
+    const [currentUser, setCurrentUser] = useState(null)
+    const [authLoading, setAuthLoading] = useState(true)
+
     const [characters, setCharacters] = useState([])
     const [selectedCharacter, setSelectedCharacter] = useState(null)
 
     const [inventory, setInventory] = useState([])
-
     const [equipment, setEquipment] = useState([])
+    
     const [equipmentSlots, setEquipmentSlots] = useState([])
 
     const [currentPage, setCurrentPage] = useState("home")
@@ -56,22 +66,10 @@ function App() {
     }, 0)
 
     // -- Use Effects --
-    useEffect(() => {
-        async function loadCharacters() {
-            try {
-                const data = await getCharacters()
-
-                setCharacters(data)
-            }
-            catch (error) {
-                console.error(error)
-            }
-        }
-
+    useEffect(() => {        
         async function loadEquipmentSlots() {
             try {
                 const data = await getEquipmentSlots()
-
                 setEquipmentSlots(data)
             }
             catch (error) {
@@ -79,9 +77,42 @@ function App() {
             }
         }
 
-        loadCharacters()
+        async function checkAuth() {
+            try{
+                const user = await getCurrentUser()
+                setCurrentUser(user)
+            }
+            catch (error) {
+                setCurrentUser(null)
+            }
+            finally {
+                setAuthLoading(false)
+            }
+        }
+
         loadEquipmentSlots()
+        checkAuth()
     }, [])
+
+    useEffect(() => {
+        async function loadCharacters() {
+            try {
+                const data = await getCharacters()
+                setCharacters(data)
+            }
+            catch (error) {
+                console.error(error)
+            }
+        }
+
+        if (currentUser) {
+            loadCharacters()
+        } else {
+            setSelectedCharacter(null)
+            setCharacters([])
+        }
+
+    }, [currentUser])
 
     useEffect(() => {
         if (selectedCharacter === null) {
@@ -269,6 +300,28 @@ function App() {
         })
     }
 
+    async function handleLogin(email, password) {
+        try {
+            await login(email, password)
+            const user = await getCurrentUser()
+            setCurrentUser(user)
+            return null
+        } catch(error){
+            return error.message
+        }
+    }
+
+    async function handleLogout() {
+        try {
+            await logout()
+            setCurrentPage("home")
+            setCurrentUser(null)
+            return null
+        } catch (error) {
+            return error.message
+        }
+    }
+
     // --- Render ---
     const characterElements = characters.map((character) => {
         return (
@@ -281,6 +334,16 @@ function App() {
         )
     })
 
+    if (authLoading) {
+        return <p>Loading...</p>
+    }
+
+    if (!currentUser) {
+        return <LoginPage 
+            handleLogin={handleLogin}
+        />
+    }
+
     return (
         <>
             <div className="app-layout">
@@ -289,6 +352,7 @@ function App() {
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}
                     selectedCharacter={selectedCharacter}
+                    handleLogout={handleLogout}
                 />
 
                 <main className="main-content">

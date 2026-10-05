@@ -1,6 +1,6 @@
 const API_BASE_URL = "http://localhost:3000"
 
-export async function apiRequest(endpoint, options = {}) {
+async function apiRequest(endpoint, options = {}) {
     const response = await fetch(
         `${API_BASE_URL}${endpoint}`,
         {

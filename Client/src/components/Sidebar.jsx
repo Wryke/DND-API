@@ -54,7 +54,7 @@ function Sidebar(props) {
 
             <button
                 className="sidebar-button"
-                onClick={() => props.setCurrentPage("log out")}
+                onClick={() => props.handleLogout()}
             >
                 Log Out
             </button>
