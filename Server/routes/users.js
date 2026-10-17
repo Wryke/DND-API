@@ -135,8 +135,8 @@ router.patch("/me", requireAuth, async (req, res) => {
 
     try {
 
-        // Email and password changes require password confirmation
-        if (hasEmail || hasPassword) {
+        // Username, Email, and password changes require password confirmation
+        if (hasUsername || hasEmail || hasPassword) {
 
             if (
                 typeof currentPassword !== "string" ||
