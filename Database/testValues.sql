@@ -13,6 +13,7 @@ VALUES
         'test@example.com',
         '$argon2id$v=19$m=65536,p=4,t=3$1H+hB3/gBS3Wqn5iGbz9ig$7hA23wGYPermRJNXReuYFYMULLgE91SnP/75Z0fGwGU'
     );
+-- password = testpass
 
 INSERT INTO characters (
     character_id,
