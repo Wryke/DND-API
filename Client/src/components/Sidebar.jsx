@@ -16,6 +16,17 @@ function Sidebar(props) {
 
                 <button
                     className={
+                        props.currentPage === "account"
+                            ? "sidebar-button active"
+                            : "sidebar-button"
+                    }
+                    onClick={() => props.setCurrentPage("account")}
+                >
+                    Account
+                </button>
+
+                <button
+                    className={
                         props.currentPage === "characters"
                             ? "sidebar-button active"
                             : "sidebar-button"

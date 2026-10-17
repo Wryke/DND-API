@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 
 import HomePage from './pages/HomePage'
+import AccountPage from './pages/AccountPage'
 import CharactersPage from './pages/CharactersPage'
 import InventoryPage from './pages/InventoryPage'
 import EquipmentPage from './pages/EquipmentPage'
@@ -374,6 +375,12 @@ function App() {
 
                     {currentPage === "home" && (
                         <HomePage />
+                    )}
+
+                    {currentPage === "account" && (
+                        <AccountPage 
+                            currentUser = {currentUser}
+                        />
                     )}
 
                     {currentPage === "characters" && (
