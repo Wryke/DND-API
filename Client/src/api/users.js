@@ -18,4 +18,19 @@ async function register(username, email, password) {
     return apiRequest("/users", options)
 }
 
-export { register }
+async function updateUser(updatedFields) {
+    const options = {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(updatedFields)
+    }
+
+    return apiRequest("/users/me", options)
+}
+
+export { 
+    register,
+    updateUser
+ }

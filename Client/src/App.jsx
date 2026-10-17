@@ -39,7 +39,10 @@ import {
     logout
 } from "./api/auth"
 
-import { register } from "./api/users"
+import { 
+    register,
+    updateUser
+} from "./api/users"
 
 function App() {
     
@@ -337,6 +340,19 @@ function App() {
         }
     }
 
+    async function handleUpdateUser(updatedFields) {
+        try {
+            await updateUser(updatedFields)
+
+            const user = await getCurrentUser()
+            setCurrentUser(user)
+
+            return null
+        } catch(error){
+            return error.message
+        }
+    }
+
     // --- Render ---
     const characterElements = characters.map((character) => {
         return (
@@ -380,6 +396,7 @@ function App() {
                     {currentPage === "account" && (
                         <AccountPage 
                             currentUser = {currentUser}
+                            handleUpdateUser = {handleUpdateUser}
                         />
                     )}
 
