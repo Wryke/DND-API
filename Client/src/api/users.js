@@ -30,7 +30,22 @@ async function updateUser(updatedFields) {
     return apiRequest("/users/me", options)
 }
 
+async function deleteUser(password) {
+    const options = {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            currentPassword: password
+        })
+    }
+
+    return apiRequest("/users/me", options)
+}
+
 export { 
     register,
-    updateUser
+    updateUser,
+    deleteUser
  }

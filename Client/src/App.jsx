@@ -41,7 +41,8 @@ import {
 
 import { 
     register,
-    updateUser
+    updateUser,
+    deleteUser
 } from "./api/users"
 
 function App() {
@@ -353,6 +354,20 @@ function App() {
         }
     }
 
+    async function handleDeleteUser(currentPassword) {
+        try {
+            await deleteUser(currentPassword)
+
+            setCurrentUser(null)
+            setCurrentPage("home")
+
+            return null
+        }
+        catch (error) {
+            return error.message
+        }
+    }
+
     // --- Render ---
     const characterElements = characters.map((character) => {
         return (
@@ -394,9 +409,10 @@ function App() {
                     )}
 
                     {currentPage === "account" && (
-                        <AccountPage 
-                            currentUser = {currentUser}
-                            handleUpdateUser = {handleUpdateUser}
+                        <AccountPage
+                            currentUser={currentUser}
+                            handleUpdateUser={handleUpdateUser}
+                            handleDeleteUser={handleDeleteUser}
                         />
                     )}
 

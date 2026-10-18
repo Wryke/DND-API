@@ -22,6 +22,12 @@ function AccountPage(props) {
     const [passwordSuccess, setPasswordSuccess] = useState("")
     const [passwordLoading, setPasswordLoading] = useState(false)
 
+    const [deletePassword, setDeletePassword] = useState("")
+    const [confirmDeletion, setConfirmDeletion] = useState(false)
+
+    const [deleteError, setDeleteError] = useState("")
+    const [deleteLoading, setDeleteLoading] = useState(false)
+
     // --- Event Handlers ---
     async function handleUsernameSubmit(event) {
         event.preventDefault()
@@ -146,6 +152,41 @@ function AccountPage(props) {
         }
         finally {
             setPasswordLoading(false)
+        }
+    }
+
+    async function handleDeleteSubmit(event) {
+        event.preventDefault()
+
+        setDeleteError("")
+
+        if (deletePassword === "") {
+            setDeleteError("Current password is required.")
+            return
+        }
+
+        if (!confirmDeletion) {
+            setDeleteError("You must confirm account deletion.")
+            return
+        }
+
+        try {
+            setDeleteLoading(true)
+
+            const errorMessage = await props.handleDeleteUser(deletePassword)
+
+            if (errorMessage) {
+                setDeleteError(errorMessage)
+                return
+            }
+
+            // App.jsx handles clearing currentUser and navigation.
+        }
+        catch (error) {
+            setDeleteError(error.message)
+        }
+        finally {
+            setDeleteLoading(false)
         }
     }
 
@@ -290,6 +331,51 @@ function AccountPage(props) {
                     {passwordLoading ? "Updating..." : "Update Password"}
                 </button>
             </form>
+
+            <section>
+                <h2>Delete Account</h2>
+
+                <p>
+                    Deleting your account is permanent and cannot be undone.
+                </p>
+
+                <form onSubmit={handleDeleteSubmit}>
+                    <label htmlFor="delete-password">
+                        Current Password
+                    </label>
+
+                    <input
+                        id="delete-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={deletePassword}
+                        onChange={(event) => {
+                            setDeletePassword(event.target.value)
+                        }}
+                    />
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={confirmDeletion}
+                            onChange={(event) => {
+                                setConfirmDeletion(event.target.checked)
+                            }}
+                        />
+
+                        I understand that deleting my account is permanent.
+                    </label>
+
+                    {deleteError && <p>{deleteError}</p>}
+
+                    <button
+                        type="submit"
+                        disabled={deleteLoading || !confirmDeletion}
+                    >
+                        {deleteLoading ? "Deleting..." : "Delete Account"}
+                    </button>
+                </form>
+            </section>
         </div>
     )
 }
