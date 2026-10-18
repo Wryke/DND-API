@@ -1,15 +1,15 @@
 import { useState } from "react"
 
-function AccountPage(props) {
+function AccountPage({ currentUser, handleUpdateUser, handleDeleteUser }) {
 
     // --- State ---
-    const [newUsername, setNewUsername] = useState(props.currentUser.username)
-    const [currentPassword, setCurrentPassword] = useState("")
-    const [error, setError] = useState("")
-    const [success, setSuccess] = useState("")
-    const [loading, setLoading] = useState(false)
+    const [newUsername, setNewUsername] = useState(currentUser.username)
+    const [usernamePassword, setUsernamePassword] = useState("")
+    const [usernameError, setUsernameError] = useState("")
+    const [usernameSuccess, setUsernameSuccess] = useState("")
+    const [usernameLoading, setUsernameLoading] = useState(false)
 
-    const [newEmail, setNewEmail] = useState(props.currentUser.email)
+    const [newEmail, setNewEmail] = useState(currentUser.email)
     const [emailPassword, setEmailPassword] = useState("")
     const [emailError, setEmailError] = useState("")
     const [emailSuccess, setEmailSuccess] = useState("")
@@ -24,7 +24,6 @@ function AccountPage(props) {
 
     const [deletePassword, setDeletePassword] = useState("")
     const [confirmDeletion, setConfirmDeletion] = useState(false)
-
     const [deleteError, setDeleteError] = useState("")
     const [deleteLoading, setDeleteLoading] = useState(false)
 
@@ -32,38 +31,38 @@ function AccountPage(props) {
     async function handleUsernameSubmit(event) {
         event.preventDefault()
 
-        setError("")
-        setSuccess("")
+        setUsernameError("")
+        setUsernameSuccess("")
 
         if (newUsername.trim() === "") {
-            setError("Username cannot be empty")
+            setUsernameError("Username cannot be empty")
             return
         }
 
-        if(currentPassword.trim() === "") {
-            setError("Current password is required.")
+        if (usernamePassword === "") {
+            setUsernameError("Current password is required.")
             return
         }
 
         try {
-            setLoading(true)
+            setUsernameLoading(true)
 
-            const errorMessage = await props.handleUpdateUser({
-                username: newUsername,
-                currentPassword: currentPassword
+            const errorMessage = await handleUpdateUser({
+                username: newUsername.trim(),
+                currentPassword: usernamePassword
             })
 
             if (errorMessage) {
-                setError(errorMessage)
+                setUsernameError(errorMessage)
                 return
             }
 
-            setSuccess("Username updated successfully.")
-            setCurrentPassword("")
-        } catch(error){
-            setError(error.message)
+            setUsernameSuccess("Username updated successfully.")
+            setUsernamePassword("")
+        } catch (error) {
+            setUsernameError(error.message)
         } finally {
-            setLoading(false)
+            setUsernameLoading(false)
         }
     }
 
@@ -78,7 +77,7 @@ function AccountPage(props) {
             return
         }
 
-        if (emailPassword.trim() === "") {
+        if (emailPassword === "") {
             setEmailError("Current password is required.")
             return
         }
@@ -86,8 +85,8 @@ function AccountPage(props) {
         try {
             setEmailLoading(true)
 
-            const errorMessage = await props.handleUpdateUser({
-                email: newEmail,
+            const errorMessage = await handleUpdateUser({
+                email: newEmail.trim(),
                 currentPassword: emailPassword
             })
 
@@ -98,11 +97,9 @@ function AccountPage(props) {
 
             setEmailSuccess("Email updated successfully.")
             setEmailPassword("")
-        }
-        catch (error) {
+        } catch (error) {
             setEmailError(error.message)
-        }
-        finally {
+        } finally {
             setEmailLoading(false)
         }
     }
@@ -131,7 +128,7 @@ function AccountPage(props) {
         try {
             setPasswordLoading(true)
 
-            const errorMessage = await props.handleUpdateUser({
+            const errorMessage = await handleUpdateUser({
                 password: newPassword,
                 currentPassword: oldPassword
             })
@@ -146,11 +143,9 @@ function AccountPage(props) {
             setOldPassword("")
             setNewPassword("")
             setConfirmPassword("")
-        }
-        catch (error) {
+        } catch (error) {
             setPasswordError(error.message)
-        }
-        finally {
+        } finally {
             setPasswordLoading(false)
         }
     }
@@ -173,7 +168,7 @@ function AccountPage(props) {
         try {
             setDeleteLoading(true)
 
-            const errorMessage = await props.handleDeleteUser(deletePassword)
+            const errorMessage = await handleDeleteUser(deletePassword)
 
             if (errorMessage) {
                 setDeleteError(errorMessage)
@@ -181,33 +176,31 @@ function AccountPage(props) {
             }
 
             // App.jsx handles clearing currentUser and navigation.
-        }
-        catch (error) {
+        } catch (error) {
             setDeleteError(error.message)
-        }
-        finally {
+        } finally {
             setDeleteLoading(false)
         }
     }
 
     // --- Render ---
     return (
-        <div>
+        <main>
             <h1>Account Settings</h1>
 
             <h2>Profile Information</h2>
 
             <p>
-                <strong>Username:</strong> {props.currentUser.username}
+                <strong>Username:</strong> {currentUser.username}
             </p>
 
             <p>
-                <strong>Email:</strong> {props.currentUser.email}
+                <strong>Email:</strong> {currentUser.email}
             </p>
 
             <h2>Change Username</h2>
 
-            <form onSubmit = {handleUsernameSubmit}>
+            <form onSubmit={handleUsernameSubmit}>
                 <label htmlFor="new-username">
                     New Username
                 </label>
@@ -215,6 +208,7 @@ function AccountPage(props) {
                 <input
                     id="new-username"
                     type="text"
+                    autoComplete="username"
                     value={newUsername}
                     onChange={(event) => {
                         setNewUsername(event.target.value)
@@ -228,20 +222,21 @@ function AccountPage(props) {
                 <input
                     id="username-current-password"
                     type="password"
-                    value={currentPassword}
+                    autoComplete="current-password"
+                    value={usernamePassword}
                     onChange={(event) => {
-                        setCurrentPassword(event.target.value)
+                        setUsernamePassword(event.target.value)
                     }}
                 />
 
-                {error && <p>{error}</p>}
-                {success && <p>{success}</p>}
+                {usernameError && <p role="alert">{usernameError}</p>}
+                {usernameSuccess && <p role="status">{usernameSuccess}</p>}
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={usernameLoading}
                 >
-                    {loading ? "Updating..." : "Update Username"}
+                    {usernameLoading ? "Updating..." : "Update Username"}
                 </button>
             </form>
 
@@ -255,6 +250,7 @@ function AccountPage(props) {
                 <input
                     id="new-email"
                     type="email"
+                    autoComplete="email"
                     value={newEmail}
                     onChange={(event) => {
                         setNewEmail(event.target.value)
@@ -268,14 +264,15 @@ function AccountPage(props) {
                 <input
                     id="email-current-password"
                     type="password"
+                    autoComplete="current-password"
                     value={emailPassword}
                     onChange={(event) => {
                         setEmailPassword(event.target.value)
                     }}
                 />
 
-                {emailError && <p>{emailError}</p>}
-                {emailSuccess && <p>{emailSuccess}</p>}
+                {emailError && <p role="alert">{emailError}</p>}
+                {emailSuccess && <p role="status">{emailSuccess}</p>}
 
                 <button
                     type="submit"
@@ -324,8 +321,8 @@ function AccountPage(props) {
                     onChange={(event) => setConfirmPassword(event.target.value)}
                 />
 
-                {passwordError && <p>{passwordError}</p>}
-                {passwordSuccess && <p>{passwordSuccess}</p>}
+                {passwordError && <p role="alert">{passwordError}</p>}
+                {passwordSuccess && <p role="status">{passwordSuccess}</p>}
 
                 <button type="submit" disabled={passwordLoading}>
                     {passwordLoading ? "Updating..." : "Update Password"}
@@ -366,7 +363,7 @@ function AccountPage(props) {
                         I understand that deleting my account is permanent.
                     </label>
 
-                    {deleteError && <p>{deleteError}</p>}
+                    {deleteError && <p role="alert">{deleteError}</p>}
 
                     <button
                         type="submit"
@@ -376,7 +373,7 @@ function AccountPage(props) {
                     </button>
                 </form>
             </section>
-        </div>
+        </main>
     )
 }
 
