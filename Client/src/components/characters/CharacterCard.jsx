@@ -3,6 +3,7 @@ import { useState } from "react"
 
 import Modal from "../Modal"
 import CharacterEditForm from "./CharacterEditForm"
+import "../../styles/CharacterCard.css"
 
 function CharacterCard({
     character,
@@ -48,27 +49,29 @@ function CharacterCard({
                 Max Carry Weight: {character.max_weight} lbs
             </p>
 
-            <button
-                type="button"
-                onClick={() => selectCharacter(character)}
-                disabled={isSelected}
-            >
-                {isSelected ? "Selected" : "Select"}
-            </button>
+            <div className="character-card-actions">
+                <button
+                    type="button"
+                    onClick={() => selectCharacter(character)}
+                    disabled={isSelected}
+                >
+                    {isSelected ? "Selected" : "Select"}
+                </button>
 
-            <button
-                type="button"
-                onClick={handleEditClick}
-            >
-                Edit
-            </button>
+                <button
+                    type="button"
+                    onClick={handleEditClick}
+                >
+                    Edit
+                </button>
 
-            <button
-                type="button"
-                onClick={handleDelete}
-            >
-                Delete
-            </button>
+                <button
+                    type="button"
+                    onClick={handleDelete}
+                >
+                    Delete
+                </button>
+            </div>
 
             {isEditing && (
                 <Modal>

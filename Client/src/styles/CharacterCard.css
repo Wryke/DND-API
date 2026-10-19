@@ -1,0 +1,62 @@
+
+/* --- Character Card --- */
+
+.character-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    padding: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 10px;
+
+    background-color: #ffffff;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.character-card h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.character-card p {
+    margin: 0;
+    color: #7a7a7a;
+}
+
+/* --- Selected Character --- */
+
+.character-card.selected {
+    border-color: #000000;
+    background-color: #eff6ff;
+}
+
+/* --- Card Buttons --- */
+
+.character-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin-top: auto;
+}
+
+.character-card-actions button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.character-card-actions button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+/* --- Character Grid --- */
+
+.character-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}

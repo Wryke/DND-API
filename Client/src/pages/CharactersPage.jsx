@@ -1,16 +1,15 @@
-import CharacterForm from '../components/characters/CharacterForm'
-import CharacterHeader from '../components/characters/CharacterHeader'
+import CharacterForm from "../components/characters/CharacterForm"
 
-function CharactersPage(props) {
+function CharactersPage({ addCharacter, characterElements }) {
     return (
         <div>
             <h1>Characters</h1>
 
-            <CharacterForm 
-                addCharacter={props.addCharacter}
-            />
+            <CharacterForm addCharacter={addCharacter} />
 
-            {props.characterElements}
+            <div className="character-grid">
+                {characterElements}
+            </div>
         </div>
     )
 }
