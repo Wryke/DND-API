@@ -4,12 +4,12 @@ function CharacterForm(props) {
     const [error, setError] = useState("")
     
     const [name, setName] = useState("")
-    const [max_weight, setMaxWeight] = useState("")
+    const [maxWeight, setMaxWeight] = useState("")
 
     async function handleSubmit(event) {
         event.preventDefault()
 
-        const numericMaxWeight = Number(max_weight)
+        const numericMaxWeight = Number(maxWeight)
         
         if(name.trim() === ""){
             setError("Character name is required.")
@@ -42,21 +42,23 @@ function CharacterForm(props) {
 
     return (
         <form onSubmit={handleSubmit}>
-
+            
+            <label htmlFor="character-name">Character Name</label>
             <input
-                placeholder="Name"
+                id="character-name"
+                type="text"
                 value={name}
-                onChange={(event) => {
-                    setName(event.target.value)
-                }}
+                onChange={(event) => setName(event.target.value)}
             />
 
+            <label htmlFor="character-max-weight">Maximum Carry Weight (lbs)</label>
             <input
-                placeholder="Max Weight"
-                value={max_weight}
-                onChange={(event) => {
-                    setMaxWeight(event.target.value)
-                }}
+                id="character-max-weight"
+                type="number"
+                min="1"
+                step="1"
+                value={maxWeight}
+                onChange={(event) => setMaxWeight(event.target.value)}
             />
 
             {error && <p>{error}</p>}

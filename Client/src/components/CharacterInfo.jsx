@@ -1,13 +1,34 @@
-function CharacterInfo(props) {
+function CharacterInfo({ character, selectCharacter, removeCharacter }) {
+
+    function handleDelete() {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete ${character.name}? This action cannot be undone.`
+        )
+
+        if (!confirmed) {
+            return
+        }
+
+        removeCharacter(character.character_id)
+    }
+
     return (
         <div>
-            <h2>{props.character.name} | Max Carry Weight: {props.character.max_weight}</h2>
+            <h2>
+                {character.name} | Max Carry Weight: {character.max_weight} lbs
+            </h2>
 
-            <button onClick={() => props.selectCharacter(props.character)}>
+            <button
+                type="button"
+                onClick={() => selectCharacter(character)}
+            >
                 Select
             </button>
 
-            <button onClick={() => props.removeCharacter(props.character.character_id)}>
+            <button
+                type="button"
+                onClick={handleDelete}
+            >
                 Delete
             </button>
         </div>
