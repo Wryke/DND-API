@@ -1,9 +1,12 @@
 
 import { useState } from "react"
+
+import Modal from "../Modal"
 import CharacterEditForm from "./CharacterEditForm"
 
-function CharacterInfo({
+function CharacterCard({
     character,
+    selectedCharacter,
     selectCharacter,
     removeCharacter,
     updateCharacter
@@ -11,6 +14,18 @@ function CharacterInfo({
 
     // --- State ---
     const [isEditing, setIsEditing] = useState(false)
+
+    // --- Derived Data ---
+    const isSelected = selectedCharacter?.character_id === character.character_id
+
+    // --- Event Handlers ---
+    function handleEditClick() {
+        setIsEditing(true)
+    }
+
+    function handleEditClose() {
+        setIsEditing(false)
+    }
 
     function handleDelete() {
         const confirmed = window.confirm(
@@ -24,38 +39,26 @@ function CharacterInfo({
         removeCharacter(character.character_id)
     }
 
-    // --- Event Handlers ---
-    function handleCancelEdit() {
-        setIsEditing(false)
-    }
-
-    // -- Render ---
-    if (isEditing) {
-        return (
-            <CharacterEditForm
-                character={character}
-                updateCharacter={updateCharacter}
-                cancelEdit={handleCancelEdit}
-            />
-        )
-    }
-
+    // --- Render ---
     return (
-        <div>
-            <h2>
-                {character.name} | Max Carry Weight: {character.max_weight} lbs
-            </h2>
+        <div className={`character-card ${isSelected ? "selected" : ""}`}>
+            <h2>{character.name}</h2>
+
+            <p>
+                Max Carry Weight: {character.max_weight} lbs
+            </p>
 
             <button
                 type="button"
                 onClick={() => selectCharacter(character)}
+                disabled={isSelected}
             >
-                Select
+                {isSelected ? "Selected" : "Select"}
             </button>
 
             <button
                 type="button"
-                onClick={() => setIsEditing(true)}
+                onClick={handleEditClick}
             >
                 Edit
             </button>
@@ -66,8 +69,18 @@ function CharacterInfo({
             >
                 Delete
             </button>
+
+            {isEditing && (
+                <Modal>
+                    <CharacterEditForm
+                        character={character}
+                        updateCharacter={updateCharacter}
+                        cancelEdit={handleEditClose}
+                    />
+                </Modal>
+            )}
         </div>
     )
 }
 
-export default CharacterInfo
+export default CharacterCard

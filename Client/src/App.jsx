@@ -9,7 +9,7 @@ import EquipmentPage from './pages/EquipmentPage'
 import LoginPage from './pages/LoginPage'
 
 import Sidebar from './components/Sidebar'
-import CharacterInfo from './components/characters/CharacterCard'
+import CharacterCard from './components/characters/CharacterCard'
 
 import { 
     convertToGold 
@@ -412,9 +412,10 @@ function App() {
     // --- Render ---
     const characterElements = characters.map((character) => {
         return (
-            <CharacterInfo 
+            <CharacterCard
                 key={character.character_id}
                 character={character}
+                selectedCharacter={selectedCharacter}
                 selectCharacter={handleSelectCharacter}
                 updateCharacter={handleUpdateCharacter}
                 removeCharacter={removeCharacter}
