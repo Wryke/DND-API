@@ -9,7 +9,7 @@ import EquipmentPage from './pages/EquipmentPage'
 import LoginPage from './pages/LoginPage'
 
 import Sidebar from './components/Sidebar'
-import CharacterInfo from './components/CharacterInfo'
+import CharacterInfo from './components/characters/CharacterCard'
 
 import { 
     convertToGold 

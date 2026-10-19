@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getContainerPath, getDescendantIds } from '../utils/inventory'
+import { getContainerPath, getDescendantIds } from '../../utils/inventory'
 
 function EditInventoryItemForm(props) {
 

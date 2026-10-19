@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { 
     getCompatibleInventory
-} from "../api/equipment"
+} from "../../api/equipment"
 
 function EquipItemForm (props) {
     

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getContainerPath } from '../utils/inventory'
-import { getItems } from "../api/items"
+import { getContainerPath } from '../../utils/inventory'
+import { getItems } from "../../api/items"
 
 function AddInventoryItemForm(props) {
 

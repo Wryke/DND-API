@@ -1,5 +1,5 @@
-import CharacterForm from '../components/CharacterForm'
-import CharacterHeader from '../components/CharacterHeader'
+import CharacterForm from '../components/characters/CharacterForm'
+import CharacterHeader from '../components/characters/CharacterHeader'
 
 function CharactersPage(props) {
     return (

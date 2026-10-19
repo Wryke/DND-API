@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-import AddInventoryItemForm from '../components/AddInventoryItemForm'
-import CharacterHeader from '../components/CharacterHeader'
-import InventoryItem from '../components/InventoryItem'
+import AddInventoryItemForm from '../components/inventory/AddInventoryItemForm'
+import CharacterHeader from '../components/characters/CharacterHeader'
+import InventoryItem from '../components/inventory/InventoryItem'
 import Modal from '../components/Modal'
 
 import { addItemAndParents } from '../utils/inventory'

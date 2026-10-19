@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import CharacterHeader from '../components/CharacterHeader'
-import EquipmentInfo from '../components/EquipmentInfo'
+import CharacterHeader from '../components/characters/CharacterHeader'
+import EquipmentInfo from '../components/equipment/EquipmentInfo'
 import Modal from "../components/Modal"
-import EquipItemForm from "../components/EquipItemForm"
+import EquipItemForm from "../components/equipment/EquipItemForm"
 
 import { 
     createEquipmentEntry, 

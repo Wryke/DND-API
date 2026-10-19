@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { convertToGold } from '../utils/currency'
+import { convertToGold } from '../../utils/currency'
 
 import EditInventoryItemForm from './EditInventoryItemForm'
-import Modal from './Modal'
+import Modal from '../Modal'
 
 function InventoryItem(props) {
 
