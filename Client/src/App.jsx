@@ -17,7 +17,8 @@ import {
 
 import { 
     getCharacters, 
-    createCharacter, 
+    createCharacter,
+    updateCharacter, 
     deleteCharacter 
 } from './api/characters'
 
@@ -368,6 +369,46 @@ function App() {
         }
     }
 
+    async function handleUpdateCharacter(characterId, updatedFields) {
+        const character = characters.find((character) => {
+            return character.character_id === characterId
+        })
+
+        if (!character) {
+            return "Character not found"
+        }
+
+        try {
+            const updatedCharacter = await updateCharacter(
+                character.name,
+                updatedFields
+            )
+
+            setCharacters((currentCharacters) => {
+                return currentCharacters.map((character) => {
+                    if (character.character_id === characterId) {
+                        return updatedCharacter
+                    }
+
+                    return character
+                })
+            })
+
+            setSelectedCharacter((currentSelected) => {
+                if (currentSelected?.character_id === characterId) {
+                    return updatedCharacter
+                }
+
+                return currentSelected
+            })
+
+            return null
+        } catch (error) {
+            console.error(error)
+            return error.message
+        }
+    }
+
     // --- Render ---
     const characterElements = characters.map((character) => {
         return (
@@ -375,6 +416,7 @@ function App() {
                 key={character.character_id}
                 character={character}
                 selectCharacter={handleSelectCharacter}
+                updateCharacter={handleUpdateCharacter}
                 removeCharacter={removeCharacter}
             />
         )

@@ -172,7 +172,7 @@ router.patch("/:name", requireAuth, (req, res) => {
         })
     }
 
-    if (hasMaxWeight && (typeof max_weight !== "number" || max_weight <= 0)) {
+    if (hasMaxWeight && (!Number.isInteger(max_weight) || max_weight <= 0)) {
         return res.status(400).json({
             error: "Max weight must be a positive number"
         })

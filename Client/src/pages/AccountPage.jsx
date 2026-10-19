@@ -185,7 +185,7 @@ function AccountPage({ currentUser, handleUpdateUser, handleDeleteUser }) {
 
     // --- Render ---
     return (
-        <main>
+        <>
             <h1>Account Settings</h1>
 
             <section>
@@ -381,7 +381,7 @@ function AccountPage({ currentUser, handleUpdateUser, handleDeleteUser }) {
                     </button>
                 </form>
             </section>
-        </main>
+        </>
     )
 }
 

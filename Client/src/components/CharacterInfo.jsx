@@ -1,5 +1,6 @@
 function CharacterInfo({ character, selectCharacter, removeCharacter }) {
 
+    // --- Event Handlers
     function handleDelete() {
         const confirmed = window.confirm(
             `Are you sure you want to delete ${character.name}? This action cannot be undone.`
@@ -12,6 +13,7 @@ function CharacterInfo({ character, selectCharacter, removeCharacter }) {
         removeCharacter(character.character_id)
     }
 
+    // --- Render ---
     return (
         <div>
             <h2>
@@ -24,7 +26,7 @@ function CharacterInfo({ character, selectCharacter, removeCharacter }) {
             >
                 Select
             </button>
-
+                
             <button
                 type="button"
                 onClick={handleDelete}

@@ -21,6 +21,21 @@ async function createCharacter(newCharacter) {
     return apiRequest(url, options)
 }
 
+
+async function updateCharacter(characterName, updatedFields) {
+    const url = `/characters/${encodeURIComponent(characterName)}`
+
+    const options = {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(updatedFields)
+    }
+
+    return apiRequest(url, options)
+}
+
 async function deleteCharacter(characterName) {
     const url = `/characters/${encodeURIComponent(characterName)}`
 
@@ -35,5 +50,6 @@ async function deleteCharacter(characterName) {
 export {
     getCharacters,
     createCharacter,
+    updateCharacter,
     deleteCharacter
 }
