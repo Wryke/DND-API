@@ -188,146 +188,154 @@ function AccountPage({ currentUser, handleUpdateUser, handleDeleteUser }) {
         <main>
             <h1>Account Settings</h1>
 
-            <h2>Profile Information</h2>
+            <section>
+                <h2>Profile Information</h2>
 
-            <p>
-                <strong>Username:</strong> {currentUser.username}
-            </p>
+                <p>
+                    <strong>Username:</strong> {currentUser.username}
+                </p>
 
-            <p>
-                <strong>Email:</strong> {currentUser.email}
-            </p>
+                <p>
+                    <strong>Email:</strong> {currentUser.email}
+                </p>
+            </section>
 
-            <h2>Change Username</h2>
+            <section>
+                <h2>Change Username</h2>
 
-            <form onSubmit={handleUsernameSubmit}>
-                <label htmlFor="new-username">
-                    New Username
-                </label>
+                <form onSubmit={handleUsernameSubmit}>
+                    <label htmlFor="new-username">
+                        New Username
+                    </label>
 
-                <input
-                    id="new-username"
-                    type="text"
-                    autoComplete="username"
-                    value={newUsername}
-                    onChange={(event) => {
-                        setNewUsername(event.target.value)
-                    }}
-                />
+                    <input
+                        id="new-username"
+                        type="text"
+                        autoComplete="username"
+                        value={newUsername}
+                        onChange={(event) => {
+                            setNewUsername(event.target.value)
+                        }}
+                    />
 
-                <label htmlFor="username-current-password">
-                    Current Password
-                </label>
+                    <label htmlFor="username-current-password">
+                        Current Password
+                    </label>
 
-                <input
-                    id="username-current-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={usernamePassword}
-                    onChange={(event) => {
-                        setUsernamePassword(event.target.value)
-                    }}
-                />
+                    <input
+                        id="username-current-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={usernamePassword}
+                        onChange={(event) => {
+                            setUsernamePassword(event.target.value)
+                        }}
+                    />
 
-                {usernameError && <p role="alert">{usernameError}</p>}
-                {usernameSuccess && <p role="status">{usernameSuccess}</p>}
+                    {usernameError && <p role="alert">{usernameError}</p>}
+                    {usernameSuccess && <p role="status">{usernameSuccess}</p>}
 
-                <button
-                    type="submit"
-                    disabled={usernameLoading}
-                >
-                    {usernameLoading ? "Updating..." : "Update Username"}
-                </button>
-            </form>
+                    <button
+                        type="submit"
+                        disabled={usernameLoading}
+                    >
+                        {usernameLoading ? "Updating..." : "Update Username"}
+                    </button>
+                </form>
+            </section>
 
-            <h2>Change Email</h2>
+            <section>
+                <h2>Change Email</h2>
 
-            <form onSubmit={handleEmailSubmit}>
-                <label htmlFor="new-email">
-                    New Email
-                </label>
+                <form onSubmit={handleEmailSubmit}>
+                    <label htmlFor="new-email">
+                        New Email
+                    </label>
 
-                <input
-                    id="new-email"
-                    type="email"
-                    autoComplete="email"
-                    value={newEmail}
-                    onChange={(event) => {
-                        setNewEmail(event.target.value)
-                    }}
-                />
+                    <input
+                        id="new-email"
+                        type="email"
+                        autoComplete="email"
+                        value={newEmail}
+                        onChange={(event) => {
+                            setNewEmail(event.target.value)
+                        }}
+                    />
 
-                <label htmlFor="email-current-password">
-                    Current Password
-                </label>
+                    <label htmlFor="email-current-password">
+                        Current Password
+                    </label>
 
-                <input
-                    id="email-current-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={emailPassword}
-                    onChange={(event) => {
-                        setEmailPassword(event.target.value)
-                    }}
-                />
+                    <input
+                        id="email-current-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={emailPassword}
+                        onChange={(event) => {
+                            setEmailPassword(event.target.value)
+                        }}
+                    />
 
-                {emailError && <p role="alert">{emailError}</p>}
-                {emailSuccess && <p role="status">{emailSuccess}</p>}
+                    {emailError && <p role="alert">{emailError}</p>}
+                    {emailSuccess && <p role="status">{emailSuccess}</p>}
 
-                <button
-                    type="submit"
-                    disabled={emailLoading}
-                >
-                    {emailLoading ? "Updating..." : "Update Email"}
-                </button>
-            </form>
+                    <button
+                        type="submit"
+                        disabled={emailLoading}
+                    >
+                        {emailLoading ? "Updating..." : "Update Email"}
+                    </button>
+                </form>      
+            </section>
 
-            <h2>Change Password</h2>
+            <section>
+                <h2>Change Password</h2>
 
-            <form onSubmit={handlePasswordSubmit}>
-                <label htmlFor="old-password">
-                    Current Password
-                </label>
+                <form onSubmit={handlePasswordSubmit}>
+                    <label htmlFor="old-password">
+                        Current Password
+                    </label>
 
-                <input
-                    id="old-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={oldPassword}
-                    onChange={(event) => setOldPassword(event.target.value)}
-                />
+                    <input
+                        id="old-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={oldPassword}
+                        onChange={(event) => setOldPassword(event.target.value)}
+                    />
 
-                <label htmlFor="new-password">
-                    New Password
-                </label>
+                    <label htmlFor="new-password">
+                        New Password
+                    </label>
 
-                <input
-                    id="new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                />
+                    <input
+                        id="new-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                    />
 
-                <label htmlFor="confirm-password">
-                    Confirm New Password
-                </label>
+                    <label htmlFor="confirm-password">
+                        Confirm New Password
+                    </label>
 
-                <input
-                    id="confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                />
+                    <input
+                        id="confirm-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                    />
 
-                {passwordError && <p role="alert">{passwordError}</p>}
-                {passwordSuccess && <p role="status">{passwordSuccess}</p>}
+                    {passwordError && <p role="alert">{passwordError}</p>}
+                    {passwordSuccess && <p role="status">{passwordSuccess}</p>}
 
-                <button type="submit" disabled={passwordLoading}>
-                    {passwordLoading ? "Updating..." : "Update Password"}
-                </button>
-            </form>
+                    <button type="submit" disabled={passwordLoading}>
+                        {passwordLoading ? "Updating..." : "Update Password"}
+                    </button>
+                </form>
+            </section>
 
             <section>
                 <h2>Delete Account</h2>
