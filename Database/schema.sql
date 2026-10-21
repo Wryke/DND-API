@@ -1,6 +1,41 @@
 PRAGMA foreign_keys = ON;
 
 -- Lookup Tables --
+CREATE TABLE class_lookup (
+    class_id INTEGER PRIMARY KEY,
+    class_index TEXT NOT NULL UNIQUE,
+    class_name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE subclass_lookup (
+    subclass_id INTEGER PRIMARY KEY,
+    class_id INTEGER NOT NULL,
+    subclass_index TEXT NOT NULL UNIQUE,
+    subclass_name TEXT NOT NULL UNIQUE,
+
+    FOREIGN KEY (class_id)
+        REFERENCES class_lookup(class_id),
+
+    UNIQUE (class_id, subclass_id)
+);
+
+CREATE TABLE proficiency_lookup (
+    proficiency_id INTEGER PRIMARY KEY,
+    proficiency_index TEXT NOT NULL UNIQUE,
+    proficiency_name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE species_lookup (
+    species_id INTEGER PRIMARY KEY,
+    species_index TEXT NOT NULL UNIQUE,
+    species_name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE background_lookup (
+    background_id INTEGER PRIMARY KEY,
+    background_index TEXT NOT NULL UNIQUE,
+    background_name TEXT NOT NULL UNIQUE
+);
 
 CREATE TABLE item_type_lookup (
     item_type_id INTEGER PRIMARY KEY,
@@ -64,9 +99,25 @@ CREATE TABLE characters (
     name TEXT NOT NULL,
     max_weight REAL NOT NULL,
 
+    species_id INTEGER, 
+    background_id INTEGER,
+
+    strength_score INTEGER NOT NULL DEFAULT 10 CHECK (strength_score > 0),
+    dexterity_score INTEGER NOT NULL DEFAULT 10 CHECK (dexterity_score > 0),
+    constitution_score INTEGER NOT NULL DEFAULT 10 CHECK (constitution_score > 0),
+    intelligence_score INTEGER NOT NULL DEFAULT 10 CHECK (intelligence_score > 0),
+    wisdom_score INTEGER NOT NULL DEFAULT 10 CHECK (wisdom_score > 0),
+    charisma_score INTEGER NOT NULL DEFAULT 10 CHECK (charisma_score > 0),
+
     FOREIGN KEY (user_id)
         REFERENCES users(user_id)
         ON DELETE CASCADE,
+
+    FOREIGN KEY (species_id)
+        REFERENCES species_lookup(species_id),
+
+    FOREIGN KEY (background_id)
+        REFERENCES background_lookup(background_id),
 
     UNIQUE (user_id, name)
 );
@@ -328,4 +379,37 @@ CREATE TABLE pack_contents (
 
     FOREIGN KEY (contained_item_id)
         REFERENCES items(item_id)
+);
+
+CREATE TABLE character_to_class (
+    character_id INTEGER NOT NULL,
+    class_id INTEGER NOT NULL,
+    subclass_id INTEGER,
+    class_level INTEGER NOT NULL CHECK (class_level > 0),
+
+    PRIMARY KEY (character_id, class_id),
+
+    FOREIGN KEY (character_id)
+        REFERENCES characters (character_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (class_id)
+        REFERENCES class_lookup(class_id),
+
+    FOREIGN KEY (class_id, subclass_id)
+        REFERENCES subclass_lookup(class_id, subclass_id)
+);
+
+CREATE TABLE character_to_proficiency (
+    character_id INTEGER NOT NULL,
+    proficiency_id INTEGER NOT NULL,
+
+    PRIMARY KEY (character_id, proficiency_id),
+
+    FOREIGN KEY (character_id)
+        REFERENCES characters(character_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (proficiency_id)
+        REFERENCES proficiency_lookup(proficiency_id)
 );
