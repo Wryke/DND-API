@@ -138,12 +138,11 @@ const tables = [
         name: "weapons",
         columns: [
             "item_id",
-            "weapon_category",
             "range_normal",
             "range_long",
             "throw_range_normal",
             "throw_range_long",
-            "mastery_id"
+            "weapon_type_id"
         ],
         orderBy: "item_id"
     },

@@ -19,10 +19,28 @@ CREATE TABLE subclass_lookup (
     UNIQUE (class_id, subclass_id)
 );
 
+CREATE TABLE proficiency_type_lookup (
+    proficiency_type_id INTEGER PRIMARY KEY,
+    type_index TEXT NOT NULL UNIQUE,
+    type_name TEXT NOT NULL UNIQUE
+);
+
 CREATE TABLE proficiency_lookup (
     proficiency_id INTEGER PRIMARY KEY,
+    proficiency_type_id INTEGER NOT NULL,
     proficiency_index TEXT NOT NULL UNIQUE,
-    proficiency_name TEXT NOT NULL UNIQUE
+    proficiency_name TEXT NOT NULL UNIQUE,
+    ability_score_id INTEGER,
+    weapon_type_id INTEGER UNIQUE,
+
+    FOREIGN KEY (proficiency_type_id)
+        REFERENCES proficiency_type_lookup(proficiency_type_id),
+
+    FOREIGN KEY (ability_score_id)
+        REFERENCES ability_lookup(ability_score_id),
+
+    FOREIGN KEY (weapon_type_id)
+        REFERENCES weapon_type_lookup(weapon_type_id)
 );
 
 CREATE TABLE species_lookup (
@@ -72,6 +90,18 @@ CREATE TABLE weapon_property_lookup (
     property_name TEXT NOT NULL
 );
 
+CREATE TABLE weapon_type_lookup (
+    weapon_type_id INTEGER PRIMARY KEY,
+    weapon_type_index TEXT NOT NULL UNIQUE,
+    weapon_type_name TEXT NOT NULL UNIQUE,
+    weapon_category TEXT NOT NULL
+        CHECK (weapon_category IN ('simple', 'martial')),
+    mastery_id INTEGER NOT NULL,
+
+    FOREIGN KEY (mastery_id)
+        REFERENCES weapon_mastery_lookup(mastery_id)
+);
+
 CREATE TABLE categories_lookup (
     category_id INTEGER PRIMARY KEY,
     category_index TEXT NOT NULL UNIQUE,
@@ -97,7 +127,7 @@ CREATE TABLE characters (
     character_id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    max_weight REAL NOT NULL,
+    max_weight REAL NOT NULL CHECK (max_weight >= 0),
 
     species_id INTEGER, 
     background_id INTEGER,
@@ -184,19 +214,18 @@ CREATE TABLE equipment (
 
 CREATE TABLE weapons (
     item_id INTEGER PRIMARY KEY,
-    weapon_category TEXT NOT NULL,
     range_normal INTEGER CHECK (range_normal >= 0),
     range_long INTEGER CHECK (range_long >= 0),
     throw_range_normal INTEGER CHECK (throw_range_normal >= 0),
     throw_range_long INTEGER CHECK (throw_range_long >= 0),
-    mastery_id INTEGER,
-
+    weapon_type_id INTEGER NOT NULL,
+    
     FOREIGN KEY (item_id)
         REFERENCES items(item_id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (mastery_id)
-        REFERENCES weapon_mastery_lookup(mastery_id)
+    FOREIGN KEY (weapon_type_id)
+        REFERENCES weapon_type_lookup(weapon_type_id)
 );
 
 CREATE TABLE armor (
@@ -381,11 +410,12 @@ CREATE TABLE pack_contents (
         REFERENCES items(item_id)
 );
 
+-- Character Tables --
 CREATE TABLE character_to_class (
     character_id INTEGER NOT NULL,
     class_id INTEGER NOT NULL,
     subclass_id INTEGER,
-    class_level INTEGER NOT NULL CHECK (class_level > 0),
+    class_level INTEGER NOT NULL CHECK (class_level BETWEEN 1 and 20),
 
     PRIMARY KEY (character_id, class_id),
 
@@ -412,4 +442,18 @@ CREATE TABLE character_to_proficiency (
 
     FOREIGN KEY (proficiency_id)
         REFERENCES proficiency_lookup(proficiency_id)
+);
+
+CREATE TABLE character_to_weapon_mastery (
+    character_id INTEGER NOT NULL,
+    weapon_type_id INTEGER NOT NULL,
+
+    PRIMARY KEY (character_id, weapon_type_id),
+
+    FOREIGN KEY (character_id)
+        REFERENCES characters(character_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (weapon_type_id)
+        REFERENCES weapon_type_lookup(weapon_type_id)
 );

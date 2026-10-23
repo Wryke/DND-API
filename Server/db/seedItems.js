@@ -67,14 +67,13 @@ const insertItemCategoryStmt = db.prepare(`
 const insertWeaponStmt = db.prepare(`
     INSERT INTO weapons (
         item_id,
-        weapon_category,
         range_normal,
         range_long,
         throw_range_normal,
         throw_range_long,
-        mastery_id
+        weapon_type_id
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?)
 `)
 
 const insertWeaponDamageComponentStmt = db.prepare(`
@@ -216,6 +215,13 @@ const findWeaponPropertyByIndexStmt = db.prepare(`
         property_id
     FROM weapon_property_lookup
     WHERE property_index = ?
+`)
+
+const findWeaponTypeByIndexStmt = db.prepare(`
+    SELECT
+        weapon_type_id
+    FROM weapon_type_lookup
+    WHERE weapon_type_index = ?
 `)
 
 const findAbilityByIndexStmt = db.prepare(`
@@ -372,36 +378,22 @@ function getWeaponCategory(item) {
 }
 
 function seedWeapon(item, itemId) {
-    const weaponCategory =
-        getWeaponCategory(item)
+    const weaponType =
+        findWeaponTypeByIndexStmt.get(item.index)
 
-    const mastery = item.mastery
-        ? findMasteryByIndexStmt.get(item.mastery.index)
-        : undefined
-
-    const masteryId =
-        mastery?.mastery_id ?? null
-
-    if (weaponCategory === null) {
-        console.log(
-            `Missing weapon category: ${item.index}`
-        )
-    }
-
-    if (item.mastery && masteryId === null) {
-        console.log(
-            `Missing mastery lookup: ${item.mastery.index} (${item.index})`
+    if (!weaponType) {
+        throw new Error(
+            `Missing weapon type: ${item.index}`
         )
     }
 
     insertWeaponStmt.run(
         itemId,
-        weaponCategory,
         item.range?.normal ?? null,
         item.range?.long ?? null,
         item.throw_range?.normal ?? null,
         item.throw_range?.long ?? null,
-        masteryId
+        weaponType.weapon_type_id
     )
 
     seedWeaponDamageComponents(item, itemId)
