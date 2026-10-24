@@ -1981,441 +1981,6 @@ If the spell requires a saving throw or an attack roll, the spell save DC is 13,
         NULL
     );
 
--- item_to_equipment_slot
-INSERT INTO item_to_equipment_slot (
-    item_id,
-    equipment_slot_id
-)
-VALUES
-    (
-        4,
-        8
-    ),
-    (
-        12,
-        1
-    ),
-    (
-        12,
-        2
-    ),
-    (
-        17,
-        1
-    ),
-    (
-        17,
-        2
-    ),
-    (
-        21,
-        4
-    ),
-    (
-        35,
-        4
-    ),
-    (
-        36,
-        4
-    ),
-    (
-        41,
-        1
-    ),
-    (
-        41,
-        2
-    ),
-    (
-        47,
-        1
-    ),
-    (
-        47,
-        2
-    ),
-    (
-        48,
-        1
-    ),
-    (
-        48,
-        2
-    ),
-    (
-        49,
-        1
-    ),
-    (
-        49,
-        2
-    ),
-    (
-        57,
-        8
-    ),
-    (
-        60,
-        1
-    ),
-    (
-        60,
-        2
-    ),
-    (
-        64,
-        1
-    ),
-    (
-        64,
-        2
-    ),
-    (
-        67,
-        1
-    ),
-    (
-        67,
-        2
-    ),
-    (
-        68,
-        1
-    ),
-    (
-        68,
-        2
-    ),
-    (
-        69,
-        1
-    ),
-    (
-        69,
-        2
-    ),
-    (
-        70,
-        1
-    ),
-    (
-        70,
-        2
-    ),
-    (
-        71,
-        4
-    ),
-    (
-        72,
-        1
-    ),
-    (
-        72,
-        2
-    ),
-    (
-        73,
-        1
-    ),
-    (
-        73,
-        2
-    ),
-    (
-        75,
-        1
-    ),
-    (
-        75,
-        2
-    ),
-    (
-        77,
-        4
-    ),
-    (
-        83,
-        1
-    ),
-    (
-        83,
-        2
-    ),
-    (
-        88,
-        1
-    ),
-    (
-        88,
-        2
-    ),
-    (
-        91,
-        4
-    ),
-    (
-        93,
-        1
-    ),
-    (
-        93,
-        2
-    ),
-    (
-        94,
-        1
-    ),
-    (
-        94,
-        2
-    ),
-    (
-        96,
-        1
-    ),
-    (
-        96,
-        2
-    ),
-    (
-        97,
-        1
-    ),
-    (
-        97,
-        2
-    ),
-    (
-        100,
-        1
-    ),
-    (
-        100,
-        2
-    ),
-    (
-        106,
-        1
-    ),
-    (
-        106,
-        2
-    ),
-    (
-        107,
-        1
-    ),
-    (
-        107,
-        2
-    ),
-    (
-        108,
-        1
-    ),
-    (
-        108,
-        2
-    ),
-    (
-        113,
-        1
-    ),
-    (
-        113,
-        2
-    ),
-    (
-        114,
-        4
-    ),
-    (
-        120,
-        1
-    ),
-    (
-        120,
-        2
-    ),
-    (
-        121,
-        1
-    ),
-    (
-        121,
-        2
-    ),
-    (
-        123,
-        4
-    ),
-    (
-        132,
-        1
-    ),
-    (
-        132,
-        2
-    ),
-    (
-        135,
-        1
-    ),
-    (
-        135,
-        2
-    ),
-    (
-        137,
-        8
-    ),
-    (
-        138,
-        4
-    ),
-    (
-        140,
-        1
-    ),
-    (
-        140,
-        2
-    ),
-    (
-        143,
-        4
-    ),
-    (
-        145,
-        1
-    ),
-    (
-        145,
-        2
-    ),
-    (
-        147,
-        1
-    ),
-    (
-        147,
-        2
-    ),
-    (
-        148,
-        1
-    ),
-    (
-        148,
-        2
-    ),
-    (
-        149,
-        1
-    ),
-    (
-        149,
-        2
-    ),
-    (
-        151,
-        1
-    ),
-    (
-        151,
-        2
-    ),
-    (
-        153,
-        1
-    ),
-    (
-        153,
-        2
-    ),
-    (
-        155,
-        1
-    ),
-    (
-        155,
-        2
-    ),
-    (
-        160,
-        4
-    ),
-    (
-        161,
-        1
-    ),
-    (
-        161,
-        2
-    ),
-    (
-        163,
-        1
-    ),
-    (
-        163,
-        2
-    ),
-    (
-        165,
-        4
-    ),
-    (
-        172,
-        1
-    ),
-    (
-        172,
-        2
-    ),
-    (
-        175,
-        1
-    ),
-    (
-        175,
-        2
-    ),
-    (
-        176,
-        1
-    ),
-    (
-        176,
-        2
-    ),
-    (
-        177,
-        1
-    ),
-    (
-        177,
-        2
-    ),
-    (
-        180,
-        1
-    ),
-    (
-        180,
-        2
-    ),
-    (
-        182,
-        1
-    ),
-    (
-        182,
-        2
-    );
-
 -- item_to_category
 INSERT INTO item_to_category (
     item_id,
@@ -3882,206 +3447,175 @@ VALUES
 -- weapons
 INSERT INTO weapons (
     item_id,
-    weapon_category,
     range_normal,
     range_long,
     throw_range_normal,
     throw_range_long,
-    mastery_id
+    weapon_type_id
 )
 VALUES
     (
         12,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        7
+        15
     ),
     (
         17,
-        'martial',
         25,
         100,
         NULL,
         NULL,
-        8
+        33
     ),
     (
         41,
-        'simple',
         5,
         NULL,
         NULL,
         NULL,
-        6
+        1
     ),
     (
         48,
-        'simple',
         5,
         NULL,
         20,
         60,
-        3
+        2
     ),
     (
         49,
-        'simple',
         20,
         60,
         20,
         60,
-        8
+        11
     ),
     (
         60,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        5
+        16
     ),
     (
         64,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        2
+        17
     ),
     (
         67,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        1
+        18
     ),
     (
         68,
-        'simple',
         5,
         NULL,
         NULL,
         NULL,
-        4
+        3
     ),
     (
         69,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        2
+        19
     ),
     (
         70,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        1
+        20
     ),
     (
         72,
-        'martial',
         30,
         120,
         NULL,
         NULL,
-        8
+        34
     ),
     (
         73,
-        'simple',
         5,
         NULL,
         20,
         60,
-        8
+        4
     ),
     (
         75,
-        'martial',
         100,
         400,
         NULL,
         NULL,
-        4
+        35
     ),
     (
         83,
-        'simple',
         5,
         NULL,
         30,
         120,
-        6
+        5
     ),
     (
         88,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        7
+        21
     ),
     (
         93,
-        'simple',
         80,
         320,
         NULL,
         NULL,
-        6
+        12
     ),
     (
         94,
-        'simple',
         5,
         NULL,
         20,
         60,
-        3
+        6
     ),
     (
         96,
-        'martial',
         150,
         600,
         NULL,
         NULL,
-        6
+        36
     ),
     (
         97,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        5
+        22
     ),
     (
         100,
-        'simple',
-        5,
-        NULL,
-        NULL,
-        NULL,
-        5
-    ),
-    (
-        106,
-        'martial',
         5,
         NULL,
         NULL,
@@ -4089,53 +3623,47 @@ VALUES
         7
     ),
     (
+        106,
+        5,
+        NULL,
+        NULL,
+        NULL,
+        23
+    ),
+    (
         107,
-        'martial',
         NULL,
         NULL,
         NULL,
         NULL,
-        5
+        24
     ),
     (
         108,
-        'martial',
         40,
         120,
         NULL,
         NULL,
-        6
+        37
     ),
     (
         120,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        4
+        25
     ),
     (
         121,
-        'martial',
         30,
         90,
         NULL,
         NULL,
-        8
+        38
     ),
     (
         132,
-        'simple',
-        5,
-        NULL,
-        NULL,
-        NULL,
-        7
-    ),
-    (
-        135,
-        'martial',
         5,
         NULL,
         NULL,
@@ -4143,94 +3671,92 @@ VALUES
         8
     ),
     (
-        145,
-        'martial',
+        135,
         5,
         NULL,
         NULL,
         NULL,
-        3
+        26
+    ),
+    (
+        145,
+        5,
+        NULL,
+        NULL,
+        NULL,
+        27
     ),
     (
         148,
-        'simple',
         80,
         320,
         NULL,
         NULL,
-        8
+        13
     ),
     (
         149,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        8
+        28
     ),
     (
         151,
-        'simple',
         5,
         NULL,
         NULL,
         NULL,
-        3
+        9
     ),
     (
         153,
-        'simple',
         30,
         120,
         NULL,
         NULL,
-        6
+        14
     ),
     (
         155,
-        'simple',
         5,
         NULL,
         20,
         60,
-        5
+        10
     ),
     (
         172,
-        'martial',
         5,
         NULL,
         20,
         60,
-        7
+        29
     ),
     (
         176,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        4
+        30
     ),
     (
         177,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        5
+        31
     ),
     (
         180,
-        'martial',
         5,
         NULL,
         NULL,
         NULL,
-        6
+        32
     );
 
 -- weapon_damage_components
