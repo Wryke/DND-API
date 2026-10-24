@@ -228,24 +228,26 @@ function findItemEquipmentData(itemId) {
 
 const findWeaponDetailsStmt = db.prepare(`
     SELECT
-        item_id,
-        weapon_category,
-        range_normal,
-        range_long,
-        throw_range_normal,
-        throw_range_long
-    FROM weapons
-    WHERE item_id = ?
-`)
+        weapons.item_id,
+        weapons.range_normal,
+        weapons.range_long,
+        weapons.throw_range_normal,
+        weapons.throw_range_long,
 
-const findWeaponMasteryStmt = db.prepare(`
-    SELECT
-        weapon_mastery_lookup.mastery_index,
-        weapon_mastery_lookup.mastery_name
+        weapons.weapon_type_id,
+        weapon_type_id.weapon_type_index,
+        weapon_type_id.weapon_type_name,
+        weapon_type_id.weapon_category,
+        
+        weapon_type_id.mastery_id,
+        weapons_property_lookup.mastery_index,
+        weapons_property_lookup.mastery_name
     FROM weapons
+    JOIN weapon_type_lookup
+        ON weapons.weapon_type_id = weapon_type_lookup.weapon_type_id
     JOIN weapon_mastery_lookup
-        ON weapons.mastery_id = weapon_mastery_lookup.mastery_id
-    WHERE weapons.item_id = ?
+        ON weapon_type_id.mastery_id = weapon_mastery_lookup.mastery_id
+        WHERE weapons.item_id = ?
 `)
 
 const findWeaponPropertyStmt = db.prepare(`
@@ -270,6 +272,7 @@ const findWeaponDamageComponentsStmt = db.prepare(`
     WHERE weapon_damage_components.item_id = ?
 `)
 
+
 function findWeaponDetails(itemId) {
     const weapon = findWeaponDetailsStmt.get(itemId)
 
@@ -277,15 +280,12 @@ function findWeaponDetails(itemId) {
         return undefined
     }
 
-    const mastery = findWeaponMasteryStmt.get(itemId)
-
     const properties = findWeaponPropertyStmt.all(itemId)
 
     const damage = findWeaponDamageComponentsStmt.all(itemId)
 
     return {
         ...weapon,
-        mastery,
         properties,
         damage
     }
