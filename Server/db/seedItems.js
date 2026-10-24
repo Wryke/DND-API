@@ -203,13 +203,6 @@ const findDamageTypeByIndexStmt = db.prepare(`
     WHERE damage_index = ?
 `)
 
-const findMasteryByIndexStmt = db.prepare(`
-    SELECT
-        mastery_id
-    FROM weapon_mastery_lookup
-    WHERE mastery_index = ?
-`)
-
 const findWeaponPropertyByIndexStmt = db.prepare(`
     SELECT
         property_id
@@ -362,20 +355,6 @@ function seedCategories(item, itemId) {
 }
 
 // --- Weapon Seeding ---
-
-function getWeaponCategory(item) {
-    const categoryIndexes = getCategoryIndexes(item)
-
-    if (categoryIndexes.includes("martial-weapons")) {
-        return "martial"
-    }
-
-    if (categoryIndexes.includes("simple-weapons")) {
-        return "simple"
-    }
-
-    return null
-}
 
 function seedWeapon(item, itemId) {
     const weaponType =
