@@ -235,18 +235,18 @@ const findWeaponDetailsStmt = db.prepare(`
         weapons.throw_range_long,
 
         weapons.weapon_type_id,
-        weapon_type_id.weapon_type_index,
-        weapon_type_id.weapon_type_name,
-        weapon_type_id.weapon_category,
+        weapon_type_lookup.weapon_type_index,
+        weapon_type_lookup.weapon_type_name,
+        weapon_type_lookup.weapon_category,
         
-        weapon_type_id.mastery_id,
-        weapons_property_lookup.mastery_index,
-        weapons_property_lookup.mastery_name
+        weapon_type_lookup.mastery_id,
+        weapon_mastery_lookup.mastery_index,
+        weapon_mastery_lookup.mastery_name
     FROM weapons
     JOIN weapon_type_lookup
         ON weapons.weapon_type_id = weapon_type_lookup.weapon_type_id
     JOIN weapon_mastery_lookup
-        ON weapon_type_id.mastery_id = weapon_mastery_lookup.mastery_id
+        ON weapon_type_lookup.mastery_id = weapon_mastery_lookup.mastery_id
         WHERE weapons.item_id = ?
 `)
 
@@ -271,7 +271,6 @@ const findWeaponDamageComponentsStmt = db.prepare(`
         ON weapon_damage_components.damage_type_id = damage_type_lookup.damage_type_id
     WHERE weapon_damage_components.item_id = ?
 `)
-
 
 function findWeaponDetails(itemId) {
     const weapon = findWeaponDetailsStmt.get(itemId)
