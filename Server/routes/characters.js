@@ -4,15 +4,17 @@ const router = express.Router()
 const requireAuth = require("../middleware/requireAuth")
 
 const { 
-    findUserById,
+    findUserById
+ } = require("../db/userQueries.js")
 
+ const {
     findCharactersByUserId,
     findCharacterByUserIdAndName,
     createCharacter,
     updateCharacterById,
-    deleteCharacterById,
- } = require("../db/userQueries.js")
-
+    deleteCharacterById
+ } = require("../db/characterQueries.js")
+ 
 // --- Character Routes ---
 // GET /characters/ - Return all characters owned by a user
 // GET /characters/:name - Return a character by name

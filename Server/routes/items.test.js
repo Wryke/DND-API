@@ -488,7 +488,7 @@ describe("Item Routes", () => {
                 .toHaveProperty("throw_range_long")
 
             expect(response.body)
-                .toHaveProperty("mastery")
+                .toHaveProperty("mastery_name")
 
             expect(response.body.mastery)
                 .toHaveProperty("mastery_index")

@@ -4,10 +4,14 @@ const router = express.Router()
 const requireAuth = require("../middleware/requireAuth")
 
 const { 
-    findUserById,
+    findUserById
+ } = require("../db/userQueries.js")
 
-    findCharacterByUserIdAndName,
+const {
+    findCharacterByUserIdAndName
+} = require("../db/characterQueries.js")
 
+const { 
     findInventoryEntryById,
     findAllInventoryByCharacterId,
     findRootInventoryByCharacterId,
@@ -17,7 +21,7 @@ const {
     moveInventoryEntry,
     updateInventoryEntry,
     deleteInventoryEntry,
- } = require("../db/userQueries.js")
+ } = require("../db/inventoryQueries.js")
 const { findItemByIndex } = require("../db/itemQueries.js")
 
 // --- Inventory Routes ---

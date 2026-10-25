@@ -349,10 +349,10 @@ describe("Database Item Detail Queries", () => {
 
             expect(weapon).toBeDefined()
             expect(weapon.item_id).toBe(item.item_id)
-            expect(weapon).toHaveProperty("weapon_category")
+            expect(weapon).toHaveProperty("weapon_type_id")
             expect(Array.isArray(weapon.properties)).toBe(true)
             expect(Array.isArray(weapon.damage)).toBe(true)
-            expect(weapon).toHaveProperty("mastery")
+            expect(weapon).toHaveProperty("mastery_name")
         })
 
         test("returns undefined for a missing weapon", () => {

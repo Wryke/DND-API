@@ -173,6 +173,14 @@ const insertPackContentStmt = db.prepare(`
     VALUES (?, ?, ?)
 `)
 
+const insertItemEquipmentSlotStmt = db.prepare(`
+    INSERT OR IGNORE INTO item_to_equipment_slot (
+        item_id,
+        equipment_slot_id
+    )
+    VALUES (?, ?)
+`)
+
 // --- Lookup Statements ---
 
 const findItemByIndexStmt = db.prepare(`
@@ -231,6 +239,11 @@ const findCategoryByIndexStmt = db.prepare(`
     WHERE category_index = ?
 `)
 
+const findEquipmentSlotByIndexStmt = db.prepare(`
+    SELECT equipment_slot_id
+    FROM equipment_slot_lookup
+    WHERE equipment_slot_index = ?
+`)
 // --- General Helpers ---
 
 function getCategoryIndexes(item) {
@@ -350,6 +363,42 @@ function seedCategories(item, itemId) {
         insertItemCategoryStmt.run(
             itemId,
             categoryRow.category_id
+        )
+    }
+}
+
+// --- EquipmentSlot Seeding
+function seedEquipmentSlots(item, itemId) {
+    const itemType = determineItemType(item)
+
+    let slotIndexes = []
+
+    if (itemType === "weapon") {
+        slotIndexes = ["main_hand", "off_hand"]
+    }
+
+    if (itemType === "armor") {
+        const armorCategory = getArmorCategory(item)
+
+        if (armorCategory === "shield") {
+            slotIndexes = ["main_hand", "off_hand"]
+        } else {
+            slotIndexes = ["body"]
+        }
+    }
+
+    for (const slotIndex of slotIndexes) {
+        const slot = findEquipmentSlotByIndexStmt.get(slotIndex)
+
+        if (!slot) {
+            throw new Error(
+                `Equipment slot not found: ${slotIndex}`
+            )
+        }
+
+        insertItemEquipmentSlotStmt.run(
+            itemId,
+            slot.equipment_slot_id
         )
     }
 }
@@ -683,6 +732,7 @@ const seedEquipment = db.transaction(() => {
             determineItemType(item)
 
         seedCategories(item, itemId)
+        seedEquipmentSlots(item, itemId)
 
         switch (itemType) {
             case "weapon":

@@ -1,4 +1,22 @@
 const {
+    createUser,
+    deleteUserById
+} = require("./userQueries")
+
+const {
+    createCharacter
+} = require("./characterQueries")
+
+const {
+    createInventoryEntry
+} = require("./inventoryQueries")
+
+
+const {
+    findItemByIndex
+} = require("./itemQueries")
+
+const {
     findAllEquipmentSlots,
     findEquipmentSlotById,
     findEquipmentEntryBySlot,
@@ -10,18 +28,6 @@ const {
     findCompatibleInventory,
     isInventoryItemEquipped
 } = require("./equipmentQueries")
-
-const {
-    createUser,
-    deleteUserById,
-    createCharacter,
-    createInventoryEntry
-} = require("./userQueries")
-
-const {
-    findItemByIndex
-} = require("./itemQueries")
-
 
 describe("Database Equipment Queries", () => {
     let testUser

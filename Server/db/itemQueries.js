@@ -247,7 +247,7 @@ const findWeaponDetailsStmt = db.prepare(`
         ON weapons.weapon_type_id = weapon_type_lookup.weapon_type_id
     JOIN weapon_mastery_lookup
         ON weapon_type_lookup.mastery_id = weapon_mastery_lookup.mastery_id
-        WHERE weapons.item_id = ?
+    WHERE weapons.item_id = ?
 `)
 
 const findWeaponPropertyStmt = db.prepare(`

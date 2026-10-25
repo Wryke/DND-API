@@ -4,10 +4,16 @@ const router = express.Router()
 const requireAuth = require("../middleware/requireAuth")
 
 const { 
-    findUserById,
-    findCharacterByUserIdAndName,
-    findInventoryEntryById,
+    findUserById
  } = require("../db/userQueries.js")
+
+const {
+    findCharacterByUserIdAndName
+} = require("../db/characterQueries.js")
+
+const {
+    findInventoryEntryById
+} = require("../db/inventoryQueries.js")
 
 const {
     findEquipmentSlotById,
@@ -22,8 +28,8 @@ const {
 } = require("../db/equipmentQueries.js")
 
 // --- Equipment Routes ---
-// GET characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
 // GET characters/:name/equipment - Returns all of a characters equipped items
+// GET characters/:name/equipment/compatible/:slotId - Return all a characters inventory items that are compatible with selected slot
 // GET characters/:name/equipment/:equipmentId - Returns a specific equipped item
 // POST characters/:name/equipment - Create an equipment entry
 // PATCH ??

@@ -1,5 +1,6 @@
 const db = require("./connection")
 
+
 // --- Equipment Queries ---
 
 const findAllEquipmentSlotsStmt = db.prepare(`
