@@ -71,69 +71,136 @@ function deleteCharacterById (characterId) {
     return result.changes === 1
 }
 
-// // --- Class Queries ---
-// const findAllClassesStmt = db.prepare(`
-//     SELECT *
-//     FROM class_lookup
-//     ORDER BY class_name
-// `)
+// --- Class Queries ---
+const findAllClassesStmt = db.prepare(`
+    SELECT *
+    FROM class_lookup
+    ORDER BY class_name
+`)
 
-// const findSubclassByClassIDStmt = db.prepare(`
-//     SELECT *
-//     FROM subclass_lookup
-//     WHERE class_id = ?    
-// `)
+const findSubclassByClassIdStmt = db.prepare(`
+    SELECT *
+    FROM subclass_lookup
+    WHERE class_id = ?
+    ORDER BY subclass_name  
+`)
 
-// // --- Species Queries ---
-// const findAllSpeciesStmt = db.prepare(`
-//     SELECT *
-//     FROM species_lookup
-// `)
+const findCharacterClassesStmt = db.prepare(`
+    SELECT
+        c.character_id,
 
-// // --- Background Queries ---
-// const findAllBackgroundsStmt = db.prepare(`
-//     SELECT *
-//     FROM background_lookup
-// `)
+        cl.class_id,
+        cl.class_index,
+        cl.class_name,
 
-// // --- Proficiency Queries ---
-// const findCharacterProficienciesStmt = db.prepare(`
-//     SELECT
-//         c.character_id,
+        sub.subclass_id,
+        sub.subclass_index,
+        sub.subclass_name,
 
-//         c.proficiency_id,
-//         p.proficiency_index,
-//         p.proficiency_name,
+        c.class_level
+    FROM character_to_class AS c
+    JOIN class_lookup AS cl
+        ON c.class_id = cl.class_id
+    LEFT JOIN subclass_lookup AS sub
+        ON c.subclass_id = sub.subclass_id
+    WHERE c.character_id = ?
+`)
 
-//         t.proficiency_type_id,
-//         t.type_index,
-//         t.type_name,
+// --- Species Queries ---
+const findAllSpeciesStmt = db.prepare(`
+    SELECT *
+    FROM species_lookup
+    ORDER BY species_name
+`)
+
+// --- Background Queries ---
+const findAllBackgroundsStmt = db.prepare(`
+    SELECT *
+    FROM background_lookup
+    ORDER BY background_name
+`)
+
+// --- Proficiency Queries ---
+const findCharacterProficienciesStmt = db.prepare(`
+    SELECT
+        c.character_id,
+
+        c.proficiency_id,
+        p.proficiency_index,
+        p.proficiency_name,
+
+        t.proficiency_type_id,
+        t.type_index,
+        t.type_name,
         
-//         a.ability_index,
-//         a.ability_name,
+        a.ability_index,
+        a.ability_name
+    FROM character_to_proficiency AS c
+    JOIN proficiency_lookup AS p
+        ON c.proficiency_id = p.proficiency_id
+    JOIN proficiency_type_lookup AS t
+        ON p.proficiency_type_id = t.proficiency_type_id
+    LEFT JOIN ability_lookup AS a
+        ON p.ability_score_id = a.ability_score_id
+    WHERE c.character_id = ?
+`)
 
-//         w.weapon_type_id,
-//         w.weapon_type_index,
-//         w.weapon_type_name,
-//         w.weapon_category
-//     FROM character_to_proficiency AS c
-//     JOIN proficiency_lookup AS p
-//         ON c.proficiency_id = p.proficiency_id
-//     JOIN proficiency_type_lookup AS t
-//         ON p.proficiency_type_id = t.proficiency_type_id
-//     LEFT JOIN ability_lookup AS a
-//         ON p.ability_score_id = a.ability_score_id
-//     LEFT JOIN weapon_type_lookup AS w
-//         ON p.weapon_type_id = w.weapon_type_id
-//     WHERE c.character_id = ?
-// `)
+// --- Skills Queries ---
+const findSkillsStmt = db.prepare(`
+    SELECT
+        s.skill_id,
+        s.skill_index,
+        s.skill_name,
 
-// // --- Mastery Queries ---
-// const findCharacterMasteriesStmt = db.prepare(`
-//     SELECT *
-//     FROM character_to_wepaon_mastery
-//     WHERE character_id = ?
-// `)
+        a.ability_index,
+        a.ability_name
+    FROM skill_lookup AS s
+    JOIN ability_lookup AS a
+        ON s.ability_score_id = a.ability_score_id
+`)
+
+const findCharacterSkillsStmt = db.prepare(`
+    SELECT *
+    FROM character_to_skill
+    WHERE character_id = ?    
+`)
+
+// --- Mastery Queries ---
+const findAllWeaponMasteriesStmt = db.prepare(`
+    SELECT
+        w.weapon_type_id,
+        w.weapon_type_index,
+        w.weapon_type_name,
+        w.weapon_category,
+        
+        m.mastery_id,
+        m.mastery_index,
+        m.mastery_name
+    FROM weapon_type_lookup AS w
+    JOIN weapon_mastery_lookup AS m
+        ON w.mastery_id = m.mastery_id
+    ORDER BY w.weapon_type_name
+`)
+
+const findCharacterWeaponMasteriesStmt = db.prepare(`
+    SELECT
+        c.character_id,
+        
+        w.weapon_type_id,
+        w.weapon_type_index,
+        w.weapon_type_name,
+        w.weapon_category,
+        
+        m.mastery_id,
+        m.mastery_index,
+        m.mastery_name
+    FROM character_to_weapon_mastery AS c
+    JOIN weapon_type_lookup AS w
+        ON c.weapon_type_id = w.weapon_type_id
+    JOIN weapon_mastery_lookup AS m
+        ON w.mastery_id = m.mastery_id
+    WHERE c.character_id = ?
+`)
 
 module.exports = {
     findCharactersByUserId,
