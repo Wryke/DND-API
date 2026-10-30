@@ -31,16 +31,12 @@ CREATE TABLE proficiency_lookup (
     proficiency_index TEXT NOT NULL UNIQUE,
     proficiency_name TEXT NOT NULL UNIQUE,
     ability_score_id INTEGER,
-    weapon_type_id INTEGER UNIQUE,
 
     FOREIGN KEY (proficiency_type_id)
         REFERENCES proficiency_type_lookup(proficiency_type_id),
 
     FOREIGN KEY (ability_score_id)
-        REFERENCES ability_lookup(ability_score_id),
-
-    FOREIGN KEY (weapon_type_id)
-        REFERENCES weapon_type_lookup(weapon_type_id)
+        REFERENCES ability_lookup(ability_score_id)
 );
 
 CREATE TABLE species_lookup (
@@ -53,6 +49,16 @@ CREATE TABLE background_lookup (
     background_id INTEGER PRIMARY KEY,
     background_index TEXT NOT NULL UNIQUE,
     background_name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE skill_lookup (
+    skill_id INTEGER PRIMARY KEY,
+    skill_index TEXT NOT NULL UNIQUE,
+    skill_name TEXT NOT NULL UNIQUE,
+    ability_score_id INTEGER NOT NULL,
+
+    FOREIGN KEY (ability_score_id)
+        REFERENCES ability_lookup(ability_score_id)
 );
 
 CREATE TABLE item_type_lookup (
@@ -456,4 +462,19 @@ CREATE TABLE character_to_weapon_mastery (
 
     FOREIGN KEY (weapon_type_id)
         REFERENCES weapon_type_lookup(weapon_type_id)
+);
+
+CREATE TABLE character_to_skill (
+    character_id INTEGER NOT NULL,
+    skill_id INTEGER NOT NULL,
+    expertise INTEGER NOT NULL DEFAULT 0 CHECK (expertise IN (0, 1)),
+
+    PRIMARY KEY (character_id, skill_id),
+
+    FOREIGN KEY (character_id)
+        REFERENCES characters(character_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (skill_id)
+        REFERENCES skill_lookup(skill_id)
 );

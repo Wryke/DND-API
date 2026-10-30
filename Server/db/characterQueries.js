@@ -71,6 +71,70 @@ function deleteCharacterById (characterId) {
     return result.changes === 1
 }
 
+// // --- Class Queries ---
+// const findAllClassesStmt = db.prepare(`
+//     SELECT *
+//     FROM class_lookup
+//     ORDER BY class_name
+// `)
+
+// const findSubclassByClassIDStmt = db.prepare(`
+//     SELECT *
+//     FROM subclass_lookup
+//     WHERE class_id = ?    
+// `)
+
+// // --- Species Queries ---
+// const findAllSpeciesStmt = db.prepare(`
+//     SELECT *
+//     FROM species_lookup
+// `)
+
+// // --- Background Queries ---
+// const findAllBackgroundsStmt = db.prepare(`
+//     SELECT *
+//     FROM background_lookup
+// `)
+
+// // --- Proficiency Queries ---
+// const findCharacterProficienciesStmt = db.prepare(`
+//     SELECT
+//         c.character_id,
+
+//         c.proficiency_id,
+//         p.proficiency_index,
+//         p.proficiency_name,
+
+//         t.proficiency_type_id,
+//         t.type_index,
+//         t.type_name,
+        
+//         a.ability_index,
+//         a.ability_name,
+
+//         w.weapon_type_id,
+//         w.weapon_type_index,
+//         w.weapon_type_name,
+//         w.weapon_category
+//     FROM character_to_proficiency AS c
+//     JOIN proficiency_lookup AS p
+//         ON c.proficiency_id = p.proficiency_id
+//     JOIN proficiency_type_lookup AS t
+//         ON p.proficiency_type_id = t.proficiency_type_id
+//     LEFT JOIN ability_lookup AS a
+//         ON p.ability_score_id = a.ability_score_id
+//     LEFT JOIN weapon_type_lookup AS w
+//         ON p.weapon_type_id = w.weapon_type_id
+//     WHERE c.character_id = ?
+// `)
+
+// // --- Mastery Queries ---
+// const findCharacterMasteriesStmt = db.prepare(`
+//     SELECT *
+//     FROM character_to_wepaon_mastery
+//     WHERE character_id = ?
+// `)
+
 module.exports = {
     findCharactersByUserId,
     findCharacterByUserIdAndName,

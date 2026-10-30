@@ -56,7 +56,7 @@ database.
 The diagram below documents the project's database evolution across its
 V1, V2, and V3 designs.
 
-![D&D database schema diagram](docs/database-schema.png)
+![D&D database schema diagram](docs/database-schema.jpg)
 
 **Note:** This diagram is a historical/design overview, not a guaranteed
 exact snapshot of the current database. The SQL schema is the source of

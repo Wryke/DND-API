@@ -56,22 +56,35 @@ INSERT INTO character_to_proficiency (
 VALUES
     -- Fighter
     (1, 7),   -- Martial Weapons
-    (1, 17),  -- Athletics
     (1, 58),  -- Strength saving throws
     (1, 60),  -- Constitution saving throws
+
     -- Paladin
     (2, 7),   -- Martial Weapons
-    (2, 27),  -- Persuasion
     (2, 58),  -- Strength saving throws
     (2, 62),  -- Wisdom saving throws
+
     -- Rogue
     (3, 6),   -- Simple Weapons
-    (3, 30),  -- Stealth
     (3, 59),  -- Dexterity saving throws
     (3, 61);  -- Intelligence saving throws
 
 -- These are representative test assignments, not complete class rules.
 
+-- ============================================
+-- Test Character Skills
+-- ============================================
+
+INSERT INTO character_to_skill (
+    character_id,
+    skill_id,
+    expertise
+)
+VALUES
+    (1, 4, 0),   -- Fighter: Athletics
+    (2, 14, 0),  -- Paladin: Persuasion
+    (3, 17, 1);  -- Rogue: Stealth (Expertise)
+    
 -- ============================================
 -- Test Character Weapon Masteries
 -- ============================================

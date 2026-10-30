@@ -459,12 +459,12 @@ module.exports = {
     findItemByIndexAndCategory,
     findItemByNameAndCategory,
 
-    findItemEquipmentData,
-
     findWeaponDetails,
     findArmorDetails,
     findContainerDetails,
     findAmmunitionDetails,
     findToolDetails,
-    findEquipmentPackDetails
+    findEquipmentPackDetails,
+    
+    findItemEquipmentData
 }
