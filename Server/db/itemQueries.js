@@ -4,21 +4,23 @@ const db = require("./connection")
 
 const findAllItemsStmt = db.prepare(`
     SELECT
-        items.item_id,
-        items.item_index,
-        items.name,
-        items.description,
-        items.weight,
-        items.cost_quantity,
-        currency_lookup.currency_code,
-        currency_lookup.currency_name,
-        item_type_lookup.item_type_name
-    FROM items
-    LEFT JOIN currency_lookup
-        ON items.currency_unit_id = currency_lookup.currency_unit_id
-    LEFT JOIN item_type_lookup
-        ON items.item_type_id = item_type_lookup.item_type_id
-    ORDER BY items.name
+        i.item_id,
+        i.item_index,
+        i.name,
+        i.description,
+        i.weight,
+        i.cost_quantity,
+
+        c.currency_code,
+        c.currency_name,
+
+        t.item_type_name
+    FROM items AS i
+    LEFT JOIN currency_lookup AS c
+        ON i.currency_unit_id = c.currency_unit_id
+    LEFT JOIN item_type_lookup AS t
+        ON i.item_type_id = t.item_type_id
+    ORDER BY i.name
 `)
 
 function findAllItems() {
@@ -228,26 +230,26 @@ function findItemEquipmentData(itemId) {
 
 const findWeaponDetailsStmt = db.prepare(`
     SELECT
-        weapons.item_id,
-        weapons.range_normal,
-        weapons.range_long,
-        weapons.throw_range_normal,
-        weapons.throw_range_long,
+        w.item_id,
+        w.range_normal,
+        w.range_long,
+        w.throw_range_normal,
+        w.throw_range_long,
 
-        weapons.weapon_type_id,
-        weapon_type_lookup.weapon_type_index,
-        weapon_type_lookup.weapon_type_name,
-        weapon_type_lookup.weapon_category,
+        t.weapon_type_id,
+        t.weapon_type_index,
+        t.weapon_type_name,
+        t.weapon_category,
         
-        weapon_type_lookup.mastery_id,
-        weapon_mastery_lookup.mastery_index,
-        weapon_mastery_lookup.mastery_name
-    FROM weapons
-    JOIN weapon_type_lookup
-        ON weapons.weapon_type_id = weapon_type_lookup.weapon_type_id
-    JOIN weapon_mastery_lookup
-        ON weapon_type_lookup.mastery_id = weapon_mastery_lookup.mastery_id
-    WHERE weapons.item_id = ?
+        m.mastery_id,
+        m.mastery_index,
+        m.mastery_name
+    FROM weapons AS w
+    JOIN weapon_type_lookup AS t
+        ON w.weapon_type_id = t.weapon_type_id
+    JOIN weapon_mastery_lookup AS m
+        ON t.mastery_id = m.mastery_id
+    WHERE w.item_id = ?
 `)
 
 const findWeaponPropertyStmt = db.prepare(`

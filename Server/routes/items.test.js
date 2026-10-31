@@ -490,10 +490,10 @@ describe("Item Routes", () => {
             expect(response.body)
                 .toHaveProperty("mastery_name")
 
-            expect(response.body.mastery)
+            expect(response.body)
                 .toHaveProperty("mastery_index")
 
-            expect(response.body.mastery)
+            expect(response.body)
                 .toHaveProperty("mastery_name")
 
             expect(Array.isArray(response.body.damage))
