@@ -23,6 +23,11 @@ const seedPath = path.join(
     "../../Database/seed.sql"
 )
 
+const testValuesPath = path.join(
+    __dirname,
+    "../../Database/testValues.sql"
+)
+
 // Remove the previous test database so each run starts fresh
 if (fs.existsSync(databasePath)) {
     fs.unlinkSync(databasePath)
@@ -43,6 +48,10 @@ db.exec(reference)
 // Populate item seed data
 const seed = fs.readFileSync(seedPath, "utf8")
 db.exec(seed)
+
+// Populate test data
+const testValues = fs.readFileSync(testValuesPath, "utf8")
+db.exec(testValues)
 
 // Close the database connection
 db.close()

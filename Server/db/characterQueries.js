@@ -78,12 +78,20 @@ const findAllClassesStmt = db.prepare(`
     ORDER BY class_name
 `)
 
+function findAllClasses () {
+    return findAllClassesStmt.all()
+}
+
 const findSubclassByClassIdStmt = db.prepare(`
     SELECT *
     FROM subclass_lookup
     WHERE class_id = ?
     ORDER BY subclass_name  
 `)
+
+function findSubclassByClassId (classId) {
+    return findSubclassByClassIdStmt.all(classId)
+}
 
 const findCharacterClassesStmt = db.prepare(`
     SELECT
@@ -106,6 +114,10 @@ const findCharacterClassesStmt = db.prepare(`
     WHERE c.character_id = ?
 `)
 
+function findCharacterClasses (characterId) {
+    return findCharacterClassesStmt.all(characterId)
+}
+
 // --- Species Queries ---
 const findAllSpeciesStmt = db.prepare(`
     SELECT *
@@ -113,12 +125,20 @@ const findAllSpeciesStmt = db.prepare(`
     ORDER BY species_name
 `)
 
+function findAllSpecies () {
+    return findAllSpeciesStmt.all()
+}
+
 // --- Background Queries ---
 const findAllBackgroundsStmt = db.prepare(`
     SELECT *
     FROM background_lookup
     ORDER BY background_name
 `)
+
+function findAllBackgrounds () {
+    return findAllBackgroundsStmt.all()
+}
 
 // --- Proficiency Queries ---
 const findCharacterProficienciesStmt = db.prepare(`
@@ -145,6 +165,10 @@ const findCharacterProficienciesStmt = db.prepare(`
     WHERE c.character_id = ?
 `)
 
+function findCharacterProficiencies(characterId) {
+    return findCharacterProficienciesStmt.all(characterId)
+}
+
 // --- Skills Queries ---
 const findSkillsStmt = db.prepare(`
     SELECT
@@ -157,13 +181,22 @@ const findSkillsStmt = db.prepare(`
     FROM skill_lookup AS s
     JOIN ability_lookup AS a
         ON s.ability_score_id = a.ability_score_id
+    ORDER BY s.skill_name
 `)
+
+function findSkills () {
+    return findSkillsStmt.all()
+}
 
 const findCharacterSkillsStmt = db.prepare(`
     SELECT *
     FROM character_to_skill
-    WHERE character_id = ?    
+    WHERE character_id = ? 
 `)
+
+function findCharacterSkills (characterId) {
+    return findCharacterSkillsStmt.all(characterId)
+}
 
 // --- Mastery Queries ---
 const findAllWeaponMasteriesStmt = db.prepare(`
@@ -181,6 +214,10 @@ const findAllWeaponMasteriesStmt = db.prepare(`
         ON w.mastery_id = m.mastery_id
     ORDER BY w.weapon_type_name
 `)
+
+function findAllWeaponMasteries () {
+    return findAllWeaponMasteriesStmt.all()
+}
 
 const findCharacterWeaponMasteriesStmt = db.prepare(`
     SELECT
@@ -202,10 +239,25 @@ const findCharacterWeaponMasteriesStmt = db.prepare(`
     WHERE c.character_id = ?
 `)
 
+function findCharacterWeaponMasteries (characterId) {
+    return findCharacterWeaponMasteriesStmt.all(characterId)
+}
+
 module.exports = {
     findCharactersByUserId,
     findCharacterByUserIdAndName,
     createCharacter,
     updateCharacterById,
-    deleteCharacterById
+    deleteCharacterById,
+
+    findAllClasses, 
+    findSubclassByClassId, 
+    findCharacterClasses, 
+    findAllSpecies, 
+    findAllBackgrounds, 
+    findCharacterProficiencies, 
+    findSkills, 
+    findCharacterSkills,
+    findAllWeaponMasteries,
+    findCharacterWeaponMasteries
 }

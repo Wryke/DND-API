@@ -9,7 +9,17 @@ const {
     findCharacterByUserIdAndName,
     createCharacter,
     updateCharacterById,
-    deleteCharacterById
+    deleteCharacterById,
+    findAllClasses,
+    findSubclassByClassId,
+    findCharacterClasses,
+    findAllSpecies,
+    findAllBackgrounds,
+    findCharacterProficiencies,
+    findSkills,
+    findCharacterSkills,
+    findAllWeaponMasteries,
+    findCharacterWeaponMasteries
 } = require("./characterQueries")
 
 // Integration tests: use a dedicated SQLite test database.
@@ -238,6 +248,165 @@ describe("Database Character Queries", () => {
             const deleted = deleteCharacterById(999999999)
 
             expect(deleted).toBe(false)
+        })
+    })
+})
+
+
+// Reference-data tests require referenceSeed.sql.
+// Seeded-character tests additionally require the three characters from testValues.sql.
+describe("Character Reference and Relationship Queries", () => {
+    describe("findAllClasses", () => {
+        test("returns all 12 classes alphabetically", () => {
+            const classes = findAllClasses()
+            expect(classes).toHaveLength(12)
+            expect(classes.map(c => c.class_name)).toEqual(
+                [...classes.map(c => c.class_name)].sort((a, b) => a.localeCompare(b))
+            )
+            expect(classes).toEqual(expect.arrayContaining([
+                expect.objectContaining({ class_id: 5, class_name: "Fighter" }),
+                expect.objectContaining({ class_id: 9, class_name: "Rogue" })
+            ]))
+        })
+    })
+
+    describe("findSubclassByClassId", () => {
+        test("returns the four Fighter subclasses", () => {
+            const subclasses = findSubclassByClassId(5)
+            expect(subclasses).toHaveLength(4)
+            expect(subclasses.every(s => s.class_id === 5)).toBe(true)
+            expect(subclasses.map(s => s.subclass_name)).toContain("Champion")
+        })
+
+        test("returns an empty array for a nonexistent class", () => {
+            expect(findSubclassByClassId(999999)).toEqual([])
+        })
+    })
+
+    describe("findCharacterClasses", () => {
+        test("returns seeded Fighter's class, subclass, and level", () => {
+            expect(findCharacterClasses(1)).toEqual([
+                expect.objectContaining({
+                    character_id: 1,
+                    class_id: 5,
+                    class_name: "Fighter",
+                    subclass_id: 18,
+                    subclass_name: "Champion",
+                    class_level: 3
+                })
+            ])
+        })
+
+        test("returns an empty array when no classes are assigned", () => {
+            expect(findCharacterClasses(999999)).toEqual([])
+        })
+    })
+
+    describe("findAllSpecies", () => {
+        test("returns the ten seeded species", () => {
+            const species = findAllSpecies()
+            expect(species).toHaveLength(10)
+            expect(species).toEqual(expect.arrayContaining([
+                expect.objectContaining({ species_index: "human", species_name: "Human" })
+            ]))
+        })
+    })
+
+    describe("findAllBackgrounds", () => {
+        test("returns the sixteen seeded backgrounds", () => {
+            const backgrounds = findAllBackgrounds()
+            expect(backgrounds).toHaveLength(16)
+            expect(backgrounds).toEqual(expect.arrayContaining([
+                expect.objectContaining({ background_index: "soldier", background_name: "Soldier" })
+            ]))
+        })
+    })
+
+    describe("findCharacterProficiencies", () => {
+        test("returns Fighter's weapon and saving throw proficiencies", () => {
+            const proficiencies = findCharacterProficiencies(1)
+            expect(proficiencies).toHaveLength(3)
+            expect(proficiencies.map(p => p.proficiency_index).sort()).toEqual([
+                "martial-weapons", "saving-throw-con", "saving-throw-str"
+            ])
+            expect(proficiencies).toEqual(expect.arrayContaining([
+                expect.objectContaining({
+                    proficiency_index: "saving-throw-str",
+                    type_index: "saving-throw",
+                    ability_index: "str"
+                }),
+                expect.objectContaining({
+                    proficiency_index: "martial-weapons",
+                    type_index: "weapon",
+                    ability_index: null
+                })
+            ]))
+        })
+
+        test("returns no proficiencies for an unassigned character", () => {
+            expect(findCharacterProficiencies(999999)).toEqual([])
+        })
+    })
+
+    describe("findSkills", () => {
+        test("returns all 18 skills with their abilities", () => {
+            const skills = findSkills()
+            expect(skills).toHaveLength(18)
+            expect(skills).toEqual(expect.arrayContaining([
+                expect.objectContaining({ skill_name: "Athletics", ability_index: "str" }),
+                expect.objectContaining({ skill_name: "Stealth", ability_index: "dex" }),
+                expect.objectContaining({ skill_name: "Persuasion", ability_index: "cha" })
+            ]))
+        })
+    })
+
+    describe("findCharacterSkills", () => {
+        test("returns seeded Rogue's Stealth expertise", () => {
+            expect(findCharacterSkills(3)).toEqual([
+                expect.objectContaining({ character_id: 3, skill_id: 17, expertise: 1 })
+            ])
+        })
+
+        test("returns no skills for an unassigned character", () => {
+            expect(findCharacterSkills(999999)).toEqual([])
+        })
+    })
+
+    describe("findAllWeaponMasteries", () => {
+        test("returns all 38 weapon types and their mastery properties", () => {
+            const weapons = findAllWeaponMasteries()
+            expect(weapons).toHaveLength(38)
+            expect(weapons).toEqual(expect.arrayContaining([
+                expect.objectContaining({
+                    weapon_type_id: 22,
+                    weapon_type_name: "Longsword",
+                    weapon_category: "martial",
+                    mastery_name: "Sap"
+                }),
+                expect.objectContaining({
+                    weapon_type_id: 2,
+                    weapon_type_name: "Dagger",
+                    weapon_category: "simple",
+                    mastery_name: "Nick"
+                })
+            ]))
+        })
+    })
+
+    describe("findCharacterWeaponMasteries", () => {
+        test("returns the seeded Fighter's Longsword mastery", () => {
+            expect(findCharacterWeaponMasteries(1)).toEqual([
+                expect.objectContaining({
+                    character_id: 1,
+                    weapon_type_id: 22,
+                    weapon_type_name: "Longsword",
+                    mastery_name: "Sap"
+                })
+            ])
+        })
+
+        test("returns no masteries for an unassigned character", () => {
+            expect(findCharacterWeaponMasteries(999999)).toEqual([])
         })
     })
 })
